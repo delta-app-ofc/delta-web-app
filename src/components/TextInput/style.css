@@ -1,0 +1,65 @@
+.text-input-group {
+  width: 100%;
+}
+
+.text-input {
+  width: 100%;
+  height: 52px;
+
+  padding: 0 22px;
+
+  background-color: transparent;
+
+  border: 1px solid #a7a7a7;
+  border-radius: 999px;
+
+  color: #ffffff;
+
+  /* TROQUE A FONTE DO INPUT AQUI,
+     CASO QUEIRA UMA FONTE DIFERENTE */
+  font-family: var(--font-primary);
+
+  font-size: 16px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.text-input::placeholder {
+  color: var(--placeholder);
+}
+
+.text-input:hover {
+  border-color: #d2d2d2;
+}
+
+.text-input:focus {
+  border-color: #4c80ec;
+
+  box-shadow: 0 0 0 3px rgba(53, 108, 224, 0.25);
+}
+
+/*
+  Esconde visualmente o label,
+  mas mantém ele disponível para leitores de tela.
+*/
+.sr-only {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  padding: 0;
+  margin: -1px;
+
+  overflow: hidden;
+
+  clip: rect(0, 0, 0, 0);
+
+  white-space: nowrap;
+
+  border: 0;
+}

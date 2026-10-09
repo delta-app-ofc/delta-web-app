@@ -1,0 +1,52 @@
+.login-form-container {
+  width: 100%;
+  max-width: 440px;
+}
+
+.login-form-header {
+  margin-bottom: 45px;
+}
+
+.login-form-header h1 {
+  margin-bottom: 12px;
+
+  color: #ffffff;
+
+  /* =====================================
+     FONTE DO "Oie, bom te ver de novo!"
+     ===================================== */
+  font-family: var(--font-primary);
+
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.login-form-header p {
+  color: var(--text-secondary);
+
+  /* =====================================
+     FONTE DO "Acesse com suas informações"
+     ===================================== */
+  font-family: var(--font-primary);
+
+  font-size: 23px;
+  font-weight: 400;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  gap: 30px;
+}
+
+.login-form-fields {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 24px;
+}

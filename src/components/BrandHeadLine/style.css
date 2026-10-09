@@ -1,0 +1,65 @@
+.brand-headline {
+  width: 100%;
+}
+
+.brand-headline__subtitle {
+  margin-left: 4px;
+
+  color: #9DBDFF;
+
+  /* ============================================
+     FONTE DO TEXTO "Transformando hábitos"
+     ============================================ */
+  font-family: var(--font-primary);
+
+  font-size: clamp(30px, 3.3vw, 52px);
+  font-weight: 400;
+
+  line-height: 1;
+}
+
+.brand-headline__main {
+  margin-top: 5px;
+  margin-left: 40px;
+
+  display: flex;
+  flex-direction: column;
+
+  color: #d6ffff;
+
+  /* ============================================
+     FONTE DO TEXTO GRANDE "gota por gota"
+     MUDE A FONTE AQUI
+     ============================================ */
+  font-family: var(--font-display);
+
+  font-weight: 500;
+
+  line-height: 0.78;
+}
+
+.brand-headline__gota {
+  font-size: clamp(95px, 10vw, 160px);
+
+  letter-spacing: -5px;
+}
+
+.brand-headline__second-line {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 15px;
+
+  margin-top: 8px;
+  margin-left: 45px;
+}
+
+.brand-headline__por {
+  margin-top: 10px;
+
+  color: #9DBDFF;
+
+  font-size: clamp(55px, 6vw, 92px);
+
+  letter-spacing: -4px;
+}
