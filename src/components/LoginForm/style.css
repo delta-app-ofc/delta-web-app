@@ -10,7 +10,7 @@
 .login-form-header h1 {
   margin-bottom: 12px;
 
-  color: #ffffff;
+  color: var(--white);
 
   /* =====================================
      FONTE DO "Oie, bom te ver de novo!"
