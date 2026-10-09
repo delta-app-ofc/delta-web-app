@@ -5,7 +5,7 @@
 .brand-headline__subtitle {
   margin-left: 4px;
 
-  color: #9DBDFF;
+  color: var(--blue-light);
 
   /* ============================================
      FONTE DO TEXTO "Transformando hábitos"
@@ -25,7 +25,7 @@
   display: flex;
   flex-direction: column;
 
-  color: #d6ffff;
+  color: var(--cyan-light);
 
   /* ============================================
      FONTE DO TEXTO GRANDE "gota por gota"
@@ -57,7 +57,7 @@
 .brand-headline__por {
   margin-top: 10px;
 
-  color: #9DBDFF;
+  color: var(--blue-light);
 
   font-size: clamp(55px, 6vw, 92px);
 

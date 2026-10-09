@@ -10,11 +10,11 @@
   padding: 0 26px;
 
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 
   background-color: var(--blue);
 
-  color: #ffffff;
+  color: var(--white);
 
   /* FONTE DO BOTÃO */
   font-family: var(--font-primary);
@@ -33,7 +33,7 @@
 }
 
 .login-button:focus-visible {
-  outline: 3px solid #ffffff;
+  outline: 3px solid var(--white);
   outline-offset: 3px;
 }
 
