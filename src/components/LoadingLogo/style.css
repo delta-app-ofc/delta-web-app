@@ -1,0 +1,73 @@
+.loading-logo {
+  position: relative;
+
+  width: 180px;
+  height: 180px;
+}
+
+/* LOGO BRANCA / BASE */
+.loading-logo__base {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+
+  z-index: 1;
+}
+
+/* GOTA AZUL */
+.loading-logo__gota {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+
+  /*
+    IMPORTANTE:
+    precisa ficar POR CIMA da imagem base
+  */
+  z-index: 2;
+
+  /*
+    Começa completamente escondida.
+  */
+  clip-path: inset(100% 0 0 0);
+
+  animation: fillDrop 2.5s ease-in-out infinite;
+}
+
+/* ==================================
+   ANIMAÇÃO DO PREENCHIMENTO DA GOTA
+   ================================== */
+
+@keyframes fillDrop {
+  0% {
+    clip-path: inset(100% 0 0 0);
+  }
+
+  20% {
+    clip-path: inset(80% 0 0 0);
+  }
+
+  40% {
+    clip-path: inset(60% 0 0 0);
+  }
+
+  60% {
+    clip-path: inset(40% 0 0 0);
+  }
+
+  80% {
+    clip-path: inset(20% 0 0 0);
+  }
+
+  100% {
+    clip-path: inset(0% 0 0 0);
+  }
+}

@@ -1,0 +1,57 @@
+/* FONTES DO PROJETO */
+
+:root {
+  /* FONTE DOS TEXTOS NORMAIS */
+  --font-primary: "Google Sans Flex", sans-serif;
+
+  /* FONTE DO "GOTA POR GOTA" */
+  --font-display: "Clayful", sans-serif;
+
+  --background-dark: #191b1c;
+
+  --white: #ffffff;
+  --text-secondary: #e4e4e4;
+  --placeholder: #858585;
+
+  --blue: #356ce0;
+  --blue-hover: #477ce8;
+
+  --hero-blue-start: #3159aa;
+  --hero-blue-middle: #193589;
+  --hero-blue-end: #101a61;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+
+  /* FONTE PADRÃO DO SITE */
+  font-family: var(--font-primary);
+  letter-spacing: 0.4px;
+
+  background-color: var(--background-dark);
+  color: var(--white);
+
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}

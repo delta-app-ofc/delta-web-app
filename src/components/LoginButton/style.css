@@ -1,0 +1,48 @@
+.login-button {
+  min-width: 165px;
+  height: 47px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+
+  padding: 0 26px;
+
+  border: none;
+  border-radius: 999px;
+
+  background-color: var(--blue);
+
+  color: #ffffff;
+
+  /* FONTE DO BOTÃO */
+  font-family: var(--font-primary);
+
+  font-size: 17px;
+  font-weight: 600;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.login-button:hover:not(:disabled) {
+  background-color: var(--blue-hover);
+  transform: translateY(-1px);
+}
+
+.login-button:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-button__arrow {
+  font-size: 19px;
+  font-weight: 300;
+}
