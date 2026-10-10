@@ -1,0 +1,66 @@
+.login-page {
+  width: 100%;
+  min-height: 100vh;
+
+  display: grid;
+
+  /*
+    Aproximadamente 44% da tela para o login
+    e 56% para a parte azul.
+  */
+  grid-template-columns: 44% 56%;
+
+  background-color: var(--background-dark);
+}
+
+.login-page__left {
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+
+  padding: 60px 8%;
+}
+
+.login-page__right {
+  min-height: 100vh;
+
+  display: flex;
+  align-items: stretch;
+}
+
+.login-page__right > * {
+  width: 100%;
+}
+
+/* ========================================
+   TABLETS / TELAS MENORES
+   ======================================== */
+
+@media (max-width: 900px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .login-page__left {
+    min-height: auto;
+
+    justify-content: center;
+
+    padding: 80px 30px;
+  }
+
+  .login-page__right {
+    min-height: auto;
+  }
+}
+
+/* ========================================
+   CELULAR
+   ======================================== */
+
+@media (max-width: 600px) {
+  .login-page__left {
+    padding: 60px 24px;
+  }
+}

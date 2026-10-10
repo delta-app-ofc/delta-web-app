@@ -1,0 +1,41 @@
+.mascot-container {
+  width: 100%;
+
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-end;
+
+  flex: 1;
+
+  padding-left: 1px;
+}
+
+.mascot-image {
+  width: min(330px, 43%);
+  max-height: 370px;
+
+  object-fit: contain;
+
+  user-select: none;
+  pointer-events: none;
+
+  /* APLICA A ANIMAÇÃO */
+  animation: mascotDance 0.9s ease-in-out infinite;
+
+  /* Faz a rotação parecer mais natural */
+  transform-origin: center bottom;
+}
+
+@keyframes mascotDance {
+  0% {
+    transform: translateX(50px) translateY(0) rotate(-3deg);
+  }
+
+  50% {
+    transform: translateX(50px) translateY(-10px) rotate(3deg);
+  }
+
+  100% {
+    transform: translateX(50px) translateY(0) rotate(-3deg);
+  }
+}

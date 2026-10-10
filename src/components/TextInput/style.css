@@ -1,0 +1,44 @@
+.text-input-group {
+  width: 100%;
+}
+
+.text-input {
+  width: 100%;
+  height: 52px;
+
+  padding: 0 22px;
+
+  background-color: transparent;
+
+  border: 1px solid #a7a7a7;
+  border-radius: var(--radius-pill);
+
+  color: var(--white);
+
+  /* TROQUE A FONTE DO INPUT AQUI,
+     CASO QUEIRA UMA FONTE DIFERENTE */
+  font-family: var(--font-primary);
+
+  font-size: 16px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.text-input::placeholder {
+  color: var(--placeholder);
+}
+
+.text-input:hover {
+  border-color: #d2d2d2;
+}
+
+.text-input:focus {
+  border-color: var(--blue-focus);
+
+  box-shadow: 0 0 0 3px rgba(53, 108, 224, 0.25);
+}
+

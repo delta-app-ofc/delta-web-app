@@ -1,0 +1,32 @@
+.hero-panel {
+  height: calc(100vh - 6px);
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 75px 65px 30px;
+
+  overflow: hidden;
+
+  border-radius: 135px 0 0 135px;
+
+  background:
+    linear-gradient(
+      150deg,
+      var(--hero-blue-start) 0%,
+      var(--hero-blue-middle) 45%,
+      var(--hero-blue-end) 70%,
+      #315cbd 100%
+    );
+}
+
+@media (max-width: 900px) {
+  .hero-panel {
+    min-height: 650px;
+    height: auto;
+
+    padding: 60px 40px;
+
+    border-radius: 80px 0 0 80px;
+  }
+}
