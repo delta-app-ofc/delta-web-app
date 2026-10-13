@@ -1,5 +1,7 @@
 # React + TypeScript + Vite
 
+Consulte [DOCKER-HELP.md](DOCKER-HELP.md) para usar o ambiente Docker local.
+
 ## Fonte Clayful
 
 A fonte **Clayful**, criada por **Namara Creative**, foi incluída localmente no formato `.otf` para compor o texto de destaque “gota por gota”. Ela foi obtida na [página da Clayful no DaFont](https://www.dafont.com/pt/clayful.font).
