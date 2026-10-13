@@ -11,7 +11,7 @@
   background-color: var(--background-dark);
 
   font-family: var(--font-primary);
-  color: #ffffff;
+  color: var(--white);
 }
 
 .loading-page__title {
@@ -37,5 +37,5 @@
   font-size: 15px;
   font-weight: 400;
 
-  color: #d8d8d8;
+  color: var(--text-muted);
 }
