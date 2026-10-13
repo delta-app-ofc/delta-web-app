@@ -1,13 +1,16 @@
+import type { InputHTMLAttributes } from "react";
 import "./style.css";
 
 interface TextInputProps {
   id: string;
   label: string;
-  type: "text" | "email" | "password";
+  type: "text" | "email" | "password" | "tel" | "date";
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
   autoComplete?: string;
+  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  maxLength?: number;
 }
 
 export function TextInput({
@@ -18,6 +21,8 @@ export function TextInput({
   value,
   onChange,
   autoComplete,
+  inputMode,
+  maxLength,
 }: TextInputProps) {
   return (
     <div className="text-input-group">
@@ -32,6 +37,8 @@ export function TextInput({
         placeholder={placeholder}
         value={value}
         autoComplete={autoComplete}
+        inputMode={inputMode}
+        maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
       />
     </div>
