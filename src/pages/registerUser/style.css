@@ -1,0 +1,43 @@
+.register-page {
+  width: 100%;
+  min-height: 100vh;
+
+  display: grid;
+
+  grid-template-columns: 43.5% 56.5%;
+
+  background-color: var(--background-dark);
+}
+
+.register-page__left {
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+
+  padding: 60px 9%;
+}
+
+.register-page__right {
+  min-height: 100vh;
+
+  display: flex;
+}
+
+@media (max-width: 900px) {
+  .register-page {
+    grid-template-columns: 1fr;
+  }
+
+  .register-page__left {
+    min-height: auto;
+
+    justify-content: center;
+
+    padding: 70px 30px;
+  }
+
+  .register-page__right {
+    min-height: auto;
+  }
+}

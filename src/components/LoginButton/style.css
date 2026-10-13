@@ -1,13 +1,13 @@
 .login-button {
-  min-width: 165px;
-  height: 47px;
+  min-width: 145px;
+  height: 42px;
 
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 12px;
 
-  padding: 0 26px;
+  padding: 0 22px;
 
   border: none;
   border-radius: 999px;
@@ -20,7 +20,7 @@
   font-family: var(--font-primary);
 
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 500;
 
   transition:
     background-color 0.2s ease,

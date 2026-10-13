@@ -1,0 +1,153 @@
+.register-hero {
+    width: 100%;
+    height: calc(100vh - 6px);
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 75px 65px 0;
+
+    overflow: hidden;
+
+    border-radius: 135px 0 0 135px;
+
+    background:
+        radial-gradient(circle at 22% 72%,
+            rgba(57, 114, 231, 0.28) 0%,
+            rgba(57, 114, 231, 0.12) 28%,
+            transparent 55%),
+        radial-gradient(circle at 100% 100%,
+            rgba(9, 18, 76, 0.72) 0%,
+            rgba(14, 29, 96, 0.48) 34%,
+            transparent 68%),
+        linear-gradient(135deg,
+            #18317f 0%,
+            #2346a8 34%,
+            #2d5bc5 62%,
+            #162770 100%);
+}
+
+.register-hero__headline {
+    width: 100%;
+}
+
+.register-hero__subtitle {
+    margin-left: 4px;
+
+    font-family: var(--font-primary);
+
+    font-size: clamp(30px, 3.3vw, 52px);
+    font-weight: 400;
+
+    line-height: 1;
+
+    color: #d6ffff;
+}
+
+.register-hero__brand {
+    margin-top: 5px;
+    margin-left: 20px;
+
+    display: flex;
+    flex-direction: column;
+
+    font-family: var(--font-display);
+
+    /* MESMA ESPESSURA DO LOGIN */
+    font-weight: 500;
+
+    line-height: 0.78;
+
+    color: #9DBDFF;
+
+    letter-spacing: normal;
+}
+
+.register-hero__gota {
+    font-size: clamp(95px, 10vw, 160px);
+
+    letter-spacing: -5px;
+}
+
+.register-hero__second-line {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 15px;
+
+    margin-top: 8px;
+    margin-left: 45px;
+}
+
+.register-hero__por {
+    margin-top: 10px;
+
+    color: #d6ffff;
+
+    font-size: clamp(55px, 6vw, 92px);
+
+    letter-spacing: -4px;
+}
+
+.register-hero__mascot-container {
+    width: 100%;
+
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-end;
+
+    flex: 1;
+}
+
+.register-hero__mascot {
+  width: min(330px, 42%);
+  max-height: 370px;
+
+  object-fit: contain;
+
+  transform: translateX(30px);
+
+  transform-origin: 45% 85%;
+
+  animation: mascotWave 1.6s ease-in-out infinite;
+
+  user-select: none;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+    .register-hero {
+        height: auto;
+        min-height: 650px;
+
+        padding: 60px 40px;
+
+        border-radius: 80px 0 0 80px;
+    }
+}
+
+@keyframes mascotWave {
+  0% {
+    transform: translateX(30px) rotate(0deg);
+  }
+
+  20% {
+    transform: translateX(30px) rotate(-3deg);
+  }
+
+  40% {
+    transform: translateX(30px) rotate(3deg);
+  }
+
+  60% {
+    transform: translateX(30px) rotate(-3deg);
+  }
+
+  80% {
+    transform: translateX(30px) rotate(2deg);
+  }
+
+  100% {
+    transform: translateX(30px) rotate(0deg);
+  }
+}

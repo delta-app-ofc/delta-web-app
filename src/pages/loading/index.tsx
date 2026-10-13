@@ -2,11 +2,17 @@ import { LoadingLogo } from "../../components/LoadingLogo";
 
 import "./style.css";
 
-export function LoadingPage() {
+interface LoadingPageProps {
+  title?: string;
+}
+
+export function LoadingPage({
+  title = "Estamos preparando tudo para você...",
+}: LoadingPageProps) {
   return (
     <main className="loading-page">
       <h1 className="loading-page__title">
-        Estamos preparando tudo para você...
+        {title}
       </h1>
 
       <div className="loading-page__content">
