@@ -1,7 +1,5 @@
 import {
-  createContext,
   ReactNode,
-  useContext,
   useReducer,
 } from "react";
 
@@ -10,11 +8,7 @@ import type {
   RegisterField,
 } from "../../types/register";
 
-interface RegisterContextProps {
-  registerData: RegisterData;
-  setField: (field: RegisterField, value: string) => void;
-  resetRegister: () => void;
-}
+import { RegisterContext } from "./useRegister";
 
 interface RegisterProviderProps {
   children: ReactNode;
@@ -38,9 +32,6 @@ const initialState: RegisterData = {
   password: "",
   confirmPassword: "",
 };
-
-const RegisterContext =
-  createContext<RegisterContextProps | undefined>(undefined);
 
 function registerReducer(
   state: RegisterData,

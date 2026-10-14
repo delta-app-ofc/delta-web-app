@@ -1,7 +1,7 @@
 import { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useRegister } from "../../contexts/RegisterContext";
+import { useRegister } from "../../contexts/RegisterContext/useRegister";
 import { TextInput } from "../TextInput";
 import { RegisterButton } from "../RegisterButton";
 
