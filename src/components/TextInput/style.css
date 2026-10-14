@@ -11,9 +11,9 @@
   background-color: transparent;
 
   border: 1px solid #a7a7a7;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 
-  color: #ffffff;
+  color: var(--white);
 
   /* TROQUE A FONTE DO INPUT AQUI,
      CASO QUEIRA UMA FONTE DIFERENTE */
@@ -54,7 +54,7 @@
 }
 
 .text-input:focus {
-  border-color: #4c80ec;
+  border-color: var(--blue-focus);
 
   box-shadow: 0 0 0 3px rgba(53, 108, 224, 0.25);
 }

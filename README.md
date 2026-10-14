@@ -1,5 +1,11 @@
 # React + TypeScript + Vite
 
+## Fonte Clayful
+
+A fonte **Clayful**, criada por **Namara Creative**, foi incluída localmente no formato `.otf` para compor o texto de destaque “gota por gota”. Ela foi obtida na [página da Clayful no DaFont](https://www.dafont.com/pt/clayful.font).
+
+A licença que acompanha o arquivo permite **somente uso pessoal** e proíbe uso comercial. Para utilizar a fonte em qualquer atividade comercial, é necessário adquirir previamente a licença adequada na [página oficial de licenciamento da Clayful](https://onedsgn.com/product/clayful-typeface/).
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
