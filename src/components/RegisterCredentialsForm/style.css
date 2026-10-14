@@ -72,7 +72,7 @@
   flex-direction: column;
   align-items: flex-start;
 
-  gap: 28px;
+  gap: var(--form-action-gap);
 }
 
 .register-credentials-fields {
@@ -81,44 +81,6 @@
   display: flex;
   flex-direction: column;
 
-  gap: 24px;
-}
-
-.register-credentials-button {
-  min-width: 145px;
-  height: 42px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
   gap: 12px;
-
-  padding: 0 22px;
-
-  border: none;
-  border-radius: 999px;
-
-  background-color: var(--blue);
-
-  color: var(--white);
-
-  font-family: var(--font-primary);
-  font-size: 17px;
-  font-weight: 500;
-
-  cursor: pointer;
 }
 
-.register-credentials-button:hover {
-  background-color: var(--blue-hover);
-}
-
-.register-credentials-button:focus-visible {
-  outline: 3px solid #ffffff;
-  outline-offset: 3px;
-}
-
-.register-credentials-button__arrow {
-  font-size: 18px;
-}

@@ -11,6 +11,7 @@ interface TextInputProps {
   autoComplete?: string;
   inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
   maxLength?: number;
+  error?: string;
 }
 
 export function TextInput({
@@ -23,7 +24,10 @@ export function TextInput({
   autoComplete,
   inputMode,
   maxLength,
+  error,
 }: TextInputProps) {
+  const errorId = `${id}-error`;
+
   return (
     <div className="text-input-group">
       <label className="sr-only" htmlFor={id}>
@@ -39,8 +43,16 @@ export function TextInput({
         autoComplete={autoComplete}
         inputMode={inputMode}
         maxLength={maxLength}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId : undefined}
         onChange={(event) => onChange(event.target.value)}
       />
+
+      {error && (
+        <p className="text-input-error" id={errorId} role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
