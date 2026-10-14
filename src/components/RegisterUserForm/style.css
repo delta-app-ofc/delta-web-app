@@ -69,7 +69,7 @@
   flex-direction: column;
   align-items: flex-start;
 
-  gap: 30px;
+  gap: var(--form-action-gap);
 }
 
 .register-form-fields {
@@ -78,49 +78,6 @@
   display: flex;
   flex-direction: column;
 
-  gap: 24px;
-}
-
-.register-button {
-  min-width: 145px;
-  height: 42px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
   gap: 12px;
-
-  padding: 0 22px;
-
-  border: none;
-  border-radius: 999px;
-
-  background-color: var(--blue);
-
-  color: var(--white); 
-
-  font-family: var(--font-primary);
-  font-size: 17px;
-  font-weight: 500;
-
-  cursor: pointer;
-
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
 }
 
-.register-button:hover {
-  background-color: var(--blue-hover);
-  transform: translateY(-1px);
-}
-
-.register-button:focus-visible {
-  outline: 3px solid #ffffff;
-  outline-offset: 3px;
-}
-
-.register-button__arrow {
-  font-size: 18px;
-}

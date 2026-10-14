@@ -1,0 +1,247 @@
+.company-register {
+  width: 100%;
+  max-width: 450px;
+}
+
+.company-register__header {
+  margin-bottom: 30px;
+}
+
+.company-register__header h1 {
+  margin-bottom: 10px;
+  color: var(--white);
+  font-size: clamp(28px, 2.25vw, 36px);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.company-register__header > p {
+  max-width: 360px;
+  color: var(--text-secondary);
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.company-register__login {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+  color: #c6c6c6;
+  font-size: 14px;
+}
+
+.company-register__login button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #5d8ff5;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.company-register__login button:hover {
+  text-decoration: underline;
+}
+
+.company-register__login button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.company-register__form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--form-action-gap);
+}
+
+.company-register__fields,
+.company-register__questions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.company-register__labeled-field {
+  width: min(100%, 260px);
+}
+
+.company-register__labeled-field > p {
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.company-register__row {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+
+.company-register__row--equal {
+  grid-template-columns: 1fr 1fr;
+}
+
+.company-register__row--address {
+  grid-template-columns: minmax(0, 2fr) minmax(92px, 0.85fr);
+}
+
+.company-register__fieldset {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+}
+
+.company-register__fieldset legend {
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.company-register__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.company-register__choices--stacked {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.company-register__choices--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.company-register__choice {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.company-register__choice input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.company-register__choice span {
+  min-height: 31px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #6e6f70;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.15;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.company-register__choice span::before {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border: 1px solid #f3f3f3;
+  border-radius: 50%;
+  content: "";
+}
+
+.company-register__choice input[type="checkbox"] + span::before {
+  border-radius: 2px;
+}
+
+.company-register__choice input:checked + span {
+  border-color: #7ea5f8;
+  background: var(--blue);
+}
+
+.company-register__choice input:checked + span::before {
+  background: #ffffff;
+  box-shadow: inset 0 0 0 2px var(--blue);
+}
+
+.company-register__choice input:focus-visible + span {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.company-register__time-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d6d6d6;
+  font-size: 13px;
+}
+
+.company-register__time-range input {
+  width: 112px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #a7a7a7;
+  border-radius: 999px;
+  outline: none;
+  background: transparent;
+  color: #ffffff;
+  color-scheme: dark;
+}
+
+.company-register__time-range input:focus-visible {
+  border-color: #4c80ec;
+  box-shadow: 0 0 0 3px rgba(53, 108, 224, 0.25);
+}
+
+.company-register__shift-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.company-register__shift {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: #d6d6d6;
+  font-size: 13px;
+}
+
+.company-register__shift > span {
+  width: 58px;
+}
+
+.company-register__error {
+  width: 100%;
+  margin-top: 6px;
+  color: #ff9c9c;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+@media (max-height: 760px) and (min-width: 901px) {
+  .company-register__header {
+    margin-bottom: 20px;
+  }
+
+  .company-register__fields,
+  .company-register__questions {
+    gap: 12px;
+  }
+
+}
+
+@media (max-width: 520px) {
+  .company-register__row--equal,
+  .company-register__row--address,
+  .company-register__choices--grid {
+    grid-template-columns: 1fr;
+  }
+}
