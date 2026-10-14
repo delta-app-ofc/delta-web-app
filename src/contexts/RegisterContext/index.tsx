@@ -99,6 +99,8 @@ export function RegisterProvider({
   );
 }
 
+// O hook fica junto do Provider para manter a API pública do contexto coesa.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useRegister() {
   const context = useContext(RegisterContext);
 

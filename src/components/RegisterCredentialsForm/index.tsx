@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useRegister } from "../../contexts/RegisterContext";
 import { TextInput } from "../TextInput";
+import { RegisterButton } from "../RegisterButton";
 
 import "./style.css";
 
@@ -96,19 +97,7 @@ export function RegisterCredentialsForm() {
           />
         </div>
 
-        <button
-          type="submit"
-          className="register-credentials-button"
-        >
-          <span>Cadastrar</span>
-
-          <span
-            className="register-credentials-button__arrow"
-            aria-hidden="true"
-          >
-            →
-          </span>
-        </button>
+        <RegisterButton>Cadastrar</RegisterButton>
       </form>
     </section>
   );

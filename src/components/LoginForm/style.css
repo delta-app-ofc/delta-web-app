@@ -39,7 +39,7 @@
   flex-direction: column;
   align-items: flex-start;
 
-  gap: 30px;
+  gap: var(--form-action-gap);
 }
 
 .login-form-fields {
