@@ -10,6 +10,7 @@ import { LoadingPage } from "./pages/loading";
 import { CompanyRegisterPage } from "./pages/companyRegister";
 import { RegisterSuccessPage } from "./pages/registerSuccess";
 import { DashboardPage } from "./pages/dashboard";
+import { MonitoringPage } from "./pages/monitoring";
 
 function App() {
   return (
@@ -100,6 +101,11 @@ function App() {
             <Route
               path="/dashboard"
               element={<DashboardPage />}
+            />
+
+            <Route
+              path="/monitoramento"
+              element={<MonitoringPage />}
             />
 
             <Route
