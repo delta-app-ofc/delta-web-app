@@ -3,8 +3,10 @@
 .list > li { flex-shrink: 0; }
 .item { display: flex; align-items: center; gap: var(--sidebar-link-gap, 13px); width: 100%; min-height: var(--sidebar-item-height, 41px); padding: var(--sidebar-link-padding, 8px 15px); border: 0; border-radius: 14px; background: transparent; color: #a2b9d8; text-decoration: none; text-align: left; font-size: var(--sidebar-font-size, 16px); font-weight: 600; line-height: 1.25; }
 .item img { flex: none; width: auto; height: auto; max-width: var(--sidebar-icon-size, 27px); max-height: var(--sidebar-icon-size, 27px); }
+.item[data-navigation-id="installations"] img { filter: brightness(0) saturate(100%) invert(85%) sepia(16%) saturate(1038%) hue-rotate(188deg) brightness(102%) contrast(101%); opacity: .8; }
 .item span { white-space: nowrap; }
 .item.active { color: white; background: rgba(145,193,255,.18); }
+.item.active img { filter: brightness(0) saturate(100%) invert(55%) sepia(94%) saturate(1718%) hue-rotate(195deg) brightness(102%) contrast(101%); opacity: 1; }
 .item:disabled { cursor: not-allowed; }
 .item:not(:disabled) { cursor: pointer; }
 .item:hover:not(:disabled) { background: rgba(145,193,255,.24); }

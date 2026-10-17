@@ -9,6 +9,7 @@ import { LoginPage } from "./pages/login";
 import { LoadingPage } from "./pages/loading";
 import { CompanyRegisterPage } from "./pages/companyRegister";
 import { RegisterSuccessPage } from "./pages/registerSuccess";
+import { DashboardPage } from "./pages/dashboard";
 
 function App() {
   return (
@@ -97,8 +98,17 @@ function App() {
             />
 
             <Route
+              path="/dashboard"
+              element={<DashboardPage />}
+            />
+
+            <Route
               path="/loading"
-              element={<LoadingPage />}
+              element={
+                <LoadingPage
+                  redirectTo="/dashboard"
+                />
+              }
             />
           </Routes>
         </CompanyRegisterProvider>

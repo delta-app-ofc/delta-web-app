@@ -16,7 +16,7 @@ export function RegisterSuccessPage({
 
   useEffect(() => {
     const redirectTimer = window.setTimeout(() => {
-      navigate("/login", { replace: true });
+      navigate("/dashboard", { replace: true });
     }, redirectDelay);
 
     return () => window.clearTimeout(redirectTimer);
