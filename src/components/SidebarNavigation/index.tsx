@@ -26,17 +26,17 @@ interface SidebarNavigationProps {
 }
 
 const navigation: readonly SidebarNavigationItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: dashboard },
+  { id: "dashboard", label: "Dashboard", icon: dashboard, path: "/dashboard" },
   { id: "installations", label: "Instalações", icon: installations, path: "/instalacoes" },
-  { id: "monitoring", label: "Monitoramento", icon: monitoring },
-  { id: "alerts", label: "Alertas", icon: alerts },
-  { id: "leaks", label: "Vazamentos", icon: leaks },
-  { id: "ranking", label: "Ranking", icon: ranking },
-  { id: "goals", label: "Metas", icon: goals },
-  { id: "investments", label: "Investimentos", icon: investments },
-  { id: "devices", label: "Dispositivos", icon: devices },
-  { id: "gluh", label: "Gluh", icon: gluh },
-  { id: "settings", label: "Configurações", icon: settings },
+  { id: "monitoring", label: "Monitoramento", icon: monitoring, path: "/monitoramento" },
+  { id: "alerts", label: "Alertas", icon: alerts, path: "/alertas" },
+  { id: "leaks", label: "Vazamentos", icon: leaks, path: "/vazamentos" },
+  { id: "ranking", label: "Ranking", icon: ranking, path: "/ranking" },
+  { id: "goals", label: "Metas", icon: goals, path: "/metas" },
+  { id: "investments", label: "Investimentos", icon: investments, path: "/investimentos" },
+  { id: "devices", label: "Dispositivos", icon: devices, path: "/dispositivos" },
+  { id: "gluh", label: "Gluh", icon: gluh, path: "/gluh" },
+  { id: "settings", label: "Configurações", icon: settings, path: "/configuracoes" },
 ];
 
 export function SidebarNavigation({ label, items = navigation }: SidebarNavigationProps) {
@@ -45,7 +45,7 @@ export function SidebarNavigation({ label, items = navigation }: SidebarNavigati
         <ul className={styles.list}>
           {items.map((item) => <li key={item.id}>
             {item.path
-              ? <NavLink className={({ isActive }) => `${styles.item} ${isActive ? styles.active : ""}`} to={item.path}><img src={item.icon} alt="" /><span>{item.label}</span></NavLink>
+              ? <NavLink data-navigation-id={item.id} className={({ isActive }) => `${styles.item} ${isActive ? styles.active : ""}`} to={item.path}><img src={item.icon} alt="" /><span>{item.label}</span></NavLink>
               : <button className={styles.item} type="button" disabled title="Esta seção ainda não está disponível"><img src={item.icon} alt="" /><span>{item.label}</span></button>}
           </li>)}
         </ul>
