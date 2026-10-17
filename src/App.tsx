@@ -11,6 +11,7 @@ import { CompanyRegisterPage } from "./pages/companyRegister";
 import { RegisterSuccessPage } from "./pages/registerSuccess";
 import { DashboardPage } from "./pages/dashboard";
 import { MonitoringPage } from "./pages/monitoring";
+import { RankingPage } from "./pages/ranking";
 
 function App() {
   return (
@@ -106,6 +107,11 @@ function App() {
             <Route
               path="/monitoramento"
               element={<MonitoringPage />}
+            />
+
+            <Route
+              path="/ranking"
+              element={<RankingPage />}
             />
 
             <Route
