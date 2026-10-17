@@ -1,0 +1,12 @@
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 5.23%;
+  width: 153px;
+  max-width: 100%;
+}
+.brand img { display: block; height: auto; }
+.symbol { flex: none; width: 32.68%; }
+.text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.wordmark { width: 81.05%; }
+.description { width: 100%; }
