@@ -1,5 +1,15 @@
 # React + TypeScript + Vite
 
+## API e autenticação
+
+Copie `.env.example` para `.env.local` e defina `VITE_POSTGRES_API_URL` com a origem da API, sem `/delta` no final. Reinicie o servidor de desenvolvimento após alterar essa configuração.
+
+O formulário envia e-mail e senha para `POST /delta/auth/login`. Após autenticar, abre `/instalacoes`. Os tokens ficam no `sessionStorage` da aba; a senha não é armazenada. As consultas enviam `Authorization: Bearer ...`, renovam o access token via `POST /delta/auth/refresh` quando necessário e retornam ao login quando a sessão deixa de ser válida. O perfil usa `GET /delta/auth/me` para carregar nome e e-mail.
+
+A lista de instalações identifica o usuário em `/delta/auth/me`, consulta suas associações em `/delta/user-properties/{userId}` e busca os detalhes somente dos imóveis vinculados. Endereços e consumos também são consultados apenas para essas instalações. Uma conta sem associações exibe a lista vazia; falhas na consulta não acionam a listagem geral de imóveis.
+
+`npm test` verifica login, erros, cancelamento, envio do token, renovação simultânea e expiração usando respostas simuladas, sem acessar contas reais. O teste completo no ambiente depende de uma conta ativa no backend. `npm run build` e `npm run lint` verificam compilação e análise estática.
+
 ## Fonte Clayful
 
 A fonte **Clayful**, criada por **Namara Creative**, foi incluída localmente no formato `.otf` para compor o texto de destaque “gota por gota”. Ela foi obtida na [página da Clayful no DaFont](https://www.dafont.com/pt/clayful.font).
