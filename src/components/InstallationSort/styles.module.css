@@ -1,0 +1,5 @@
+.sort { display: flex; align-items: center; flex-wrap: wrap; gap: 13px; color: var(--installation-muted); font-size: 16px; }
+.sort span { margin-right: 3px; }
+.sort button { min-height: 36px; padding: 8px 15px; border: 1px solid transparent; border-radius: 50px; background: rgba(153,190,244,.18); color: white; }
+.sort button[aria-pressed="true"] { border-color: #89afff; }
+.sort button:hover { background: rgba(153,190,244,.3); }
