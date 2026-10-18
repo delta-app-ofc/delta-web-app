@@ -156,6 +156,12 @@
   padding: 16px 27px;
 }
 
+.dashboard-page .ranking-card {
+  border: 1px solid var(--dashboard-border);
+  border-radius: 34px;
+  background: var(--dashboard-card);
+}
+
 .history-chart {
   height: 140px;
   display: flex;

@@ -10,6 +10,9 @@ import { LoadingPage } from "./pages/loading";
 import { CompanyRegisterPage } from "./pages/companyRegister";
 import { RegisterSuccessPage } from "./pages/registerSuccess";
 import { DashboardPage } from "./pages/dashboard";
+import { MonitoringPage } from "./pages/monitoring";
+import { RankingPage } from "./pages/ranking";
+import { AlertsPage } from "./pages/alerts";
 
 function App() {
   return (
@@ -100,6 +103,21 @@ function App() {
             <Route
               path="/dashboard"
               element={<DashboardPage />}
+            />
+
+            <Route
+              path="/monitoramento"
+              element={<MonitoringPage />}
+            />
+
+            <Route
+              path="/ranking"
+              element={<RankingPage />}
+            />
+
+            <Route
+              path="/alertas"
+              element={<AlertsPage />}
             />
 
             <Route
