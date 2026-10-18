@@ -8,6 +8,9 @@ interface TextInputProps {
   value: string;
   onChange: (value: string) => void;
   autoComplete?: string;
+  required?: boolean;
+  disabled?: boolean;
+  maxLength?: number;
 }
 
 export function TextInput({
@@ -18,6 +21,9 @@ export function TextInput({
   value,
   onChange,
   autoComplete,
+  required,
+  disabled,
+  maxLength,
 }: TextInputProps) {
   return (
     <div className="text-input-group">
@@ -32,6 +38,9 @@ export function TextInput({
         placeholder={placeholder}
         value={value}
         autoComplete={autoComplete}
+        required={required}
+        disabled={disabled}
+        maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
       />
     </div>
