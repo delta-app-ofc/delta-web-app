@@ -27,17 +27,54 @@
 }
 
 .monitoring-header {
-  min-height: 68px;
+  min-height: 104px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
 }
 
+.monitoring-header__heading {
+  display: flex;
+  flex-direction: column;
+}
+
 .monitoring-header h1 {
   font-size: clamp(30px, 3vw, 40px);
   font-weight: 650;
   line-height: 1.1;
+}
+
+.monitoring-intervals {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.monitoring-interval {
+  min-width: 55px;
+  min-height: 30px;
+  padding: 5px 11px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #2c343e;
+  color: #cbd5e3;
+  font-size: 11px;
+  font-weight: 550;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.monitoring-interval:hover,
+.monitoring-interval--active {
+  border-color: rgba(118, 153, 207, 0.48);
+  background: #40506a;
+  color: #f4f7fb;
+}
+
+.monitoring-interval:focus-visible {
+  outline: 3px solid var(--blue-light);
+  outline-offset: 3px;
 }
 
 .monitoring-export {
@@ -300,6 +337,22 @@
 
   .monitoring-page__sidebar {
     min-height: 680px;
+  }
+
+  .monitoring-header {
+    min-height: 90px;
+  }
+
+  .monitoring-intervals {
+    gap: 5px;
+    margin-top: 10px;
+  }
+
+  .monitoring-interval {
+    min-width: 45px;
+    min-height: 26px;
+    padding: 4px 8px;
+    font-size: 9px;
   }
 
   .monitoring-indicators {
