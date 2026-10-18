@@ -48,13 +48,13 @@ export function useInstallations(): UseInstallationsResult {
 
     async function load(): Promise<void> {
       try {
-        const [records, addressResult] = await Promise.all([
-          listInstallations(signal),
-          listAddresses(signal).then(
-            (addresses) => ({ addresses, unavailable: false }),
-            () => ({ addresses: [], unavailable: true }),
-          ),
-        ]);
+        const records = await listInstallations(signal);
+        if (signal.aborted) return;
+        const addressIds = records.flatMap((record) => record.addressId === null ? [] : [record.addressId]);
+        const addressResult = await listAddresses(addressIds, signal).then(
+          (addresses) => ({ addresses, unavailable: false }),
+          () => ({ addresses: [], unavailable: true }),
+        );
         if (signal.aborted) return;
         const addresses = new Map(addressResult.addresses.map((address) => [address.id, address]));
         const installations: Installation[] = [];

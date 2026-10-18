@@ -1,5 +1,5 @@
 import type { Address } from "../types/address";
-import { isRecord, readArray, readId, readOptionalNumber, readText } from "../utils/apiValidation";
+import { isRecord, readId, readOptionalNumber, readText } from "../utils/apiValidation";
 import { ApiError, getJson } from "./http";
 
 function parseAddress(value: unknown): Address {
@@ -15,9 +15,20 @@ function parseAddress(value: unknown): Address {
   };
 }
 
-export async function listAddresses(signal: AbortSignal): Promise<Address[]> {
+export async function listAddresses(addressIds: number[], signal: AbortSignal): Promise<Address[]> {
   try {
-    return readArray(await getJson("/delta/address", signal), parseAddress);
+    const uniqueIds = [...new Set(addressIds.map(readId))];
+    const addresses: Address[] = [];
+    for (let offset = 0; offset < uniqueIds.length; offset += 6) {
+      signal.throwIfAborted();
+      const batch = await Promise.all(uniqueIds.slice(offset, offset + 6).map(async (id) => {
+        const address = parseAddress(await getJson(`/delta/address/${id}`, signal));
+        if (address.id !== id) throw new Error("A API retornou um endereço diferente do solicitado.");
+        return address;
+      }));
+      addresses.push(...batch);
+    }
+    return addresses;
   } catch (error: unknown) {
     if (signal.aborted || error instanceof ApiError) throw error;
     throw new ApiError("A API retornou dados de endereço inválidos.");

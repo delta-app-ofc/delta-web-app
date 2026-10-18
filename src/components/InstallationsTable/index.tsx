@@ -29,7 +29,7 @@ export function InstallationsTable({ installations, monthLabel, isFiltered }: In
           </tbody>
         </table>
       </div>
-      {installations.length === 0 && <p className={styles.empty} role="status">{isFiltered ? "Nenhuma instalação corresponde à sua busca." : "Nenhuma instalação cadastrada."}</p>}
+      {installations.length === 0 && <p className={styles.empty} role="status">{isFiltered ? "Nenhuma instalação corresponde à sua busca." : "Nenhuma instalação associada à sua conta."}</p>}
     </section>
   );
 }

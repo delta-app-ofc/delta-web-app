@@ -148,3 +148,91 @@ test("sessão expirada ou ausente não envia consultas protegidas", async () => 
   await assert.rejects(app.http.getJson("/delta/property", signal()), /Entre na sua conta/);
   assert.equal(requests, 0);
 });
+
+test("cada usuário carrega somente os detalhes das instalações associadas, sem lista geral", async () => {
+  for (const [userId, propertyId] of [[7, 15], [8, 29]]) {
+    const paths = [];
+    const app = await harness(async (url, options) => {
+      const path = new URL(url).pathname;
+      paths.push(path);
+      assert.equal(options.headers.Authorization, `Bearer ${tokens.accessToken}`);
+      if (path === "/delta/auth/me") return response({ id: userId, name: "Pessoa", email: "pessoa@example.test" });
+      if (path === `/delta/user-properties/${userId}`) return response([
+        { id: 100, userId, propertyId }, { id: 101, userId, propertyId },
+      ]);
+      if (path === `/delta/property/${propertyId}`) return response({ id: propertyId, name: "Instalação", addressId: 3, builtAreaM2: 120 });
+      assert.fail(`Consulta indevida: ${path}`);
+    }, validSession());
+    const service = await app.service("installations");
+    const records = await service.listInstallations(signal());
+    assert.equal(records.length, 1);
+    assert.equal(records[0].id, propertyId);
+    assert.deepEqual(paths, ["/delta/auth/me", `/delta/user-properties/${userId}`, `/delta/property/${propertyId}`]);
+  }
+});
+
+test("conta sem associações retorna lista vazia sem consultar outras instalações", async () => {
+  const paths = [];
+  const app = await harness(async (url) => {
+    const path = new URL(url).pathname;
+    paths.push(path);
+    if (path === "/delta/auth/me") return response({ id: 7, name: "Pessoa", email: "pessoa@example.test" });
+    if (path === "/delta/user-properties/7") return response([]);
+    assert.fail(`Consulta indevida: ${path}`);
+  }, validSession());
+  const service = await app.service("installations");
+  assert.equal((await service.listInstallations(signal())).length, 0);
+  assert.equal(paths.length, 2);
+});
+
+test("associação de outro usuário ou identificador inválido interrompe o carregamento", async () => {
+  for (const association of [{ userId: 8, propertyId: 99 }, { userId: 7, propertyId: "99" }]) {
+    const app = await harness(async (url) => {
+      const path = new URL(url).pathname;
+      if (path === "/delta/auth/me") return response({ id: 7, name: "Pessoa", email: "pessoa@example.test" });
+      if (path === "/delta/user-properties/7") return response([association]);
+      assert.fail(`Consulta indevida: ${path}`);
+    }, validSession());
+    const service = await app.service("installations");
+    await assert.rejects(service.listInstallations(signal()), /dados de instalação inválidos/);
+  }
+});
+
+test("falha nas associações não recorre à lista geral", async () => {
+  const app = await harness(async (url) => {
+    const path = new URL(url).pathname;
+    if (path === "/delta/auth/me") return response({ id: 7, name: "Pessoa", email: "pessoa@example.test" });
+    if (path === "/delta/user-properties/7") return response({}, 403);
+    assert.fail(`Consulta indevida: ${path}`);
+  }, validSession());
+  const service = await app.service("installations");
+  await assert.rejects(service.listInstallations(signal()), (error) => error.status === 403);
+});
+
+test("detalhes com ID diferente do solicitado são recusados", async () => {
+  const app = await harness(async (url) => {
+    const path = new URL(url).pathname;
+    if (path === "/delta/auth/me") return response({ id: 7, name: "Pessoa", email: "pessoa@example.test" });
+    if (path === "/delta/user-properties/7") return response([{ userId: 7, propertyId: 15 }]);
+    if (path === "/delta/property/15") return response({ id: 99, name: "Outra instalação" });
+    assert.fail(`Consulta indevida: ${path}`);
+  }, validSession());
+  const service = await app.service("installations");
+  await assert.rejects(service.listInstallations(signal()), /dados de instalação inválidos/);
+});
+
+test("endereços são consultados somente pelos IDs necessários, sem duplicatas ou lista geral", async () => {
+  const paths = [];
+  const app = await harness(async (url) => {
+    const path = new URL(url).pathname;
+    paths.push(path);
+    if (path === "/delta/address/3") return response({ id: 3, city: "São Paulo", state: "SP" });
+    assert.fail(`Consulta indevida: ${path}`);
+  }, validSession());
+  const service = await app.service("addresses");
+  assert.equal((await service.listAddresses([], signal())).length, 0);
+  const addresses = await service.listAddresses([3, 3], signal());
+  assert.equal(addresses.length, 1);
+  assert.equal(addresses[0].id, 3);
+  assert.deepEqual(paths, ["/delta/address/3"]);
+});
