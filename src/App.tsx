@@ -13,6 +13,7 @@ import { DashboardPage } from "./pages/dashboard";
 import { MonitoringPage } from "./pages/monitoring";
 import { RankingPage } from "./pages/ranking";
 import { AlertsPage } from "./pages/alerts";
+import { LeaksPage } from "./pages/leaks";
 
 function App() {
   return (
@@ -118,6 +119,11 @@ function App() {
             <Route
               path="/alertas"
               element={<AlertsPage />}
+            />
+
+            <Route
+              path="/vazamentos"
+              element={<LeaksPage />}
             />
 
             <Route
