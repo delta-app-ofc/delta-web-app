@@ -1,7 +1,9 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { AppSidebar } from "../../components/AppSidebar";
 import arrowIcon from "../../assets/chatbot/arrow.png";
+import historicalIcon from "../../assets/chatbot/historical.png";
+import newConversationIcon from "../../assets/chatbot/new-conversation.png";
 import sendIcon from "../../assets/chatbot/send.png";
 import gluhMascot from "../../assets/mascotes/gluh-animarion.png";
 
@@ -11,6 +13,12 @@ interface ChatMessage {
   id: string;
   author: "user" | "assistant";
   content: string;
+}
+
+interface ArchivedConversation {
+  id: string;
+  title: string;
+  messages: readonly ChatMessage[];
 }
 
 const suggestions = [
@@ -32,6 +40,12 @@ const suggestedAnswers: Record<(typeof suggestions)[number], string> = {
 };
 
 function getAnswer(question: string) {
+  const normalizedQuestion = question.toLocaleLowerCase("pt-BR");
+
+  if (normalizedQuestion.includes("unidades") && normalizedQuestion.includes("crític")) {
+    return "Encontrei 2 unidades em estado crítico:\n• Loja Swift - Pinheiros — 112% da meta, consumo de 12.300 L\n• Centro de Distribuição - Campinas — 118% da meta, consumo de 15.680 L\nRecomendo priorizar a inspeção dessas unidades esta semana.";
+  }
+
   if (question in suggestedAnswers) {
     return suggestedAnswers[question as keyof typeof suggestedAnswers];
   }
@@ -42,6 +56,24 @@ function getAnswer(question: string) {
 export function ChatbotPage() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<readonly ChatMessage[]>([]);
+  const [conversationHistory, setConversationHistory] = useState<readonly ArchivedConversation[]>([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      return;
+    }
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [messages.length]);
 
   function sendMessage(content: string) {
     const normalizedContent = content.trim();
@@ -75,6 +107,34 @@ export function ChatbotPage() {
     sendMessage(question);
   }
 
+  function startNewConversation() {
+    if (messages.length > 0) {
+      const firstUserMessage = messages.find((message) => message.author === "user");
+
+      setConversationHistory((currentHistory) => [
+        {
+          id: `conversation-${currentHistory.length}`,
+          title: firstUserMessage?.content ?? "Conversa com o Gluh",
+          messages,
+        },
+        ...currentHistory,
+      ]);
+    }
+
+    setMessages([]);
+    setQuestion("");
+    setIsHistoryOpen(false);
+  }
+
+  function restoreConversation(conversation: ArchivedConversation) {
+    setMessages(conversation.messages);
+    setQuestion("");
+    setIsHistoryOpen(false);
+  }
+
+  const hasConversation = messages.length > 0;
+  const showConversationActions = hasConversation || conversationHistory.length > 0;
+
   return (
     <main className="chatbot-page">
       <div className="chatbot-page__sidebar">
@@ -84,12 +144,51 @@ export function ChatbotPage() {
         />
       </div>
 
-      <section className="chatbot-page__content" aria-labelledby="chatbot-title">
+      <section
+        className={`chatbot-page__content ${hasConversation ? "chatbot-page__content--conversation" : ""}`}
+        aria-labelledby="chatbot-title"
+      >
         <header className="chatbot-header">
           <h1 id="chatbot-title">Gluh AI</h1>
+
+          {showConversationActions && (
+            <div className="chatbot-header__actions">
+              <button
+                className="chatbot-history-button"
+                type="button"
+                aria-expanded={isHistoryOpen}
+                onClick={() => setIsHistoryOpen((currentValue) => !currentValue)}
+              >
+                <img src={historicalIcon} alt="" />
+                <span>Histórico de conversas</span>
+              </button>
+              <button className="chatbot-new-button" type="button" onClick={startNewConversation}>
+                <img src={newConversationIcon} alt="" />
+                <span>Nova conversa</span>
+              </button>
+
+              {isHistoryOpen && (
+                <div className="chatbot-history" aria-label="Histórico de conversas">
+                  {conversationHistory.length > 0 ? (
+                    <ul>
+                      {conversationHistory.map((conversation) => (
+                        <li key={conversation.id}>
+                          <button type="button" onClick={() => restoreConversation(conversation)}>
+                            {conversation.title}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>Nenhuma conversa anterior.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </header>
 
-        {messages.length === 0 && (
+        {!hasConversation && (
           <>
             <section className="chatbot-welcome" aria-labelledby="chatbot-greeting">
               <img src={gluhMascot} alt="Gluh, assistente virtual da Delta" />
@@ -111,7 +210,7 @@ export function ChatbotPage() {
           </>
         )}
 
-        {messages.length > 0 && (
+        {hasConversation && (
           <section className="chatbot-messages" aria-label="Conversa com o Gluh" aria-live="polite">
             {messages.map((message) => (
               <article className={`chatbot-message chatbot-message--${message.author}`} key={message.id}>
@@ -119,23 +218,28 @@ export function ChatbotPage() {
                 <p>{message.content}</p>
               </article>
             ))}
+            <div ref={messagesEndRef} className="chatbot-messages__end" aria-hidden="true" />
           </section>
         )}
 
-        <form className="chatbot-composer" onSubmit={handleSubmit}>
-          <label className="sr-only" htmlFor="chatbot-question">Pergunte algo ao Gluh</label>
-          <input
-            id="chatbot-question"
-            type="text"
-            placeholder="Pergunte algo ao Gluh!"
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-            autoComplete="off"
-          />
-          <button type="submit" aria-label="Enviar pergunta" disabled={!question.trim()}>
-            <img src={sendIcon} alt="" />
-          </button>
-        </form>
+        <div className="chatbot-composer-dock">
+          <div className="chatbot-composer-dock__inner">
+            <form className="chatbot-composer" onSubmit={handleSubmit}>
+              <label className="sr-only" htmlFor="chatbot-question">Pergunte algo ao Gluh</label>
+              <input
+                id="chatbot-question"
+                type="text"
+                placeholder="Pergunte algo ao Gluh!"
+                value={question}
+                onChange={(event) => setQuestion(event.target.value)}
+                autoComplete="off"
+              />
+              <button type="submit" aria-label="Enviar pergunta" disabled={!question.trim()}>
+                <img src={sendIcon} alt="" />
+              </button>
+            </form>
+          </div>
+        </div>
       </section>
     </main>
   );
