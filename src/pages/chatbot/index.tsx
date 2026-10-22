@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { AppSidebar } from "../../components/AppSidebar";
 import arrowIcon from "../../assets/chatbot/arrow.png";
@@ -6,19 +7,16 @@ import historicalIcon from "../../assets/chatbot/historical.png";
 import newConversationIcon from "../../assets/chatbot/new-conversation.png";
 import sendIcon from "../../assets/chatbot/send.png";
 import gluhMascot from "../../assets/mascotes/gluh-animarion.png";
+import {
+  defaultConversations,
+  type ArchivedConversation,
+  type ChatMessage,
+} from "./conversations";
 
 import "./style.css";
 
-interface ChatMessage {
-  id: string;
-  author: "user" | "assistant";
-  content: string;
-}
-
-interface ArchivedConversation {
-  id: string;
-  title: string;
-  messages: readonly ChatMessage[];
+interface ChatbotLocationState {
+  conversation?: ArchivedConversation;
 }
 
 const suggestions = [
@@ -54,10 +52,16 @@ function getAnswer(question: string) {
 }
 
 export function ChatbotPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = location.state as ChatbotLocationState | null;
   const [question, setQuestion] = useState("");
-  const [messages, setMessages] = useState<readonly ChatMessage[]>([]);
-  const [conversationHistory, setConversationHistory] = useState<readonly ArchivedConversation[]>([]);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [messages, setMessages] = useState<readonly ChatMessage[]>(
+    () => locationState?.conversation?.messages ?? [],
+  );
+  const [conversationHistory, setConversationHistory] = useState<readonly ArchivedConversation[]>(
+    defaultConversations,
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -115,6 +119,7 @@ export function ChatbotPage() {
         {
           id: `conversation-${currentHistory.length}`,
           title: firstUserMessage?.content ?? "Conversa com o Gluh",
+          date: new Date().toLocaleDateString("pt-BR"),
           messages,
         },
         ...currentHistory,
@@ -123,17 +128,9 @@ export function ChatbotPage() {
 
     setMessages([]);
     setQuestion("");
-    setIsHistoryOpen(false);
-  }
-
-  function restoreConversation(conversation: ArchivedConversation) {
-    setMessages(conversation.messages);
-    setQuestion("");
-    setIsHistoryOpen(false);
   }
 
   const hasConversation = messages.length > 0;
-  const showConversationActions = hasConversation || conversationHistory.length > 0;
 
   return (
     <main className="chatbot-page">
@@ -151,41 +148,20 @@ export function ChatbotPage() {
         <header className="chatbot-header">
           <h1 id="chatbot-title">Gluh AI</h1>
 
-          {showConversationActions && (
-            <div className="chatbot-header__actions">
-              <button
-                className="chatbot-history-button"
-                type="button"
-                aria-expanded={isHistoryOpen}
-                onClick={() => setIsHistoryOpen((currentValue) => !currentValue)}
-              >
-                <img src={historicalIcon} alt="" />
-                <span>Histórico de conversas</span>
-              </button>
-              <button className="chatbot-new-button" type="button" onClick={startNewConversation}>
-                <img src={newConversationIcon} alt="" />
-                <span>Nova conversa</span>
-              </button>
-
-              {isHistoryOpen && (
-                <div className="chatbot-history" aria-label="Histórico de conversas">
-                  {conversationHistory.length > 0 ? (
-                    <ul>
-                      {conversationHistory.map((conversation) => (
-                        <li key={conversation.id}>
-                          <button type="button" onClick={() => restoreConversation(conversation)}>
-                            {conversation.title}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>Nenhuma conversa anterior.</p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+          <div className="chatbot-header__actions">
+            <button
+              className="chatbot-history-button"
+              type="button"
+              onClick={() => navigate("/gluh/historico", { state: { conversations: conversationHistory } })}
+            >
+              <img src={historicalIcon} alt="" />
+              <span>Histórico de conversas</span>
+            </button>
+            <button className="chatbot-new-button" type="button" onClick={startNewConversation}>
+              <img src={newConversationIcon} alt="" />
+              <span>Nova conversa</span>
+            </button>
+          </div>
         </header>
 
         {!hasConversation && (
