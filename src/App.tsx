@@ -14,8 +14,11 @@ import { MonitoringPage } from "./pages/monitoring";
 import { RankingPage } from "./pages/ranking";
 import { AlertsPage } from "./pages/alerts";
 import { LeaksPage } from "./pages/leaks";
+import { GoalsPage } from "./pages/goals";
 import { ChatbotPage } from "./pages/chatbot";
 import { ChatbotHistoryPage } from "./pages/chatbotHistory";
+import { DevicesPage } from "./pages/devices";
+import { DeviceLinkPage } from "./pages/deviceLink";
 
 function App() {
   return (
@@ -126,6 +129,31 @@ function App() {
             <Route
               path="/vazamentos"
               element={<LeaksPage />}
+            />
+
+            <Route
+              path="/metas"
+              element={<GoalsPage />}
+            />
+
+            <Route
+              path="/gluh"
+              element={<ChatbotPage />}
+            />
+
+            <Route
+              path="/gluh/historico"
+              element={<ChatbotHistoryPage />}
+            />
+
+            <Route
+              path="/dispositivos"
+              element={<DevicesPage />}
+            />
+
+            <Route
+              path="/dispositivos/vincular"
+              element={<DeviceLinkPage />}
             />
 
             <Route
