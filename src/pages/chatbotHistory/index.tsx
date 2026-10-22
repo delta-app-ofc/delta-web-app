@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { AppSidebar } from "../../components/AppSidebar";
+import backArrowIcon from "../../assets/chatbot/arrow2.png";
 import conversationIcon from "../../assets/chatbot/conversations.png";
 import newConversationIcon from "../../assets/chatbot/new-conversation.png";
 import {
@@ -38,7 +39,7 @@ export function ChatbotHistoryPage() {
           <div className="chatbot-history-page__heading">
             <div className="chatbot-history-page__title-row">
               <button type="button" aria-label="Voltar para o Gluh" onClick={() => navigate("/gluh")}>
-                <span aria-hidden="true">←</span>
+                <img src={backArrowIcon} alt="" />
               </button>
               <h1 id="conversation-history-title">Histórico de conversas</h1>
             </div>

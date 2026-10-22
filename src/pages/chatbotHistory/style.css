@@ -47,10 +47,12 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #4d83f0;
-  font-size: 36px;
-  font-weight: 300;
-  line-height: 1;
+}
+
+.chatbot-history-page__title-row > button img {
+  width: 28px;
+  height: 22px;
+  object-fit: contain;
 }
 
 .chatbot-history-page__title-row > button:hover {
