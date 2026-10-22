@@ -129,16 +129,6 @@ function App() {
             />
 
             <Route
-              path="/gluh"
-              element={<ChatbotPage />}
-            />
-
-            <Route
-              path="/gluh/historico"
-              element={<ChatbotHistoryPage />}
-            />
-
-            <Route
               path="/loading"
               element={
                 <LoadingPage
