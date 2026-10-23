@@ -18,9 +18,9 @@
 .card input::placeholder { color: rgba(255,255,255,.45); opacity: 1; }
 .card input:focus-visible, .card select:focus-visible { outline: 3px solid #9dbdff; outline-offset: 3px; }
 .card select:has(option[value=""]:checked) { color: rgba(255,255,255,.45); }
-.card select { cursor: pointer; padding-right: 12px; }
+.card select { appearance: none; cursor: pointer; padding-right: 52px; background-image: url("../../assets/installation-registration/unit-chevron.svg"); background-repeat: no-repeat; background-position: right 20px center; }
 .card option { color: #fff; background: #252c38; }
-.card input[aria-invalid="true"], .card select[aria-invalid="true"] { border-color: #e94848; background: rgba(176,53,53,.18); color: #ffb5b5; }
+.card input[aria-invalid="true"], .card select[aria-invalid="true"] { border-color: #e94848; background-color: rgba(176,53,53,.18); color: #ffb5b5; }
 .fieldError { margin-top: 8px; color: #ffb5b5; font-size: 13px; line-height: 1.4; }
 .hint { margin-top: 8px; padding-inline: 12px; color: var(--installation-muted, #a0b2cc); font-size: 13px; line-height: 1.4; }
 .device { grid-column: 2; grid-row: 2; min-height: 224px; }
@@ -53,8 +53,8 @@
 .connected .general h2 { margin-bottom: 32px; }
 .connected .general { min-height: 0; align-self: start; }
 .unit { position: relative; }
-.unit select { appearance: none; padding-right: 56px; }
-.unit img { position: absolute; right: 22px; top: 15px; pointer-events: none; }
+.unit select { background-image: none; padding-right: 56px; }
+.unit img { position: absolute; right: 24px; top: 15px; pointer-events: none; }
 .deviceErrorTitle { margin: 0 0 14px; font-size: 16px; line-height: 1.3; color: #e94848; }
 @media (max-width: 1000px) { .editing .form { grid-template-columns: 1fr; grid-template-rows: none; } .editing .general, .editing .consumption, .editing .device { min-height: 0; padding-block: 28px; } .editing .card h2 { margin-bottom: 28px; } }
 @media (max-width: 1200px) { .card { padding-inline: 24px; border-radius: 32px; } .card input, .card select { padding-left: 16px; font-size: 14px; } .cityState { gap: 10px; } }
