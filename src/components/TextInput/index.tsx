@@ -9,8 +9,10 @@ interface TextInputProps {
   value: string;
   onChange: (value: string) => void;
   autoComplete?: string;
-  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  required?: boolean;
+  disabled?: boolean;
   maxLength?: number;
+  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
   error?: string;
 }
 
@@ -22,8 +24,10 @@ export function TextInput({
   value,
   onChange,
   autoComplete,
-  inputMode,
+  required,
+  disabled,
   maxLength,
+  inputMode,
   error,
 }: TextInputProps) {
   const errorId = `${id}-error`;
@@ -41,8 +45,10 @@ export function TextInput({
         placeholder={placeholder}
         value={value}
         autoComplete={autoComplete}
-        inputMode={inputMode}
+        required={required}
+        disabled={disabled}
         maxLength={maxLength}
+        inputMode={inputMode}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : undefined}
         onChange={(event) => onChange(event.target.value)}

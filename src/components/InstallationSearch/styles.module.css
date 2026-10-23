@@ -1,0 +1,6 @@
+.search { display: flex; align-items: center; gap: 25px; width: 430px; max-width: 100%; flex-shrink: 0; min-height: 55px; padding: 0 24px; border: .5px solid var(--installation-border); border-radius: 50px; background: rgba(15, 46, 109, .05); }
+.search img { width: 21px; height: 21px; flex: none; }
+.search input { width: 100%; min-width: 0; padding: 15px 0; border: 0; background: transparent; color: white; font-size: 16px; }
+.search input::placeholder { color: var(--installation-muted); opacity: 1; }
+.search:focus-within { outline: 3px solid #9dbdff; outline-offset: 4px; }
+.search input:focus-visible { outline: none; }

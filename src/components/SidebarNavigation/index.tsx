@@ -33,10 +33,10 @@ const navigation: readonly SidebarNavigationItem[] = [
   { id: "leaks", label: "Vazamentos", icon: leaks, path: "/vazamentos" },
   { id: "ranking", label: "Ranking", icon: ranking, path: "/ranking" },
   { id: "goals", label: "Metas", icon: goals, path: "/metas" },
-  { id: "investments", label: "Investimentos", icon: investments, path: "/investimentos" },
-  { id: "devices", label: "Dispositivos", icon: devices, path: "/dispositivos" },
+  { id: "investments", label: "Investimentos", icon: investments },
+  { id: "devices", label: "Dispositivos", icon: devices },
   { id: "gluh", label: "Gluh", icon: gluh, path: "/gluh" },
-  { id: "settings", label: "Configurações", icon: settings, path: "/configuracoes" },
+  { id: "settings", label: "Configurações", icon: settings },
 ];
 
 export function SidebarNavigation({ label, items = navigation }: SidebarNavigationProps) {

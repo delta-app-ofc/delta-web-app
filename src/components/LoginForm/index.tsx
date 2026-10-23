@@ -1,8 +1,10 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { LoginButton } from "../LoginButton";
 import { TextInput } from "../TextInput";
+import { login } from "../../services/auth";
+import { ApiError } from "../../services/http";
 
 import "./style.css";
 
@@ -13,6 +15,11 @@ interface LoginFormData {
 
 export function LoginForm() {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const requestRef = useRef<AbortController | null>(null);
+
+  useEffect(() => () => requestRef.current?.abort(), []);
 
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
@@ -33,18 +40,22 @@ export function LoginForm() {
     }));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    navigate("/loading");
-
-    /*
-      Por enquanto não estamos chamando a API.
-
-      Quando conectarmos o login ao backend,
-      a comunicação ficará dentro de src/services/,
-      como exige o trabalho.
-    */
+    if (requestRef.current) return;
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setError("");
+    setIsLoading(true);
+    try {
+      await login(formData.email, formData.password, controller.signal);
+      if (!controller.signal.aborted) navigate("/instalacoes", { replace: true });
+    } catch (failure: unknown) {
+      if (!controller.signal.aborted) setError(failure instanceof ApiError ? failure.message : "Não foi possível entrar. Tente novamente.");
+    } finally {
+      if (!controller.signal.aborted) setIsLoading(false);
+      if (requestRef.current === controller) requestRef.current = null;
+    }
   }
 
   return (
@@ -63,6 +74,7 @@ export function LoginForm() {
       <form
         className="login-form"
         onSubmit={handleSubmit}
+        aria-busy={isLoading}
       >
         <div className="login-form-fields">
           <TextInput
@@ -73,6 +85,9 @@ export function LoginForm() {
             value={formData.email}
             onChange={handleEmailChange}
             autoComplete="email"
+            required
+            disabled={isLoading}
+            maxLength={255}
           />
 
           <TextInput
@@ -83,10 +98,14 @@ export function LoginForm() {
             value={formData.password}
             onChange={handlePasswordChange}
             autoComplete="current-password"
+            required
+            disabled={isLoading}
+            maxLength={256}
           />
         </div>
 
-        <LoginButton />
+        {error && <p className="login-form-error" role="alert">{error}</p>}
+        <LoginButton isLoading={isLoading} />
       </form>
     </section>
   );
