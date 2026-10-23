@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "../../components/AppLayout";
 import { AsyncFeedback } from "../../components/AsyncFeedback";
 import { InstallationMap } from "../../components/InstallationMap";
@@ -11,6 +12,7 @@ import { getMonthLabel } from "../../utils/installations";
 import styles from "./styles.module.css";
 
 export default function InstallationsPage() {
+  const navigate = useNavigate();
   const { state, filters, installations, referenceMonth, totalCount, setQuery, setSort, retry } = useInstallations();
   const monthLabel = getMonthLabel(referenceMonth);
 
@@ -20,7 +22,7 @@ export default function InstallationsPage() {
         <InstallationSearch value={filters.query} onChange={setQuery} />
         <div className={styles.actions}>
           <button className={styles.export} type="button" disabled title="Exportação para PDF será implementada posteriormente"><img src={exportIcon} alt="" />Exportar para PDF</button>
-          <button className={styles.create} type="button" disabled title="Cadastro de instalação será desenvolvido em uma próxima etapa"><img src={plusIcon} alt="" />Cadastrar instalação</button>
+          <button className={styles.create} type="button" onClick={() => navigate("/instalacoes/cadastrar")}><img src={plusIcon} alt="" />Cadastrar instalação</button>
         </div>
       </div>
       <div className={styles.filters}><InstallationSort value={filters.sort} onChange={setSort} /></div>

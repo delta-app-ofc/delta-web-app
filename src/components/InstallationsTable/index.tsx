@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { Installation } from "../../types/installation";
 import { formatLiters } from "../../utils/installations";
 import { UnavailableValue } from "../UnavailableValue";
@@ -23,7 +24,7 @@ export function InstallationsTable({ installations, monthLabel, isFiltered }: In
                 <td>{installation.monthlyLiters === null ? <UnavailableValue /> : formatLiters(installation.monthlyLiters)}</td>
                 <td><UnavailableValue /></td>
                 <td><UnavailableValue variant="badge" /></td>
-                <td><button className={styles.details} type="button" disabled title="O detalhe da instalação será desenvolvido na próxima etapa" aria-label={`Ver detalhes de ${installation.name}; disponível na próxima etapa`}>Ver tudo</button></td>
+                <td><Link className={styles.details} to={`/instalacoes/${installation.id}`} aria-label={`Ver detalhes de ${installation.name}`}>Ver tudo</Link></td>
               </tr>
             ))}
           </tbody>
