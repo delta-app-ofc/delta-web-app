@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { getCurrentUser } from "../../services/auth";
 import type { CurrentUser } from "../../services/auth";
 import glow from "../../assets/installations/header-glow.svg";
+import bottomGlow from "../../assets/installation-registration/bottom-glow.svg";
 import { AppHeader } from "../AppHeader";
 import { AppSidebar } from "../AppSidebar";
 import styles from "./styles.module.css";
@@ -10,9 +11,11 @@ import styles from "./styles.module.css";
 interface AppLayoutProps {
   title: string;
   children: ReactNode;
+  registration?: boolean;
+  details?: boolean;
 }
 
-export function AppLayout({ title, children }: AppLayoutProps) {
+export function AppLayout({ title, children, registration = false, details = false }: AppLayoutProps) {
   const [user, setUser] = useState<CurrentUser>();
 
   useEffect(() => {
@@ -25,8 +28,9 @@ export function AppLayout({ title, children }: AppLayoutProps) {
   }, []);
 
   return (
-    <div className={styles.layout}>
+    <div className={`${styles.layout} ${registration || details ? styles.registration : ""} ${details ? styles.details : ""}`}>
       <img className={styles.glow} src={glow} alt="" />
+      {(registration || details) && <img className={styles.bottomGlow} src={bottomGlow} alt="" />}
       <a className={styles.skip} href="#page-content">Pular para o conteúdo</a>
       <div className={styles.grid}>
         <AppSidebar label="Navegação principal" profile={user} />
@@ -34,7 +38,7 @@ export function AppLayout({ title, children }: AppLayoutProps) {
           <AppHeader title={title} />
           <div className={styles.scrollArea} role="region" aria-label={`Conteúdo de ${title}`} tabIndex={0}>
             <main id="page-content" tabIndex={-1}>{children}</main>
-            <footer className={styles.footer}>Delta · Transformando hábitos, gota por gota.</footer>
+            {!registration && !details && <footer className={styles.footer}>Delta · Transformando hábitos, gota por gota.</footer>}
           </div>
         </div>
       </div>
