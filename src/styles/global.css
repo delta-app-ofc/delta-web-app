@@ -30,10 +30,23 @@
   --blue-light: #9dbdff;
   --cyan-light: #d6ffff;
 
+  --form-action-gap: 28px;
+
   --hero-blue-start: #3159aa;
   --hero-blue-middle: #193589;
   --hero-blue-end: #101a61;
 
+  /* GRADIENTE DO CADASTRO */
+--register-blue-dark: #111b63;
+--register-blue-deep: #172b7e;
+--register-blue-start: #183381;
+--register-blue-middle: #2856bd;
+--register-blue-light: #3972e7;
+--register-blue-edge: #1c2b78;
+
+  /* TEXTO DO PAINEL */
+  --register-title-blue: #739df7;
+  --register-text-light: #d9ffff;
   --radius-pill: 999px;
 }
 

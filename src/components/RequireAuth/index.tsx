@@ -4,5 +4,5 @@ import { getSession, subscribeSession } from "../../services/session";
 
 export function RequireAuth() {
   const session = useSyncExternalStore(subscribeSession, getSession);
-  return session ? <Outlet /> : <Navigate to="/" replace />;
+  return session ? <Outlet /> : <Navigate to="/login" replace />;
 }

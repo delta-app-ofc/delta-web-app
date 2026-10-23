@@ -1,9 +1,10 @@
+import type { InputHTMLAttributes } from "react";
 import "./style.css";
 
 interface TextInputProps {
   id: string;
   label: string;
-  type: "text" | "email" | "password";
+  type: "text" | "email" | "password" | "tel" | "date";
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
@@ -11,6 +12,8 @@ interface TextInputProps {
   required?: boolean;
   disabled?: boolean;
   maxLength?: number;
+  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  error?: string;
 }
 
 export function TextInput({
@@ -24,7 +27,11 @@ export function TextInput({
   required,
   disabled,
   maxLength,
+  inputMode,
+  error,
 }: TextInputProps) {
+  const errorId = `${id}-error`;
+
   return (
     <div className="text-input-group">
       <label className="sr-only" htmlFor={id}>
@@ -41,8 +48,17 @@ export function TextInput({
         required={required}
         disabled={disabled}
         maxLength={maxLength}
+        inputMode={inputMode}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId : undefined}
         onChange={(event) => onChange(event.target.value)}
       />
+
+      {error && (
+        <p className="text-input-error" id={errorId} role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

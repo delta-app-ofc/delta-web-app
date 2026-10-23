@@ -1,0 +1,6 @@
+services:
+  checks:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: checks
