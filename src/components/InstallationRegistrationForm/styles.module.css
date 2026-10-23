@@ -40,7 +40,7 @@
 .save:hover:not(:disabled) { background: #386fdf; }
 .actions :disabled { opacity: .65; }
 .editing .form { grid-template-rows: minmax(269px, auto) minmax(217px, auto) auto; }
-.editing .general { min-height: 417px; align-self: start; padding-top: 28px; padding-bottom: 54px; }
+.editing .general { min-height: 417px; align-self: stretch; padding-top: 28px; padding-bottom: 54px; }
 .editing .general h2 { margin-bottom: 43px; }
 .editing .general .fields { gap: 27px; }
 .editing .consumption { min-height: 269px; }
@@ -51,7 +51,7 @@
 .editing .back { overflow-wrap: anywhere; }
 .connected .general .fields { gap: 24px; }
 .connected .general h2 { margin-bottom: 32px; }
-.connected .general { min-height: 0; align-self: start; }
+.connected .general { min-height: 0; align-self: stretch; }
 .unit { position: relative; }
 .unit select { background-image: none; padding-right: 56px; }
 .unit img { position: absolute; right: 24px; top: 15px; pointer-events: none; }
