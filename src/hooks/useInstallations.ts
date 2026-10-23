@@ -79,7 +79,7 @@ export function useInstallations(): UseInstallationsResult {
               city: address?.city || null, state: address?.state || null,
               latitude: address?.latitude ?? null, longitude: address?.longitude ?? null,
               monthlyLiters,
-              litersPerM2: monthlyLiters !== null && record.builtAreaM2 !== null
+              litersPerM2: monthlyLiters !== null && record.builtAreaM2 !== null && record.builtAreaM2 > 0
                 ? monthlyLiters / record.builtAreaM2 : null,
             });
           });

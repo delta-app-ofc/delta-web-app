@@ -3,6 +3,9 @@ export interface InstallationRecord {
   name: string;
   addressId: number | null;
   builtAreaM2: number | null;
+  type: "CASA" | "PRÉDIO" | null;
+  classification?: string | null;
+  organizationId?: number | null;
 }
 
 export interface Installation {

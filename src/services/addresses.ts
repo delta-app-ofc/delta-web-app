@@ -10,6 +10,8 @@ function parseAddress(value: unknown): Address {
     id: readId(value.id),
     city: readText(value.city ?? "", 100),
     state: readText(value.state ?? "", 30),
+    cep: readText(value.cep ?? "", 9),
+    regionId: value.regionId == null ? null : readId(value.regionId),
     latitude: latitude !== null && Math.abs(latitude) <= 90 ? latitude : null,
     longitude: longitude !== null && Math.abs(longitude) <= 180 ? longitude : null,
   };
