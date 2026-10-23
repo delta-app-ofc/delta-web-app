@@ -82,21 +82,25 @@ async function refreshSession(current: Session): Promise<void> {
   finally { if (pendingRefresh?.promise === promise) pendingRefresh = null; }
 }
 
-export async function getJson(path: string, signal: AbortSignal): Promise<unknown> {
+async function authenticatedRequest(path: string, signal: AbortSignal, method: "GET" | "POST" | "PUT", body?: unknown): Promise<unknown> {
   const initial = getSession();
   if (!initial) throw new ApiError("Entre na sua conta para continuar.", 401);
   if (initial.expiresAt <= Date.now() + 5000) await refreshSession(initial);
   signal.throwIfAborted();
   let current = getSession();
   if (!current) throw new ApiError("Sua sessão expirou. Entre novamente.", 401);
-  let response = await request(path, { signal, headers: { Authorization: `Bearer ${current.accessToken}` } });
+  const options = {
+    method, signal, body: body === undefined ? undefined : JSON.stringify(body),
+    headers: { ...(body === undefined ? {} : { "Content-Type": "application/json" }), Authorization: `Bearer ${current.accessToken}` },
+  };
+  let response = await request(path, options);
   if (response.status === 401) {
     // Outras consultas podem ter renovado o token enquanto esta estava em trânsito.
     if (getSession() === current) await refreshSession(current);
     signal.throwIfAborted();
     current = getSession();
     if (!current) throw new ApiError("Sua sessão expirou. Entre novamente.", 401);
-    response = await request(path, { signal, headers: { Authorization: `Bearer ${current.accessToken}` } });
+    response = await request(path, { ...options, headers: { ...options.headers, Authorization: `Bearer ${current.accessToken}` } });
   }
   if (!response.ok) {
     if (response.status === 401 && getSession() === current) saveSession(null);
@@ -105,4 +109,13 @@ export async function getJson(path: string, signal: AbortSignal): Promise<unknow
       : "Não foi possível consultar os dados. Tente novamente.", response.status);
   }
   return readJson(response);
+}
+
+export function getJson(path: string, signal: AbortSignal): Promise<unknown> {
+  return authenticatedRequest(path, signal, "GET");
+}
+
+// Escritas só são repetidas após um 401; falhas de rede nunca repetem um POST automaticamente.
+export function writeJson(method: "POST" | "PUT", path: string, body: unknown, signal: AbortSignal): Promise<unknown> {
+  return authenticatedRequest(path, signal, method, body);
 }
