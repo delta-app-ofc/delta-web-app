@@ -3,6 +3,7 @@
 .actions button { display: flex; align-items: center; justify-content: center; flex: none; gap: 12px; min-height: 55px; width: 226px; padding: 12px 16px; border: 0; border-radius: 50px; color: white; font-size: 16px; }
 .actions img { flex: none; }
 .export { background: rgba(107,143,217,.2); }
+.exportMessage { margin-top: 16px; color: var(--installation-muted); font-size: 14px; }
 .create { background: #2c5fd0; }
 .filters { margin: 27px 9px 0; }
 .summary { display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; margin: 20px 9px -12px; font-size: 13px; color: var(--installation-muted); }

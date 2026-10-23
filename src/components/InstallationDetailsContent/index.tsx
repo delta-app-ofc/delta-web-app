@@ -10,6 +10,7 @@ import editIcon from "../../assets/installation-details/edit.svg";
 import exportIcon from "../../assets/installation-details/export.svg";
 import type { InstallationDetails } from "../../types/installationDetails";
 import { formatLiters, getCurrentReferenceMonth } from "../../utils/installations";
+import { usePdfExport } from "../../hooks/usePdfExport";
 import styles from "./styles.module.css";
 
 const tabs = ["Consumo", "Vazão", "Alertas & vazamentos", "Previsão & clima", "Histórico"] as const;
@@ -36,6 +37,16 @@ export function InstallationDetailsContent({ data, onRetry }: { data: Installati
   const history = data.monthly.filter(row => row.referenceMonth <= referenceMonth).slice(-6);
   const maximum = Math.max(1, ...history.map(row => row.totalLiters));
   const region = [data.address?.city, data.address?.state].filter(Boolean).join(" · ");
+  const { exporting, message: exportMessage, exportPdf } = usePdfExport();
+
+  function downloadReport() {
+    void exportPdf(async () => {
+      const { buildInstallationDetailsPdf } = await import("../../services/installationPdf");
+      const document = buildInstallationDetailsPdf(data, referenceMonth);
+      await document.save(`delta-instalacao-${data.installation.id}.pdf`, { returnPromise: true });
+    });
+  }
+
   function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     let next = index;
     if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
@@ -55,10 +66,11 @@ export function InstallationDetailsContent({ data, onRetry }: { data: Installati
         <div><h2>{data.installation.name || "Instalação"}</h2>{region && <p>{region}</p>}</div>
       </div>
       <div className={styles.actions}>
-        <button type="button" disabled title="Exportação para PDF disponível em breve"><img src={exportIcon} alt="" />Exportar para PDF</button>
+        <button type="button" disabled={exporting} onClick={downloadReport} aria-busy={exporting}><img src={exportIcon} alt="" />{exporting ? "Gerando PDF…" : "Exportar para PDF"}</button>
         <Link className={styles.primary} to={`/instalacoes/${data.installation.id}/editar`}><img src={editIcon} alt="" />Editar instalação</Link>
       </div>
     </div>
+    {exportMessage && <p className={styles.note} role="status">{exportMessage}</p>}
     {data.warnings.length > 0 && <div className={styles.warning} role="status">
       <p>{data.warnings.join(" ")}</p><button type="button" onClick={onRetry}>Tentar novamente</button>
     </div>}

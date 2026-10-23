@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { AppLayout } from "../../components/AppLayout";
 import { AsyncFeedback } from "../../components/AsyncFeedback";
 import { InstallationMap } from "../../components/InstallationMap";
@@ -8,23 +7,36 @@ import { InstallationsTable } from "../../components/InstallationsTable";
 import exportIcon from "../../assets/installations/export.svg";
 import plusIcon from "../../assets/installations/plus.svg";
 import { useInstallations } from "../../hooks/useInstallations";
+import { usePdfExport } from "../../hooks/usePdfExport";
 import { getMonthLabel } from "../../utils/installations";
 import styles from "./styles.module.css";
+import { useNavigate } from "react-router-dom";
 
 export default function InstallationsPage() {
   const navigate = useNavigate();
   const { state, filters, installations, referenceMonth, totalCount, setQuery, setSort, retry } = useInstallations();
   const monthLabel = getMonthLabel(referenceMonth);
+  const { exporting, message: exportMessage, exportPdf } = usePdfExport();
+
+  function downloadReport() {
+    if (state.status !== "success") return;
+    void exportPdf(async () => {
+      const { buildInstallationsPdf } = await import("../../services/installationPdf");
+      const document = buildInstallationsPdf(installations, referenceMonth, filters, state.data.warnings);
+      await document.save(`delta-instalacoes-${referenceMonth.slice(0, 7)}.pdf`, { returnPromise: true });
+    });
+  }
 
   return (
     <AppLayout title="Instalações">
       <div className={styles.toolbar}>
         <InstallationSearch value={filters.query} onChange={setQuery} />
         <div className={styles.actions}>
-          <button className={styles.export} type="button" disabled title="Exportação para PDF será implementada posteriormente"><img src={exportIcon} alt="" />Exportar para PDF</button>
+          <button className={styles.export} type="button" disabled={state.status !== "success" || exporting} onClick={downloadReport} aria-busy={exporting}><img src={exportIcon} alt="" />{exporting ? "Gerando PDF…" : "Exportar para PDF"}</button>
           <button className={styles.create} type="button" onClick={() => navigate("/instalacoes/cadastrar")}><img src={plusIcon} alt="" />Cadastrar instalação</button>
         </div>
       </div>
+      {exportMessage && <p className={styles.exportMessage} role="status">{exportMessage}</p>}
       <div className={styles.filters}><InstallationSort value={filters.sort} onChange={setSort} /></div>
       {state.status === "loading" && <AsyncFeedback status="loading" message="Carregando instalações e consumo mensal…" />}
       {state.status === "error" && <AsyncFeedback status="error" message={state.error} onRetry={retry} />}
