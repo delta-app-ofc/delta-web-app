@@ -1,52 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import vm from "node:vm";
-import ts from "typescript";
-
-// Executa os services reais com transporte e armazenamento isolados, sem credenciais reais.
-async function harness(fetch, saved = null) {
-  const storage = new Map(saved ? [["delta.session", JSON.stringify(saved)]] : []);
-  const context = vm.createContext({
-    fetch, Date, AbortController,
-    sessionStorage: {
-      getItem: (key) => storage.get(key) ?? null,
-      setItem: (key, value) => storage.set(key, value),
-      removeItem: (key) => storage.delete(key),
-    },
-  });
-  const modules = new Map();
-  function load(url) {
-    if (modules.has(url.href)) return modules.get(url.href);
-    const pending = (async () => {
-    const source = await readFile(url, "utf8");
-    const { outputText } = ts.transpileModule(source, {
-      compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ESNext },
-    });
-    const module = new vm.SourceTextModule(outputText, {
-      context, identifier: url.href,
-      initializeImportMeta: (meta) => { meta.env = { VITE_POSTGRES_API_URL: "https://api.example.test" }; },
-    });
-    await module.link((specifier, parent) => load(new URL(`${specifier}.ts`, parent.identifier)));
-    return module;
-    })();
-    // Imports paralelos devem compartilhar a mesma instância de cada módulo.
-    modules.set(url.href, pending);
-    return pending;
-  }
-  const auth = await load(new URL("../src/services/auth.ts", import.meta.url));
-  await auth.evaluate();
-  const session = (await modules.get(new URL("../src/services/session.ts", import.meta.url).href)).namespace;
-  const http = (await modules.get(new URL("../src/services/http.ts", import.meta.url).href)).namespace;
-  return {
-    auth: auth.namespace, session, http, storage,
-    async service(name) {
-      const module = await load(new URL(`../src/services/${name}.ts`, import.meta.url));
-      await module.evaluate();
-      return module.namespace;
-    },
-  };
-}
+import { harness } from "./helpers/service-harness.mjs";
 
 const tokens = {
   accessToken: "access-original", refreshToken: "refresh-original", tokenType: "Bearer",
@@ -57,6 +11,157 @@ const signal = () => new AbortController().signal;
 const validSession = () => ({
   accessToken: tokens.accessToken, refreshToken: tokens.refreshToken,
   expiresAt: Date.now() + 60000, refreshExpiresAt: Date.now() + 86400000,
+});
+
+async function detailHarness(overrides = {}, associations = [{ userId: 7, propertyId: 15 }], serviceName = "installationDetails") {
+  const paths = [];
+  const routes = {
+    "/delta/auth/me": { id: 7, name: "Pessoa", email: "pessoa@example.test" },
+    "/delta/user-properties/7": associations,
+    "/delta/property/15": { id: 15, name: "Loja", addressId: 3, builtAreaM2: 120 },
+    "/delta/address/3": { id: 3, city: "São Paulo", state: "SP" },
+    "/delta/analytics/monthly-variation/15": [{ propertyId: 15, referenceMonth: "2026-10-01", totalLiters: 1500 }],
+    "/delta/analytics/consumption-daily/15": [
+      { propertyId: 15, fullDate: "2026-10-02", totalLiters: 500, costValue: 4 },
+      { propertyId: 15, fullDate: "2026-10-01", totalLiters: 1000, costValue: null },
+    ],
+    ...overrides,
+  };
+  const app = await harness(async url => {
+    const path = new URL(url).pathname;
+    paths.push(path);
+    assert.ok(Object.hasOwn(routes, path), `Consulta indevida: ${path}`);
+    return routes[path] instanceof Response ? routes[path] : response(routes[path]);
+  }, validSession());
+  return { service: await app.service(serviceName), paths };
+}
+
+test("edição preenche tipo, CEP e UF e converte o consumo de litros para m³", async () => {
+  const month = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).slice(0, 7) + "-01";
+  const { service, paths } = await detailHarness({
+    "/delta/property/15": { id: 15, name: "Loja", type: "PRÉDIO", addressId: 3 },
+    "/delta/address/3": { id: 3, cep: "02940013", city: "São Paulo", state: "São Paulo" },
+    "/delta/analytics/monthly-variation/15": [{ propertyId: 15, referenceMonth: month, totalLiters: 1500 }],
+  }, undefined, "installationEditing");
+  const data = await service.getInstallationForEditing(15, signal());
+  assert.equal(data.formData.name, "Loja");
+  assert.equal(data.formData.type, "PRÉDIO");
+  assert.equal(data.formData.cep, "02940-013");
+  assert.equal(data.formData.state, "SP");
+  assert.equal(data.formData.monthlyConsumption, "1,5");
+  assert.equal(data.formData.deviceId, "");
+  assert.equal(data.warnings.length, 0);
+  assert.ok(paths.every(path => !path.includes("/device") && !path.includes("/internal")));
+});
+
+test("edição não carrega imóvel nem endereço quando não há associação ao usuário", async () => {
+  const { service, paths } = await detailHarness({}, [], "installationEditing");
+  await assert.rejects(service.getInstallationForEditing(15, signal()), error => error.status === 404);
+  assert.equal(paths.length, 2);
+});
+
+test("edição diferencia consumo zero de ausência de leitura no mês atual", async () => {
+  const month = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).slice(0, 7) + "-01";
+  for (const [rows, expected] of [
+    [[{ propertyId: 15, referenceMonth: month, totalLiters: 0 }], "0"],
+    [[], ""],
+  ]) {
+    const { service } = await detailHarness({ "/delta/analytics/monthly-variation/15": rows }, undefined, "installationEditing");
+    const data = await service.getInstallationForEditing(15, signal());
+    assert.equal(data.formData.monthlyConsumption, expected);
+  }
+});
+
+test("edição mantém consumo desconhecido em branco e sinaliza falhas parciais", async () => {
+  const { service } = await detailHarness({
+    "/delta/address/3": response({}, 503),
+    "/delta/analytics/monthly-variation/15": response({}, 503),
+  }, undefined, "installationEditing");
+  const data = await service.getInstallationForEditing(15, signal());
+  assert.equal(data.formData.name, "Loja");
+  assert.equal(data.formData.cep, "");
+  assert.equal(data.formData.monthlyConsumption, "");
+  assert.equal(data.warnings.length, 2);
+});
+
+test("edição descarta consumo de outra instalação e interrompe no acesso negado", async () => {
+  const { service } = await detailHarness({
+    "/delta/analytics/monthly-variation/15": [{ propertyId: 99, referenceMonth: "2026-10-01", totalLiters: 999 }],
+  }, undefined, "installationEditing");
+  const data = await service.getInstallationForEditing(15, signal());
+  assert.equal(data.formData.monthlyConsumption, "");
+  assert.equal(data.warnings.length, 1);
+  const denied = await detailHarness({ "/delta/address/3": response({}, 403) }, undefined, "installationEditing");
+  await assert.rejects(denied.service.getInstallationForEditing(15, signal()), error => error.status === 403);
+});
+
+test("detalhe autoriza a instalação antes de consultar o endereço e as leituras", async () => {
+  const { service, paths } = await detailHarness();
+  const data = await service.getInstallationDetails(15, signal());
+  assert.equal(data.installation.name, "Loja");
+  assert.equal(data.address.city, "São Paulo");
+  assert.equal(data.monthly[0].totalLiters, 1500);
+  assert.equal(data.daily[0].fullDate, "2026-10-01");
+  assert.equal(data.daily[0].costValue, null);
+  assert.equal(data.warnings.length, 0);
+  assert.deepEqual(paths.slice(0, 3), ["/delta/auth/me", "/delta/user-properties/7", "/delta/property/15"]);
+  assert.equal(paths.length, 6);
+});
+
+test("URL de instalação sem associação não consulta propriedade, endereço ou analytics", async () => {
+  const { service, paths } = await detailHarness({}, []);
+  await assert.rejects(service.getInstallationDetails(15, signal()), error => error.status === 404);
+  assert.deepEqual(paths, ["/delta/auth/me", "/delta/user-properties/7"]);
+});
+
+test("ID inválido não dispara consultas no detalhe", async () => {
+  const { service, paths } = await detailHarness();
+  for (const id of [0, -1, 1.5, NaN, "15", Number.MAX_SAFE_INTEGER + 1]) {
+    await assert.rejects(service.getInstallationDetails(id, signal()));
+  }
+  assert.equal(paths.length, 0);
+});
+
+test("detalhe recusa associação de outro usuário e propriedade com ID diferente", async () => {
+  for (const [overrides, associations] of [
+    [{}, [{ userId: 8, propertyId: 15 }]],
+    [{ "/delta/property/15": { id: 99, name: "Outra" } }, [{ userId: 7, propertyId: 15 }]],
+  ]) {
+    const { service, paths } = await detailHarness(overrides, associations);
+    await assert.rejects(service.getInstallationDetails(15, signal()));
+    assert.ok(paths.every(path => !path.includes("analytics") && !path.includes("address")));
+  }
+});
+
+test("falha parcial mantém histórico mensal e sinaliza custos indisponíveis", async () => {
+  const { service } = await detailHarness({ "/delta/analytics/consumption-daily/15": response({}, 503) });
+  const data = await service.getInstallationDetails(15, signal());
+  assert.equal(data.monthly.length, 1);
+  assert.equal(data.daily.length, 0);
+  assert.equal(data.warnings.length, 1);
+});
+
+test("leituras de outra instalação, datas inválidas e duplicatas não chegam à tela", async () => {
+  for (const daily of [
+    [{ propertyId: 99, fullDate: "2026-10-01", totalLiters: 10 }],
+    [{ propertyId: 15, fullDate: "2026-02-30", totalLiters: 10 }],
+    [{ propertyId: 15, fullDate: "2026-10-01", totalLiters: -1 }],
+    Array(2).fill({ propertyId: 15, fullDate: "2026-10-01", totalLiters: 10 }),
+  ]) {
+    const { service } = await detailHarness({ "/delta/analytics/consumption-daily/15": daily });
+    const data = await service.getInstallationDetails(15, signal());
+    assert.equal(data.daily.length, 0);
+    assert.equal(data.warnings.length, 1);
+  }
+});
+
+test("histórico mensal de outra instalação é descartado e acesso negado interrompe a página", async () => {
+  const { service } = await detailHarness({ "/delta/analytics/monthly-variation/15": [{ propertyId: 99, referenceMonth: "2026-10-01", totalLiters: 10 }] });
+  const data = await service.getInstallationDetails(15, signal());
+  assert.equal(data.monthly.length, 0);
+  assert.equal(data.warnings.length, 1);
+  const denied = await detailHarness({ "/delta/analytics/monthly-variation/15": response({}, 403) });
+  await assert.rejects(denied.service.getInstallationDetails(15, signal()), error => error.status === 403);
 });
 
 test("login envia as credenciais, mantém a senha intacta e persiste somente a sessão", async () => {
