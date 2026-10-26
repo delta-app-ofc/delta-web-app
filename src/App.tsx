@@ -19,6 +19,7 @@ import { ChatbotPage } from "./pages/chatbot";
 import { ChatbotHistoryPage } from "./pages/chatbotHistory";
 import { DevicesPage } from "./pages/devices";
 import { DeviceLinkPage } from "./pages/deviceLink";
+import { InvestmentsPage } from "./pages/investments";
 
 function App() {
   return (
@@ -154,6 +155,11 @@ function App() {
             <Route
               path="/dispositivos/vincular"
               element={<DeviceLinkPage />}
+            />
+
+            <Route
+              path="/investimentos"
+              element={<InvestmentsPage />}
             />
 
             <Route
