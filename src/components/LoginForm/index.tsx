@@ -49,7 +49,7 @@ export function LoginForm() {
     setIsLoading(true);
     try {
       await login(formData.email, formData.password, controller.signal);
-      if (!controller.signal.aborted) navigate("/instalacoes", { replace: true });
+      if (!controller.signal.aborted) navigate("/dashboard", { replace: true });
     } catch (failure: unknown) {
       if (!controller.signal.aborted) setError(failure instanceof ApiError ? failure.message : "Não foi possível entrar. Tente novamente.");
     } finally {
