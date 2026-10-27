@@ -21,6 +21,7 @@ import { ChatbotHistoryPage } from "./pages/chatbotHistory";
 import { DevicesPage } from "./pages/devices";
 import { DeviceLinkPage } from "./pages/deviceLink";
 import { InvestmentsPage } from "./pages/investments";
+import { SettingsPage } from "./pages/settings";
 import { RequireAuth } from "./components/RequireAuth";
 
 const InstallationsPage = lazy(() => import("./pages/Installations"));
@@ -161,6 +162,11 @@ function App() {
                 <Route
                   path="/investimentos"
                   element={<InvestmentsPage />}
+                />
+
+                <Route
+                  path="/configuracoes"
+                  element={<SettingsPage />}
                 />
 
                 <Route
