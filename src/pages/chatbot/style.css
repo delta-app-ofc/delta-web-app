@@ -340,6 +340,12 @@
   width: 100%;
 }
 
+@media (min-width: 961px) and (max-height: 700px) {
+  .chatbot-suggestions + .chatbot-composer-dock {
+    margin-top: 30px;
+  }
+}
+
 .chatbot-page__content--conversation .chatbot-composer-dock {
   max-width: none;
   position: fixed;

@@ -44,6 +44,18 @@
   .profileName { font-size: 12px; }
   .profileEmail { font-size: 10px; }
 }
+@media (max-width: 700px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 7px;
+    border-radius: 20px;
+    background: rgba(20, 35, 61, .96);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .24);
+  }
+  .brand, .profileRow { display: none; }
+}
 @media (max-height: 600px) {
   .sidebar { padding-block: 12px; --sidebar-item-height: 28px; --sidebar-link-padding: 3px 4px; --sidebar-icon-size: 20px; }
   .profileRow { min-height: 38px; }

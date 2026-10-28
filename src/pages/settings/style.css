@@ -10,7 +10,7 @@
   gap: 30px;
   padding: 34px 28px 40px;
   color: var(--white);
-  background: radial-gradient(circle at 94% 2%, rgba(41, 72, 125, 0.22), transparent 28%), var(--background-dark);
+  background: var(--background-dark);
 }
 
 .settings-page__sidebar { height: calc(100vh - 68px); min-height: 620px; position: sticky; top: 34px; }
@@ -94,7 +94,8 @@
 
 .settings-section { margin-top: 34px; }
 .settings-section > h2 { margin: 0 0 16px 2px; font-size: 20px; font-weight: 650; }
-.notification-card { padding: 24px; overflow-x: auto; }
+.notification-card { padding: 24px; overflow: visible; }
+.notification-table-scroll { width: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
 .notification-table { min-width: 820px; margin-top: 20px; }
 .notification-row { min-height: 62px; display: grid; grid-template-columns: 160px 90px 110px 80px minmax(330px, 1fr); align-items: center; gap: 10px; border-top: 1px solid rgba(98, 120, 156, .2); }
 .notification-row--header { min-height: 44px; border-top: 0; color: #7187aa; font-size: 13px; font-weight: 400; text-transform: none; }
@@ -129,6 +130,7 @@
 .tariff-row small { margin-left: 3px; color: var(--settings-muted); font-size: 10px; }
 
 .scheduled-reports { margin-top: 18px; padding: 24px; overflow: visible; }
+.report-table-scroll { width: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
 .report-table { min-width: 840px; margin-top: 18px; }
 .report-row { min-height: 62px; display: grid; grid-template-columns: 1.15fr 1.3fr .55fr 1.25fr 48px; align-items: center; gap: 12px; border-top: 1px solid rgba(98, 120, 156, .2); font-size: 12px; }
 .report-row--header { min-height: 42px; border: 0; color: #7187aa; font-size: 13px; text-transform: none; }
@@ -190,12 +192,18 @@
 }
 
 @media (max-width: 760px) {
-  .settings-page { grid-template-columns: 155px minmax(0, 1fr); gap: 12px; padding: 16px 10px; }
-  .settings-page__sidebar { top: 16px; height: calc(100vh - 32px); }
+  .settings-page { display: block; padding: 10px; }
+  .settings-page__sidebar { height: auto; min-height: 0; top: 8px; z-index: 20; margin-bottom: 18px; }
   .settings-page__content { padding-top: 8px; }
   .settings-header { min-height: 90px; }
   .settings-header p { display: none; }
   .settings-card { border-radius: 20px; }
   .settings-profile, .settings-preferences, .notification-card, .settings-escalation, .settings-tariffs, .scheduled-reports, .settings-security-card, .settings-sessions, .settings-data .settings-card { padding: 17px; }
-  .scheduled-reports { overflow-x: auto; overflow-y: visible; }
+  .report-form { min-width: 0; grid-template-columns: 1fr; }
+  .report-form .settings-primary-button { min-height: 48px; }
+  .settings-card-title--action { flex-wrap: wrap; }
+  .session-row, .data-row { align-items: flex-start; flex-wrap: wrap; padding-block: 12px; }
+  .session-row > :last-child, .data-row > :last-child { margin-left: 0; }
+  .settings-modal-backdrop { align-items: flex-end; padding: 10px; }
+  .settings-modal { width: 100%; max-height: calc(100dvh - 20px); padding: 22px 18px; border-radius: 26px; }
 }

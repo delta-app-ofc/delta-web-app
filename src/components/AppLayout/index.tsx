@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { getCurrentUser } from "../../services/auth";
 import type { CurrentUser } from "../../services/auth";
-import glow from "../../assets/installations/header-glow.svg";
 import bottomGlow from "../../assets/installation-registration/bottom-glow.svg";
 import { AppHeader } from "../AppHeader";
 import { AppSidebar } from "../AppSidebar";
@@ -29,7 +28,6 @@ export function AppLayout({ title, children, registration = false, details = fal
 
   return (
     <div className={`${styles.layout} ${registration || details ? styles.registration : ""} ${details ? styles.details : ""}`}>
-      <img className={styles.glow} src={glow} alt="" />
       {(registration || details) && <img className={styles.bottomGlow} src={bottomGlow} alt="" />}
       <a className={styles.skip} href="#page-content">Pular para o conteúdo</a>
       <div className={styles.grid}>

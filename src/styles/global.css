@@ -74,7 +74,10 @@ body {
   color: var(--white);
 
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
+
+img, svg, video, canvas { max-width: 100%; }
 
 button,
 input {

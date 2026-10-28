@@ -13,3 +13,37 @@
 
 @media (max-height: 600px) { .navigation { padding-bottom: 8px; } .list { gap: 4px; } }
 @media (max-height: 360px) { .navigation { padding-bottom: 0; } }
+@media (max-width: 700px) {
+  .navigation {
+    width: 100%;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
+  }
+  .list {
+    width: max-content;
+    min-width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 4px;
+  }
+  .item {
+    width: 42px;
+    min-height: 42px;
+    justify-content: center;
+    padding: 7px;
+    border-radius: 12px;
+  }
+  .item img { max-width: 22px; max-height: 22px; }
+  .item span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

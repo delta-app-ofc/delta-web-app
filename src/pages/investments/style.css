@@ -8,9 +8,7 @@
   grid-template-columns: 250px minmax(0, 1fr);
   gap: 30px;
   padding: 34px 28px 28px;
-  background:
-    radial-gradient(circle at 94% 4%, rgba(41, 72, 125, 0.2), transparent 30%),
-    var(--background-dark);
+  background: var(--background-dark);
   color: var(--white);
 }
 

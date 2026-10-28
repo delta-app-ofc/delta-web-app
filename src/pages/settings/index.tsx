@@ -350,7 +350,7 @@ export function SettingsPage() {
           <h2 id="notifications-title">Notificações e relatórios</h2>
           <div className="settings-card notification-card">
             <div className="settings-card-title"><div><h3>Notificações por canal</h3><p>Escolha por onde cada tipo de alerta chega, e para quem.</p></div></div>
-            <div className="notification-table" role="table" aria-label="Notificações por tipo de alerta">
+            <div className="notification-table-scroll"><div className="notification-table" role="table" aria-label="Notificações por tipo de alerta">
               <div className="notification-row notification-row--header" role="row"><span>Tipo de alerta</span><span>E-mail</span><span>WhatsApp</span><span>Push</span><span>Destinatários</span></div>
               {(Object.entries(notifications) as [AlertLevel, NotificationRule][]).map(([level, rule]) => (
                 <div className="notification-row" role="row" key={level}>
@@ -361,7 +361,7 @@ export function SettingsPage() {
                   </div>
                 </div>
               ))}
-            </div>
+            </div></div>
           </div>
 
           <div className="settings-paired-grid">
@@ -379,10 +379,10 @@ export function SettingsPage() {
 
           <section className="settings-card scheduled-reports">
             <div className="settings-card-title"><div><h3>Relatórios agendados</h3><p>Escolha quais relatórios enviar automaticamente, com que frequência e por qual canal.</p></div></div>
-            <div className="report-table">
+            <div className="report-table-scroll"><div className="report-table">
               <div className="report-row report-row--header"><span>Relatório</span><span>Frequência</span><span>Canal</span><span>Destinatários</span><span /></div>
               {reports.map((report) => <div className="report-row" key={report.id}><strong>{report.report}</strong><strong>{report.frequency}</strong><strong>{report.channel}</strong><strong>{report.recipients}</strong><button className="settings-icon-button" type="button" aria-label={`Remover ${report.report}`} onClick={() => setReports((current) => current.filter((item) => item.id !== report.id))}><img src={xIcon} alt="" /></button></div>)}
-            </div>
+            </div></div>
             <form className="report-form" onSubmit={addReport}>
               <SettingsSelect label="Relatório" value={newReport.report} options={["Dashboard geral", "Ranking de unidades", "Consumo mensal"]} onChange={(value) => setNewReport({ ...newReport, report: value })} />
               <SettingsSelect label="Frequência" value={newReport.frequency} options={["Semanal · segunda-feira", "Mensal · dia 1", "Diário"]} onChange={(value) => setNewReport({ ...newReport, frequency: value })} />

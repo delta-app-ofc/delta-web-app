@@ -1,0 +1,107 @@
+/* Regras compartilhadas de adaptação das páginas autenticadas. */
+@media (max-width: 700px) {
+  :is(
+    .dashboard-page,
+    .monitoring-page,
+    .ranking-page,
+    .alerts-page,
+    .leaks-page,
+    .goals-page,
+    .chatbot-page,
+    .chatbot-history-page,
+    .devices-page,
+    .device-link-page,
+    .investments-page
+  ) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 10px;
+  }
+
+  :is(
+    .dashboard-page__sidebar,
+    .monitoring-page__sidebar,
+    .ranking-page__sidebar,
+    .alerts-page__sidebar,
+    .leaks-page__sidebar,
+    .goals-page__sidebar,
+    .chatbot-page__sidebar,
+    .chatbot-history-page__sidebar,
+    .devices-page__sidebar,
+    .device-link-page__sidebar,
+    .investments-page__sidebar
+  ) {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    position: sticky;
+    z-index: 20;
+    top: 8px;
+    margin-bottom: 18px;
+  }
+
+  :is(
+    .dashboard-page__content,
+    .monitoring-page__content,
+    .ranking-page__content,
+    .alerts-page__content,
+    .leaks-page__content,
+    .goals-page__content,
+    .chatbot-page__content,
+    .chatbot-history-page__content,
+    .devices-page__content,
+    .device-link-page__content,
+    .investments-page__content
+  ) {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    padding: 0 2px 28px;
+  }
+
+  :is(
+    .monitoring-header,
+    .leaks-header,
+    .goals-header,
+    .investments-header,
+    .devices-header__top,
+    .chatbot-history-page__header
+  ) {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  :is(
+    .monitoring-page,
+    .leaks-page,
+    .goals-page,
+    .investments-page,
+    .devices-page,
+    .device-link-page,
+    .ranking-page,
+    .alerts-page
+  ) :is(button, a) {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  :is(
+    .dashboard-page,
+    .monitoring-page,
+    .ranking-page,
+    .alerts-page,
+    .leaks-page,
+    .goals-page,
+    .chatbot-page,
+    .chatbot-history-page,
+    .devices-page,
+    .device-link-page,
+    .investments-page
+  ) {
+    padding: 8px;
+  }
+
+  :is(h1, .settings-header h1) { overflow-wrap: anywhere; }
+}
