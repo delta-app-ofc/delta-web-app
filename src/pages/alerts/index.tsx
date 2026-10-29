@@ -105,13 +105,13 @@ export function AlertsPage() {
         />
       </div>
 
-      <section className="alerts-page__content" aria-labelledby="alerts-title">
+      <section id="page-content" tabIndex={-1} className="alerts-page__content" aria-labelledby="alerts-title">
         <header className="alerts-page__header">
           <h1 id="alerts-title">Alertas</h1>
         </header>
 
         <div className="alerts-page__toolbar">
-          <div className="alerts-filters" aria-label="Filtrar alertas">
+          <div className="alerts-filters" role="group" aria-label="Filtrar alertas">
             {filterOptions.map((filter) => (
               <button
                 className={`alerts-filter ${activeFilter === filter.id ? "alerts-filter--active" : ""}`}

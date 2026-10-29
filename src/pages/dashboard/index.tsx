@@ -59,7 +59,7 @@ export function DashboardPage() {
         />
       </div>
 
-      <section className="dashboard-page__content" aria-labelledby="dashboard-title">
+      <section id="page-content" tabIndex={-1} className="dashboard-page__content" aria-labelledby="dashboard-title">
         <header className="dashboard-header">
           <h1 id="dashboard-title">Dashboard</h1>
           <p>Visão Geral - Setembro/2026</p>
@@ -101,7 +101,7 @@ export function DashboardPage() {
               <span>Últimos 6 meses · m³</span>
             </header>
 
-            <div className="history-chart" aria-label="Gráfico do consumo dos últimos seis meses">
+            <div className="history-chart" role="img" aria-label="Gráfico do consumo dos últimos seis meses">
               {chartData.map((month) => (
                 <div className="history-chart__column" key={month.id}>
                   <div className="history-chart__track">
@@ -176,7 +176,7 @@ export function DashboardPage() {
               <h2>Previsão financeira</h2>
               <strong>R$ 1.284,00</strong>
               <small>Faixa esperada: R$ 1.180 - R$ 1.350</small>
-              <div className="forecast-card__progress" aria-label="62% do ciclo de faturamento decorrido">
+              <div className="forecast-card__progress" role="progressbar" aria-label="Ciclo de faturamento decorrido" aria-valuemin={0} aria-valuemax={100} aria-valuenow={62}>
                 <span />
               </div>
               <small>62% do ciclo de faturamento decorrido</small>
@@ -189,7 +189,7 @@ export function DashboardPage() {
                 <small>Parcialmente nublado</small>
               </div>
               <div className="weather-card__condition">
-                <img src={climateIcon} alt="Parcialmente nublado" />
+                <img src={climateIcon} alt="Parcialmente nublado" width="42" height="42" />
                 <small>68% chuva</small>
               </div>
             </article>

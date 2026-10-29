@@ -6,6 +6,8 @@ import organizationIcon from "../../assets/settings/organizations.png";
 import plusIcon from "../../assets/settings/plus.png";
 import settingsIcon from "../../assets/settings/settings.png";
 import xIcon from "../../assets/settings/x.png";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
+import { validateOrganization, validatePasswordChange, validateProfile, validateRecipients } from "../../utils/settingsValidation";
 
 import "./style.css";
 
@@ -91,6 +93,8 @@ function SettingsSelect({ label, value, options, onChange, className = "" }: Set
   const [open, setOpen] = useState(false);
   const listboxId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -107,11 +111,34 @@ function SettingsSelect({ label, value, options, onChange, className = "" }: Set
     };
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    const selectedIndex = Math.max(0, options.indexOf(value));
+    requestAnimationFrame(() => optionRefs.current[selectedIndex]?.focus());
+  }, [open, options, value]);
+
+  function closeAndReturnFocus() {
+    setOpen(false);
+    requestAnimationFrame(() => triggerRef.current?.focus());
+  }
+
+  function handleOptionKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    let next = index;
+    if (event.key === "ArrowDown") next = (index + 1) % options.length;
+    else if (event.key === "ArrowUp") next = (index + options.length - 1) % options.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = options.length - 1;
+    else if (event.key === "Escape") { event.preventDefault(); closeAndReturnFocus(); return; }
+    else return;
+    event.preventDefault();
+    optionRefs.current[next]?.focus();
+  }
+
   return (
     <div className={`settings-custom-select ${open ? "settings-custom-select--open" : ""} ${className}`} ref={rootRef}>
       <div className="settings-custom-select__field">
         <span>{value}</span>
-        <button type="button" aria-label={`Abrir opções de ${label}`} aria-expanded={open} aria-controls={listboxId} onClick={() => setOpen((current) => !current)}>
+        <button ref={triggerRef} type="button" aria-label={`Abrir opções de ${label}`} aria-haspopup="listbox" aria-expanded={open} aria-controls={listboxId} onClick={() => setOpen((current) => !current)} onKeyDown={(event) => { if (!open && (event.key === "ArrowDown" || event.key === "ArrowUp")) { event.preventDefault(); setOpen(true); } }}>
           <img src={arrowIcon} alt="" />
         </button>
       </div>
@@ -119,12 +146,14 @@ function SettingsSelect({ label, value, options, onChange, className = "" }: Set
         <div className="settings-custom-select__options" id={listboxId} role="listbox" aria-label={label}>
           {options.map((option) => (
             <button
+              ref={(element) => { optionRefs.current[options.indexOf(option)] = element; }}
               type="button"
               role="option"
               aria-selected={option === value}
               className={option === value ? "selected" : ""}
               key={option}
-              onClick={() => { onChange(option); setOpen(false); }}
+              onClick={() => { onChange(option); closeAndReturnFocus(); }}
+              onKeyDown={(event) => handleOptionKeyDown(event, options.indexOf(option))}
             >
               {option}
             </button>
@@ -176,6 +205,10 @@ export function SettingsPage() {
     recipients: "",
   });
   const [feedback, setFeedback] = useState("");
+  const [formError, setFormError] = useState("");
+  const generalDialogRef = useDialogFocus<HTMLElement>(generalOpen, () => setGeneralOpen(false));
+  const passwordDialogRef = useDialogFocus<HTMLFormElement>(passwordModalOpen, closePasswordModal);
+  const deleteDialogRef = useDialogFocus<HTMLFormElement>(deleteAccountModalOpen, closeDeleteAccountModal);
 
   const generalSummary = useMemo(
     () => `${general.language} · ${general.timezone.replace("América/São Paulo ", "")}`,
@@ -183,12 +216,16 @@ export function SettingsPage() {
   );
 
   function showFeedback(message: string) {
+    setFormError("");
     setFeedback(message);
     window.setTimeout(() => setFeedback(""), 3000);
   }
 
   function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const error = validateProfile(profile);
+    if (error) { setFormError(error); return; }
+    setProfile((current) => ({ ...current, name: current.name.trim(), email: current.email.trim() }));
     showFeedback("Alterações do perfil salvas.");
   }
 
@@ -204,6 +241,8 @@ export function SettingsPage() {
 
   function saveOrganization(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const error = validateOrganization(organizationDraft);
+    if (error) { setFormError(error); return; }
     setOrganization(organizationDraft);
     setOrganizationOpen(false);
     showFeedback("Dados da organização salvos.");
@@ -236,7 +275,8 @@ export function SettingsPage() {
 
   function addReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!newReport.recipients.trim()) return;
+    const error = validateRecipients(newReport.recipients);
+    if (error) { setFormError(error); return; }
     setReports((current) => [...current, { ...newReport, id: Date.now(), recipients: newReport.recipients.trim() }]);
     setNewReport((current) => ({ ...current, recipients: "" }));
     showFeedback("Relatório agendado.");
@@ -255,14 +295,8 @@ export function SettingsPage() {
 
   function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (passwords.next.length < 8) {
-      setPasswordError("A nova senha deve ter pelo menos 8 caracteres.");
-      return;
-    }
-    if (passwords.next !== passwords.confirmation) {
-      setPasswordError("A confirmação não corresponde à nova senha.");
-      return;
-    }
+    const error = validatePasswordChange(passwords);
+    if (error) { setPasswordError(error); return; }
     setPasswordLastChanged("Última alteração agora");
     closePasswordModal();
     showFeedback("Senha alterada com sucesso.");
@@ -300,21 +334,22 @@ export function SettingsPage() {
         <AppSidebar label="Navegação principal" profile={{ name: "Talita", email: "talita@delta.com.br" }} />
       </div>
 
-      <section className="settings-page__content" aria-labelledby="settings-title">
+      <section id="page-content" tabIndex={-1} className="settings-page__content" aria-labelledby="settings-title">
         <header className="settings-header">
           <div>
             <h1 id="settings-title">Configurações</h1>
             <p>Gerencie seu perfil, preferências, notificações e segurança.</p>
           </div>
           {feedback && <span className="settings-feedback" role="status">{feedback}</span>}
+          {formError && <span className="settings-feedback settings-feedback--error" role="alert">{formError}</span>}
         </header>
 
         <div className="settings-top-grid">
           <form className="settings-card settings-profile" onSubmit={saveProfile}>
             <h2>Perfil do gestor</h2>
-            <label>Nome completo<input value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} required /></label>
-            <label>E-mail<input type="email" value={profile.email} onChange={(event) => setProfile({ ...profile, email: event.target.value })} required /></label>
-            <label>Telefone<input type="tel" value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} /></label>
+            <div className="settings-field-label"><label htmlFor="settings-profile-name">Nome completo</label><input id="settings-profile-name" value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} maxLength={100} required /></div>
+            <div className="settings-field-label"><label htmlFor="settings-profile-email">E-mail</label><input id="settings-profile-email" type="email" value={profile.email} onChange={(event) => setProfile({ ...profile, email: event.target.value })} maxLength={255} required /></div>
+            <div className="settings-field-label"><label htmlFor="settings-profile-phone">Telefone</label><input id="settings-profile-phone" type="tel" value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} maxLength={20} /></div>
             <button className="settings-primary-button" type="submit">Salvar alterações</button>
           </form>
 
@@ -326,10 +361,10 @@ export function SettingsPage() {
                   <h3>Organização</h3>
                   <button className="settings-icon-button" type="button" aria-label="Fechar edição da organização" onClick={closeOrganization}><img src={xIcon} alt="" /></button>
                 </header>
-                <label>Razão social<input value={organizationDraft.legalName} onChange={(event) => setOrganizationDraft({ ...organizationDraft, legalName: event.target.value })} required /></label>
-                <label>Nome fantasia<input value={organizationDraft.tradeName} onChange={(event) => setOrganizationDraft({ ...organizationDraft, tradeName: event.target.value })} required /></label>
-                <label>CNPJ<input value={organizationDraft.cnpj} onChange={(event) => setOrganizationDraft({ ...organizationDraft, cnpj: event.target.value })} inputMode="numeric" required /></label>
-                <label>Segmento<input value={organizationDraft.segment} onChange={(event) => setOrganizationDraft({ ...organizationDraft, segment: event.target.value })} required /></label>
+                <div className="settings-field-label"><label htmlFor="settings-legal-name">Razão social</label><input id="settings-legal-name" value={organizationDraft.legalName} onChange={(event) => setOrganizationDraft({ ...organizationDraft, legalName: event.target.value })} maxLength={150} required /></div>
+                <div className="settings-field-label"><label htmlFor="settings-trade-name">Nome fantasia</label><input id="settings-trade-name" value={organizationDraft.tradeName} onChange={(event) => setOrganizationDraft({ ...organizationDraft, tradeName: event.target.value })} maxLength={100} required /></div>
+                <div className="settings-field-label"><label htmlFor="settings-cnpj">CNPJ</label><input id="settings-cnpj" value={organizationDraft.cnpj} onChange={(event) => setOrganizationDraft({ ...organizationDraft, cnpj: event.target.value })} inputMode="numeric" maxLength={18} required /></div>
+                <div className="settings-field-label"><label htmlFor="settings-segment">Segmento</label><input id="settings-segment" value={organizationDraft.segment} onChange={(event) => setOrganizationDraft({ ...organizationDraft, segment: event.target.value })} maxLength={120} required /></div>
                 <footer><button className="settings-secondary-button" type="button" onClick={closeOrganization}>Cancelar</button><button className="settings-primary-button" type="submit">Salvar</button></footer>
               </form>
             ) : (
@@ -351,12 +386,12 @@ export function SettingsPage() {
           <div className="settings-card notification-card">
             <div className="settings-card-title"><div><h3>Notificações por canal</h3><p>Escolha por onde cada tipo de alerta chega, e para quem.</p></div></div>
             <div className="notification-table-scroll"><div className="notification-table" role="table" aria-label="Notificações por tipo de alerta">
-              <div className="notification-row notification-row--header" role="row"><span>Tipo de alerta</span><span>E-mail</span><span>WhatsApp</span><span>Push</span><span>Destinatários</span></div>
+              <div className="notification-row notification-row--header" role="row"><span role="columnheader">Tipo de alerta</span><span role="columnheader">E-mail</span><span role="columnheader">WhatsApp</span><span role="columnheader">Push</span><span role="columnheader">Destinatários</span></div>
               {(Object.entries(notifications) as [AlertLevel, NotificationRule][]).map(([level, rule]) => (
                 <div className="notification-row" role="row" key={level}>
-                  <strong className={`notification-level notification-level--${level}`}>{rule.label}</strong>
-                  {(["email", "whatsapp", "push"] as const).map((channel) => <Toggle key={channel} checked={rule.channels[channel]} label={`${channel} para alertas ${rule.label}`} onChange={() => toggleChannel(level, channel)} />)}
-                  <div className="notification-recipients">
+                  <strong role="rowheader" className={`notification-level notification-level--${level}`}>{rule.label}</strong>
+                  {(["email", "whatsapp", "push"] as const).map((channel) => <span role="cell" key={channel}><Toggle checked={rule.channels[channel]} label={`${channel} para alertas ${rule.label}`} onChange={() => toggleChannel(level, channel)} /></span>)}
+                  <div className="notification-recipients" role="cell">
                     {recipientOptions.map((recipient) => <button className={rule.recipients.includes(recipient) ? "selected" : ""} type="button" key={recipient} aria-pressed={rule.recipients.includes(recipient)} onClick={() => toggleRecipient(level, recipient)}>{recipient}</button>)}
                   </div>
                 </div>
@@ -368,7 +403,7 @@ export function SettingsPage() {
             <section className="settings-card settings-escalation">
               <div className="settings-card-title settings-card-title--action"><div><div><h3>Escalonamento automático</h3><p>Se um alerta crítico não for tratado, o sistema escala sozinho.</p></div></div><Toggle checked={escalationEnabled} label="Ativar escalonamento automático" onChange={() => setEscalationEnabled((value) => !value)} /></div>
               <div className="escalation-rule"><span>Sem resposta por</span><input aria-label="Horas sem resposta" type="number" min="1" defaultValue="4" /><span>horas → notifica o gestor regional por</span><SettingsSelect className="settings-custom-select--compact" label="Canal de escalonamento" value={escalationChannel} options={["WhatsApp", "E-mail", "Push"]} onChange={setEscalationChannel} /></div>
-              <label className="settings-switch-label"><Toggle checked={attachReport} label="Anexar relatório da unidade" onChange={() => setAttachReport((value) => !value)} /><span>Anexar relatório da unidade junto com a notificação de escalonamento</span></label>
+              <div className="settings-switch-label"><Toggle checked={attachReport} label="Anexar relatório da unidade" onChange={() => setAttachReport((value) => !value)} /><span>Anexar relatório da unidade junto com a notificação de escalonamento</span></div>
             </section>
 
             <section className="settings-card settings-tariffs">
@@ -379,15 +414,15 @@ export function SettingsPage() {
 
           <section className="settings-card scheduled-reports">
             <div className="settings-card-title"><div><h3>Relatórios agendados</h3><p>Escolha quais relatórios enviar automaticamente, com que frequência e por qual canal.</p></div></div>
-            <div className="report-table-scroll"><div className="report-table">
-              <div className="report-row report-row--header"><span>Relatório</span><span>Frequência</span><span>Canal</span><span>Destinatários</span><span /></div>
-              {reports.map((report) => <div className="report-row" key={report.id}><strong>{report.report}</strong><strong>{report.frequency}</strong><strong>{report.channel}</strong><strong>{report.recipients}</strong><button className="settings-icon-button" type="button" aria-label={`Remover ${report.report}`} onClick={() => setReports((current) => current.filter((item) => item.id !== report.id))}><img src={xIcon} alt="" /></button></div>)}
+            <div className="report-table-scroll"><div className="report-table" role="table" aria-label="Relatórios agendados">
+              <div className="report-row report-row--header" role="row"><span role="columnheader">Relatório</span><span role="columnheader">Frequência</span><span role="columnheader">Canal</span><span role="columnheader">Destinatários</span><span role="columnheader"><span className="sr-only">Ações</span></span></div>
+              {reports.map((report) => <div className="report-row" role="row" key={report.id}><strong role="cell">{report.report}</strong><strong role="cell">{report.frequency}</strong><strong role="cell">{report.channel}</strong><strong role="cell">{report.recipients}</strong><span role="cell"><button className="settings-icon-button" type="button" aria-label={`Remover ${report.report}`} onClick={() => setReports((current) => current.filter((item) => item.id !== report.id))}><img src={xIcon} alt="" /></button></span></div>)}
             </div></div>
             <form className="report-form" onSubmit={addReport}>
               <SettingsSelect label="Relatório" value={newReport.report} options={["Dashboard geral", "Ranking de unidades", "Consumo mensal"]} onChange={(value) => setNewReport({ ...newReport, report: value })} />
               <SettingsSelect label="Frequência" value={newReport.frequency} options={["Semanal · segunda-feira", "Mensal · dia 1", "Diário"]} onChange={(value) => setNewReport({ ...newReport, frequency: value })} />
               <SettingsSelect label="Canal" value={newReport.channel} options={["E-mail", "WhatsApp"]} onChange={(value) => setNewReport({ ...newReport, channel: value })} />
-              <input aria-label="Destinatários" placeholder="E-mail ou lista de destinatários" value={newReport.recipients} onChange={(event) => setNewReport({ ...newReport, recipients: event.target.value })} required />
+              <input aria-label="Destinatários" placeholder="E-mail ou lista de destinatários" value={newReport.recipients} onChange={(event) => setNewReport({ ...newReport, recipients: event.target.value })} maxLength={500} required />
               <button className="settings-primary-button settings-schedule-button" type="submit"><img src={plusIcon} alt="" />Agendar</button>
             </form>
           </section>
@@ -420,31 +455,31 @@ export function SettingsPage() {
       </section>
 
       {generalOpen && <div className="settings-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setGeneralOpen(false); }}>
-        <section className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="general-settings-title">
+        <section ref={generalDialogRef} className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="general-settings-title">
           <header><h2 id="general-settings-title">Configurações gerais</h2><button className="settings-icon-button" type="button" aria-label="Fechar" onClick={() => setGeneralOpen(false)}><img src={xIcon} alt="" /></button></header>
-          <label>Idioma<SettingsSelect label="Idioma" value={general.language} options={["Português (Brasil)", "English", "Español"]} onChange={(value) => setGeneral({ ...general, language: value })} /></label>
-          <label>Fuso horário<SettingsSelect label="Fuso horário" value={general.timezone} options={["América/São Paulo (GMT-3)", "América/Manaus (GMT-4)", "UTC"]} onChange={(value) => setGeneral({ ...general, timezone: value })} /></label>
-          <label>Formato de data<SettingsSelect label="Formato de data" value={general.dateFormat} options={["DD/MM/AAAA", "MM/DD/AAAA", "AAAA-MM-DD"]} onChange={(value) => setGeneral({ ...general, dateFormat: value })} /></label>
-          <label>Unidade de medida<SettingsSelect label="Unidade de medida" value={general.unit} options={["Metros cúbicos (m³)", "Litros (L)", "Galões (US gal)"]} onChange={(value) => setGeneral({ ...general, unit: value })} /></label>
+          <div className="settings-field-label"><span>Idioma</span><SettingsSelect label="Idioma" value={general.language} options={["Português (Brasil)", "English", "Español"]} onChange={(value) => setGeneral({ ...general, language: value })} /></div>
+          <div className="settings-field-label"><span>Fuso horário</span><SettingsSelect label="Fuso horário" value={general.timezone} options={["América/São Paulo (GMT-3)", "América/Manaus (GMT-4)", "UTC"]} onChange={(value) => setGeneral({ ...general, timezone: value })} /></div>
+          <div className="settings-field-label"><span>Formato de data</span><SettingsSelect label="Formato de data" value={general.dateFormat} options={["DD/MM/AAAA", "MM/DD/AAAA", "AAAA-MM-DD"]} onChange={(value) => setGeneral({ ...general, dateFormat: value })} /></div>
+          <div className="settings-field-label"><span>Unidade de medida</span><SettingsSelect label="Unidade de medida" value={general.unit} options={["Metros cúbicos (m³)", "Litros (L)", "Galões (US gal)"]} onChange={(value) => setGeneral({ ...general, unit: value })} /></div>
           <footer><button className="settings-secondary-button" type="button" onClick={() => setGeneralOpen(false)}>Cancelar</button><button className="settings-primary-button" type="button" onClick={() => { setGeneralOpen(false); showFeedback("Configurações gerais salvas."); }}>Salvar</button></footer>
         </section>
       </div>}
 
       {passwordModalOpen && <div className="settings-modal-backdrop settings-modal-backdrop--centered" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePasswordModal(); }}>
-        <form className="settings-modal settings-password-modal" role="dialog" aria-modal="true" aria-labelledby="password-modal-title" onSubmit={changePassword}>
+        <form ref={passwordDialogRef} className="settings-modal settings-password-modal" role="dialog" aria-modal="true" aria-labelledby="password-modal-title" onSubmit={changePassword}>
           <header><div><h2 id="password-modal-title">Alterar senha</h2><p>Crie uma nova senha segura para acessar sua conta.</p></div><button className="settings-icon-button" type="button" aria-label="Fechar" onClick={closePasswordModal}><img src={xIcon} alt="" /></button></header>
-          <label>Senha atual<input type="password" autoComplete="current-password" value={passwords.current} onChange={(event) => setPasswords({ ...passwords, current: event.target.value })} required /></label>
-          <label>Nova senha<input type="password" autoComplete="new-password" minLength={8} value={passwords.next} onChange={(event) => { setPasswords({ ...passwords, next: event.target.value }); setPasswordError(""); }} required /></label>
-          <label>Confirmar nova senha<input type="password" autoComplete="new-password" minLength={8} value={passwords.confirmation} onChange={(event) => { setPasswords({ ...passwords, confirmation: event.target.value }); setPasswordError(""); }} required /></label>
+          <div className="settings-field-label"><label htmlFor="settings-current-password">Senha atual</label><input id="settings-current-password" type="password" autoComplete="current-password" maxLength={256} value={passwords.current} onChange={(event) => setPasswords({ ...passwords, current: event.target.value })} required /></div>
+          <div className="settings-field-label"><label htmlFor="settings-new-password">Nova senha</label><input id="settings-new-password" type="password" autoComplete="new-password" minLength={8} maxLength={128} value={passwords.next} onChange={(event) => { setPasswords({ ...passwords, next: event.target.value }); setPasswordError(""); }} required /></div>
+          <div className="settings-field-label"><label htmlFor="settings-confirm-password">Confirmar nova senha</label><input id="settings-confirm-password" type="password" autoComplete="new-password" minLength={8} maxLength={128} value={passwords.confirmation} onChange={(event) => { setPasswords({ ...passwords, confirmation: event.target.value }); setPasswordError(""); }} required /></div>
           {passwordError && <p className="settings-form-error" role="alert">{passwordError}</p>}
           <footer><button className="settings-secondary-button" type="button" onClick={closePasswordModal}>Cancelar</button><button className="settings-primary-button" type="submit">Alterar senha</button></footer>
         </form>
       </div>}
 
       {deleteAccountModalOpen && <div className="settings-modal-backdrop settings-modal-backdrop--centered" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDeleteAccountModal(); }}>
-        <form className="settings-modal settings-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-account-title" aria-describedby="delete-account-description" onSubmit={confirmAccountDeletion}>
+        <form ref={deleteDialogRef} className="settings-modal settings-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-account-title" aria-describedby="delete-account-description" onSubmit={confirmAccountDeletion}>
           <header><div><h2 id="delete-account-title">Excluir conta</h2><p id="delete-account-description">Esta ação é permanente e não poderá ser desfeita. Digite sua senha para confirmar.</p></div><button className="settings-icon-button" type="button" aria-label="Fechar" onClick={closeDeleteAccountModal}><img src={xIcon} alt="" /></button></header>
-          <label>Senha<input type="password" autoComplete="current-password" value={deleteAccountPassword} onChange={(event) => setDeleteAccountPassword(event.target.value)} required /></label>
+          <div className="settings-field-label"><label htmlFor="settings-delete-password">Senha</label><input id="settings-delete-password" type="password" autoComplete="current-password" maxLength={256} value={deleteAccountPassword} onChange={(event) => setDeleteAccountPassword(event.target.value)} required /></div>
           <footer><button className="settings-secondary-button" type="button" onClick={closeDeleteAccountModal}>Cancelar</button><button className="settings-danger-button" type="submit">Excluir conta</button></footer>
         </form>
       </div>}

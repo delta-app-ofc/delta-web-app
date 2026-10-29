@@ -1,6 +1,6 @@
 .chatbot-page {
   --chatbot-border: rgba(99, 133, 190, 0.58);
-  --chatbot-muted: #7185a3;
+  --chatbot-muted: #9aacc7;
   width: 100%;
   min-height: 100vh;
   display: grid;
@@ -406,7 +406,7 @@
 }
 
 .chatbot-composer input::placeholder {
-  color: #7185a3;
+  color: #9aacc7;
   opacity: 1;
 }
 

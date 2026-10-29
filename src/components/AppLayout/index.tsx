@@ -29,7 +29,6 @@ export function AppLayout({ title, children, registration = false, details = fal
   return (
     <div className={`${styles.layout} ${registration || details ? styles.registration : ""} ${details ? styles.details : ""}`}>
       {(registration || details) && <img className={styles.bottomGlow} src={bottomGlow} alt="" />}
-      <a className={styles.skip} href="#page-content">Pular para o conteúdo</a>
       <div className={styles.grid}>
         <AppSidebar label="Navegação principal" profile={user} />
         <div className={styles.content}>

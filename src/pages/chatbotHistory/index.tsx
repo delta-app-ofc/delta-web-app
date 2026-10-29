@@ -34,7 +34,7 @@ export function ChatbotHistoryPage() {
         />
       </div>
 
-      <section className="chatbot-history-page__content" aria-labelledby="conversation-history-title">
+      <section id="page-content" tabIndex={-1} className="chatbot-history-page__content" aria-labelledby="conversation-history-title">
         <header className="chatbot-history-page__header">
           <div className="chatbot-history-page__heading">
             <div className="chatbot-history-page__title-row">

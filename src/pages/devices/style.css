@@ -1,6 +1,6 @@
 .devices-page {
   --devices-border: rgba(99, 133, 190, 0.58);
-  --devices-muted: #788dab;
+  --devices-muted: #9aacc7;
   --devices-card: rgba(24, 28, 32, 0.72);
   width: 100%;
   min-height: 100vh;
@@ -93,7 +93,7 @@
 }
 
 .devices-search input::placeholder {
-  color: #7185a3;
+  color: #9aacc7;
   opacity: 1;
 }
 
@@ -234,7 +234,7 @@
 
 .devices-table th,
 .devices-unlinked th {
-  color: #7588a6;
+  color: #9aacc7;
   font-size: 12px;
   font-weight: 500;
 }
@@ -261,7 +261,7 @@
 
 .devices-table td small {
   margin-top: 4px;
-  color: #60728d;
+  color: #9aacc7;
   font-size: 9px;
 }
 

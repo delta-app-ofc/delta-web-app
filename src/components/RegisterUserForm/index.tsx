@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useRegister } from "../../contexts/RegisterContext/useRegister";
@@ -6,11 +6,18 @@ import { TextInput } from "../TextInput";
 import { RegisterButton } from "../RegisterButton";
 
 import "./style.css";
+import { validateRegisterProfile, type RegisterErrors } from "../../utils/registerValidation";
 
 export function RegisterForm() {
   const navigate = useNavigate();
 
   const { registerData, setField } = useRegister();
+  const [errors, setErrors] = useState<RegisterErrors>({});
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function clearError(field: keyof RegisterErrors) {
+    setErrors((current) => ({ ...current, [field]: undefined }));
+  }
 
   function formatBirthDate(value: string) {
     const numbersOnly = value.replace(/\D/g, "");
@@ -31,16 +38,19 @@ export function RegisterForm() {
 
   function handleNameChange(name: string) {
     setField("name", name);
+    clearError("name");
   }
 
   function handleBirthDateChange(birthDate: string) {
     const formattedBirthDate = formatBirthDate(birthDate);
 
     setField("birthDate", formattedBirthDate);
+    clearError("birthDate");
   }
 
   function handlePhoneChange(phone: string) {
     setField("phone", phone);
+    clearError("phone");
   }
 
   function handleLoginClick() {
@@ -49,7 +59,12 @@ export function RegisterForm() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
+    const validation = validateRegisterProfile(registerData);
+    setErrors(validation);
+    if (Object.keys(validation).length > 0) {
+      requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+      return;
+    }
     navigate("/cadastro/credenciais");
   }
 
@@ -81,8 +96,10 @@ export function RegisterForm() {
       </div>
 
       <form
+        ref={formRef}
         className="register-form"
         onSubmit={handleSubmit}
+        noValidate
       >
         <div className="register-form-fields">
           <TextInput
@@ -93,6 +110,9 @@ export function RegisterForm() {
             value={registerData.name}
             onChange={handleNameChange}
             autoComplete="name"
+            required
+            maxLength={100}
+            error={errors.name}
           />
 
           <TextInput
@@ -105,6 +125,8 @@ export function RegisterForm() {
             autoComplete="bday"
             inputMode="numeric"
             maxLength={10}
+            required
+            error={errors.birthDate}
           />
 
           <TextInput
@@ -115,6 +137,10 @@ export function RegisterForm() {
             value={registerData.phone}
             onChange={handlePhoneChange}
             autoComplete="tel"
+            inputMode="tel"
+            maxLength={20}
+            required
+            error={errors.phone}
           />
         </div>
 

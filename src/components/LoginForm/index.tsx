@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 
 import { LoginButton } from "../LoginButton";
 import { TextInput } from "../TextInput";
-import { login } from "../../services/auth";
+import { useAuth } from "../../contexts/AuthContext/useAuth";
 import { ApiError } from "../../services/http";
+import { validateLogin } from "../../utils/authValidation";
 
 import "./style.css";
 
@@ -15,6 +16,7 @@ interface LoginFormData {
 
 export function LoginForm() {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const requestRef = useRef<AbortController | null>(null);
@@ -46,9 +48,15 @@ export function LoginForm() {
     const controller = new AbortController();
     requestRef.current = controller;
     setError("");
+    const validationError = validateLogin(formData);
+    if (validationError) {
+      setError(validationError);
+      requestRef.current = null;
+      return;
+    }
     setIsLoading(true);
     try {
-      await login(formData.email, formData.password, controller.signal);
+      await signIn(formData.email, formData.password, controller.signal);
       if (!controller.signal.aborted) navigate("/dashboard", { replace: true });
     } catch (failure: unknown) {
       if (!controller.signal.aborted) setError(failure instanceof ApiError ? failure.message : "Não foi possível entrar. Tente novamente.");

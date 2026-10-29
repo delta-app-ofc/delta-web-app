@@ -1,6 +1,6 @@
 .goals-page {
   --goals-border: rgba(99, 133, 190, 0.58);
-  --goals-muted: #7f93b1;
+  --goals-muted: #9aacc7;
   --goals-card: rgba(24, 28, 32, 0.72);
   width: 100%;
   min-height: 100vh;
@@ -199,7 +199,7 @@
 
 .goal-unit header p {
   margin-top: 5px;
-  color: #7185a3;
+  color: #9aacc7;
   font-size: 9px;
 }
 
@@ -287,7 +287,7 @@
 }
 
 .goal-unit__content dt {
-  color: #7185a3;
+  color: #9aacc7;
   font-size: 9px;
 }
 

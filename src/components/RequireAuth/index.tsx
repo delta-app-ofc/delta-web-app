@@ -1,8 +1,7 @@
-import { useSyncExternalStore } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { getSession, subscribeSession } from "../../services/session";
+import { useAuth } from "../../contexts/AuthContext/useAuth";
 
 export function RequireAuth() {
-  const session = useSyncExternalStore(subscribeSession, getSession);
-  return session ? <Outlet /> : <Navigate to="/login" replace />;
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 }

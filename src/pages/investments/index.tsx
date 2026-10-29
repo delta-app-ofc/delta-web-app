@@ -118,7 +118,7 @@ export function InvestmentsPage() {
         />
       </div>
 
-      <section className="investments-page__content" aria-labelledby="investments-title">
+      <section id="page-content" tabIndex={-1} className="investments-page__content" aria-labelledby="investments-title">
         <header className="investments-header">
           <h1 id="investments-title">Simulador de Investimentos</h1>
           <button className="investments-export" type="button" onClick={() => window.print()}>
@@ -181,7 +181,7 @@ export function InvestmentsPage() {
             </div>
           </div>
 
-          <div className="investment-indicators" aria-label="Resumo do cenário selecionado">
+          <div className="investment-indicators" role="region" aria-label="Resumo do cenário selecionado">
             <article className="investments-card investment-indicator">
               <div><img src={sceneryIcon} alt="" /><span>Cenário selecionado</span></div>
               <strong>{selectedScenario.name}</strong>

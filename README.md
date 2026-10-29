@@ -6,7 +6,7 @@ Copie `.env.example` para `.env.local` e defina `VITE_POSTGRES_API_URL` com a or
 
 A rota `/` mantém o cadastro de usuário e empresa; `/login` abre a autenticação. As páginas internas exigem sessão, e acessos sem sessão retornam a `/login`. Após o cadastro visual da empresa, ainda é necessário entrar com uma conta existente na API.
 
-O formulário de login envia e-mail e senha para `POST /delta/auth/login`. Após autenticar, abre `/instalacoes`. Os tokens ficam no `sessionStorage` da aba; a senha não é armazenada. As consultas enviam `Authorization: Bearer ...`, renovam o access token via `POST /delta/auth/refresh` quando necessário e retornam ao login quando a sessão deixa de ser válida. O perfil usa `GET /delta/auth/me` para carregar nome e e-mail.
+O formulário de login valida os dados e envia e-mail e senha para `POST /delta/auth/login`. Após autenticar, abre `/dashboard`. Os tokens ficam no `sessionStorage` da aba; a senha não é armazenada. As consultas enviam `Authorization: Bearer ...`, renovam o access token via `POST /delta/auth/refresh` quando necessário e retornam ao login quando a sessão deixa de ser válida. O perfil usa `GET /delta/auth/me` para carregar nome e e-mail.
 
 A lista de instalações identifica o usuário em `/delta/auth/me`, consulta suas associações em `/delta/user-properties/{userId}` e busca os detalhes somente dos imóveis vinculados. Endereços e consumos também são consultados apenas para essas instalações. Uma conta sem associações exibe a lista vazia; falhas na consulta não acionam a listagem geral de imóveis.
 
@@ -43,6 +43,18 @@ Os botões da listagem e dos detalhes geram downloads locais com jsPDF e AutoTab
 Os relatórios têm quebra de linhas, paginação, cabeçalhos e horário de São Paulo. A geração não consulta endpoints adicionais e não envia os dados para outro serviço. Os testes usam respostas simuladas para gravação e documentos com múltiplas páginas; nenhuma conta real é modificada por eles.
 
 Consulte [DOCKER-HELP.md](DOCKER-HELP.md) para usar o ambiente Docker local.
+
+## Arquitetura, qualidade e acessibilidade
+
+- A autenticação protegida é centralizada em `AuthProvider` e consumida pelo hook tipado `useAuth`; páginas não leem a sessão diretamente.
+- Rotas de páginas são carregadas com `React.lazy` e `Suspense`. Serviços externos ficam em `src/services`, com contratos tipados, tratamento centralizado de falhas e cancelamento por `AbortController` nos hooks de consulta.
+- Formulários validam e limitam os dados antes de acionar serviços. Mensagens de erro são anunciadas com `role="alert"`, e operações assíncronas apresentam estados de carregamento, sucesso ou erro.
+- A navegação oferece atalho para o conteúdo principal, foco visível, controles operáveis por teclado, nomes acessíveis, tabelas identificadas e gerenciamento de foco em diálogos, menus e abas conforme o escopo mínimo da WCAG 2.1 AA.
+- O cadastro de empresa salvo no navegador inclui `_versao`, valida e migra versões conhecidas e descarta dados incompatíveis.
+
+## Publicação
+
+Ainda não há uma implantação pública configurada neste repositório. Antes da entrega, publique a aplicação no Vercel ou GitHub Pages e substitua este aviso pelo link ativo validado. A URL padrão do GitHub Pages foi verificada em 28/10/2026 e ainda retornava 404.
 
 ## Fonte Clayful
 

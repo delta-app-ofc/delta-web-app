@@ -148,7 +148,7 @@ export function DevicesPage() {
         />
       </div>
 
-      <section className="devices-page__content" aria-labelledby="devices-title">
+      <section id="page-content" tabIndex={-1} className="devices-page__content" aria-labelledby="devices-title">
         <header className="devices-header">
           <h1 id="devices-title">Dispositivos</h1>
           <div className="devices-header__controls">
@@ -159,6 +159,7 @@ export function DevicesPage() {
                 type="search"
                 placeholder="Buscar por ID ou instalação"
                 value={search}
+                maxLength={100}
                 onChange={(event) => setSearch(event.target.value)}
               />
             </label>
@@ -184,6 +185,7 @@ export function DevicesPage() {
 
         <div className="devices-card devices-table-wrapper">
           <table className="devices-table">
+            <caption className="sr-only">Dispositivos vinculados às instalações</caption>
             <thead>
               <tr>
                 <th scope="col">Dispositivo</th>
@@ -222,6 +224,7 @@ export function DevicesPage() {
           <h2 id="unlinked-installations-title">Instalações sem dispositivo vinculado</h2>
           <div className="devices-card devices-unlinked__table-wrapper">
             <table>
+              <caption className="sr-only">Instalações sem dispositivo vinculado</caption>
               <thead>
                 <tr>
                   <th scope="col">Instalação</th>

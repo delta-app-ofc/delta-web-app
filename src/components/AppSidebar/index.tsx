@@ -21,9 +21,10 @@ export function AppSidebar({ label, navigationItems, profile }: AppSidebarProps)
 
   return (
     <aside className={styles.sidebar}>
+      <a className={styles.skip} href="#page-content">Pular para o conteúdo</a>
       <SidebarBrand className={styles.brand} />
       <SidebarNavigation label={label} items={navigationItems} />
-      <div className={styles.profileRow} aria-label="Perfil da conta">
+      <div className={styles.profileRow} role="group" aria-label="Perfil da conta">
         <div className={styles.profile} aria-hidden="true">
           {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

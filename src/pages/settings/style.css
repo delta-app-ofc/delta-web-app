@@ -2,7 +2,7 @@
   --settings-border: rgba(99, 133, 190, 0.58);
   --settings-card: rgba(24, 28, 32, 0.72);
   --settings-surface: #2c3b51;
-  --settings-muted: #7d91af;
+  --settings-muted: #9aacc7;
   width: 100%;
   min-height: 100vh;
   display: grid;
@@ -19,6 +19,7 @@
 .settings-header h1 { font-size: clamp(30px, 3vw, 40px); font-weight: 650; line-height: 1.1; }
 .settings-header p { margin-top: 9px; color: var(--settings-muted); font-size: 14px; }
 .settings-feedback { position: sticky; top: 18px; z-index: 3; padding: 10px 18px; border: 1px solid rgba(74, 224, 151, .45); border-radius: 999px; color: #6ce8a9; background: #153a2d; font-size: 13px; }
+.settings-feedback--error { border-color: rgba(255, 111, 131, .6); color: #ffb1bd; background: #4a1f29; }
 
 .settings-card { border: 1px solid var(--settings-border); border-radius: 30px; background: var(--settings-card); box-shadow: 0 18px 34px rgba(0, 0, 0, .12); }
 .settings-card h2, .settings-card h3 { color: #eaf0f9; font-size: 16px; font-weight: 620; }
@@ -28,8 +29,8 @@
 .settings-profile { display: flex; flex-direction: column; gap: 14px; padding: 24px; }
 .settings-profile > .settings-primary-button { margin-top: 12px; }
 .settings-profile h2 { color: #fff; }
-.settings-profile label, .settings-modal label { display: flex; flex-direction: column; gap: 7px; color: #a9bbd6; font-size: 13px; font-weight: 550; }
-.settings-profile label { color: #fff; }
+.settings-profile label, .settings-modal label, .settings-field-label { display: flex; flex-direction: column; gap: 7px; color: #a9bbd6; font-size: 13px; font-weight: 550; }
+.settings-profile label, .settings-profile .settings-field-label { color: #fff; }
 .settings-page .settings-profile input { min-height: 50px; padding: 11px 24px; font-size: 15px; }
 .settings-page input, .settings-page select {
   width: 100%;
@@ -88,7 +89,7 @@
 .settings-organization-editor { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; padding: 16px 0 18px; border-bottom: 1px solid rgba(98, 120, 156, .2); }
 .settings-organization-editor header, .settings-organization-editor footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .settings-organization-editor header h3 { font-size: 15px; }
-.settings-organization-editor label { display: flex; flex-direction: column; gap: 7px; color: #a9bbd6; font-size: 12px; font-weight: 550; }
+.settings-organization-editor label, .settings-organization-editor .settings-field-label { color: #a9bbd6; font-size: 12px; font-weight: 550; }
 .settings-organization-editor footer { justify-content: flex-end; padding-top: 2px; }
 .settings-organization-editor .settings-primary-button { align-self: auto; }
 
@@ -98,7 +99,7 @@
 .notification-table-scroll { width: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
 .notification-table { min-width: 820px; margin-top: 20px; }
 .notification-row { min-height: 62px; display: grid; grid-template-columns: 160px 90px 110px 80px minmax(330px, 1fr); align-items: center; gap: 10px; border-top: 1px solid rgba(98, 120, 156, .2); }
-.notification-row--header { min-height: 44px; border-top: 0; color: #7187aa; font-size: 13px; font-weight: 400; text-transform: none; }
+.notification-row--header { min-height: 44px; border-top: 0; color: #a0b2cc; font-size: 13px; font-weight: 400; text-transform: none; }
 .notification-level { position: relative; padding-left: 17px; font-size: 14px; }
 .notification-level::before { content: ""; position: absolute; left: 0; top: 50%; width: 8px; height: 8px; border-radius: 50%; transform: translateY(-50%); }
 .notification-level--critical::before { background: #ef4963; }
@@ -133,7 +134,7 @@
 .report-table-scroll { width: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
 .report-table { min-width: 840px; margin-top: 18px; }
 .report-row { min-height: 62px; display: grid; grid-template-columns: 1.15fr 1.3fr .55fr 1.25fr 48px; align-items: center; gap: 12px; border-top: 1px solid rgba(98, 120, 156, .2); font-size: 12px; }
-.report-row--header { min-height: 42px; border: 0; color: #7187aa; font-size: 13px; text-transform: none; }
+.report-row--header { min-height: 42px; border: 0; color: #a0b2cc; font-size: 13px; text-transform: none; }
 .settings-icon-button { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(105, 131, 174, .35); border-radius: 12px; background: #202736; color: #9cb0cf; font-size: 20px; }
 .settings-icon-button img { width: 13px; height: 13px; object-fit: contain; }
 .report-form { min-width: 840px; display: grid; grid-template-columns: 1.15fr 1.3fr .75fr 1.3fr auto; gap: 10px; margin-top: 12px; }

@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { AppSidebar } from "../../components/AppSidebar";
@@ -35,8 +35,34 @@ export function DeviceLinkPage() {
   const [deviceId, setDeviceId] = useState("");
   const [installationId, setInstallationId] = useState(initialInstallation.id);
   const [isInstallationListOpen, setIsInstallationListOpen] = useState(false);
+  const listboxId = useId();
+  const selectTriggerRef = useRef<HTMLButtonElement>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selectedInstallation = installations.find((installation) => installation.id === installationId)
     ?? installations[0];
+
+  useEffect(() => {
+    if (!isInstallationListOpen) return;
+    const selectedIndex = Math.max(0, installations.findIndex((item) => item.id === installationId));
+    requestAnimationFrame(() => optionRefs.current[selectedIndex]?.focus());
+  }, [installationId, isInstallationListOpen]);
+
+  function closeInstallationList(returnFocus = false) {
+    setIsInstallationListOpen(false);
+    if (returnFocus) requestAnimationFrame(() => selectTriggerRef.current?.focus());
+  }
+
+  function handleOptionKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    let next = index;
+    if (event.key === "ArrowDown") next = (index + 1) % installations.length;
+    else if (event.key === "ArrowUp") next = (index + installations.length - 1) % installations.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = installations.length - 1;
+    else if (event.key === "Escape") { event.preventDefault(); closeInstallationList(true); return; }
+    else return;
+    event.preventDefault();
+    optionRefs.current[next]?.focus();
+  }
 
   function saveDevice(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -69,7 +95,7 @@ export function DeviceLinkPage() {
         />
       </div>
 
-      <section className="device-link-page__content" aria-labelledby="device-link-page-title">
+      <section id="page-content" tabIndex={-1} className="device-link-page__content" aria-labelledby="device-link-page-title">
         <h1 id="device-link-page-title">Dispositivos</h1>
 
         <button className="device-link-page__back" type="button" onClick={() => navigate("/dispositivos")}>
@@ -88,6 +114,7 @@ export function DeviceLinkPage() {
                 onChange={(event) => setDeviceId(event.target.value)}
                 placeholder="Ex. DELTA-ESP32-000184"
                 autoComplete="off"
+                maxLength={100}
                 required
               />
             </section>
@@ -108,10 +135,12 @@ export function DeviceLinkPage() {
                 }}
               >
                 <button
+                  ref={selectTriggerRef}
                   className="device-link-select__trigger"
                   type="button"
                   aria-haspopup="listbox"
                   aria-expanded={isInstallationListOpen}
+                  aria-controls={listboxId}
                   onClick={() => setIsInstallationListOpen((currentValue) => !currentValue)}
                 >
                   <span>{selectedInstallation.name}</span>
@@ -119,17 +148,19 @@ export function DeviceLinkPage() {
                 </button>
 
                 {isInstallationListOpen && (
-                  <ul className="device-link-select__options" role="listbox" aria-label="Instalação">
-                    {installations.map((installation) => (
+                  <ul id={listboxId} className="device-link-select__options" role="listbox" aria-label="Instalação">
+                    {installations.map((installation, index) => (
                       <li key={installation.id} role="presentation">
                         <button
+                          ref={(element) => { optionRefs.current[index] = element; }}
                           type="button"
                           role="option"
                           aria-selected={installation.id === installationId}
                           onClick={() => {
                             setInstallationId(installation.id);
-                            setIsInstallationListOpen(false);
+                            closeInstallationList(true);
                           }}
+                          onKeyDown={(event) => handleOptionKeyDown(event, index)}
                         >
                           {installation.name}
                         </button>

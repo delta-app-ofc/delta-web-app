@@ -3,39 +3,46 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { RegisterProvider } from "./contexts/RegisterContext";
 import { CompanyRegisterProvider } from "./contexts/CompanyRegisterContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
-import { RegisterPage } from "./pages/registerUser";
-import { RegisterCredentialsPage } from "./pages/registerCredentials";
-import { LoginPage } from "./pages/login";
 import { LoadingPage } from "./pages/loading";
-import { CompanyRegisterPage } from "./pages/companyRegister";
-import { RegisterSuccessPage } from "./pages/registerSuccess";
-import { DashboardPage } from "./pages/dashboard";
-import { MonitoringPage } from "./pages/monitoring";
-import { RankingPage } from "./pages/ranking";
-import { AlertsPage } from "./pages/alerts";
-import { LeaksPage } from "./pages/leaks";
-import { GoalsPage } from "./pages/goals";
-import { ChatbotPage } from "./pages/chatbot";
-import { ChatbotHistoryPage } from "./pages/chatbotHistory";
-import { DevicesPage } from "./pages/devices";
-import { DeviceLinkPage } from "./pages/deviceLink";
-import { InvestmentsPage } from "./pages/investments";
-import { SettingsPage } from "./pages/settings";
 import { RequireAuth } from "./components/RequireAuth";
+import { AccessibilityMenu } from "./components/AccessibilityMenu";
 
+const RegisterPage = lazy(() => import("./pages/registerUser").then(({ RegisterPage }) => ({ default: RegisterPage })));
+const RegisterCredentialsPage = lazy(() => import("./pages/registerCredentials").then(({ RegisterCredentialsPage }) => ({ default: RegisterCredentialsPage })));
+const LoginPage = lazy(() => import("./pages/login").then(({ LoginPage }) => ({ default: LoginPage })));
+const CompanyRegisterPage = lazy(() => import("./pages/companyRegister").then(({ CompanyRegisterPage }) => ({ default: CompanyRegisterPage })));
+const RegisterSuccessPage = lazy(() => import("./pages/registerSuccess").then(({ RegisterSuccessPage }) => ({ default: RegisterSuccessPage })));
+const DashboardPage = lazy(() => import("./pages/dashboard").then(({ DashboardPage }) => ({ default: DashboardPage })));
+const MonitoringPage = lazy(() => import("./pages/monitoring").then(({ MonitoringPage }) => ({ default: MonitoringPage })));
+const RankingPage = lazy(() => import("./pages/ranking").then(({ RankingPage }) => ({ default: RankingPage })));
+const AlertsPage = lazy(() => import("./pages/alerts").then(({ AlertsPage }) => ({ default: AlertsPage })));
+const LeaksPage = lazy(() => import("./pages/leaks").then(({ LeaksPage }) => ({ default: LeaksPage })));
+const GoalsPage = lazy(() => import("./pages/goals").then(({ GoalsPage }) => ({ default: GoalsPage })));
+const ChatbotPage = lazy(() => import("./pages/chatbot").then(({ ChatbotPage }) => ({ default: ChatbotPage })));
+const ChatbotHistoryPage = lazy(() => import("./pages/chatbotHistory").then(({ ChatbotHistoryPage }) => ({ default: ChatbotHistoryPage })));
+const DevicesPage = lazy(() => import("./pages/devices").then(({ DevicesPage }) => ({ default: DevicesPage })));
+const DeviceLinkPage = lazy(() => import("./pages/deviceLink").then(({ DeviceLinkPage }) => ({ default: DeviceLinkPage })));
+const InvestmentsPage = lazy(() => import("./pages/investments").then(({ InvestmentsPage }) => ({ default: InvestmentsPage })));
+const SettingsPage = lazy(() => import("./pages/settings").then(({ SettingsPage }) => ({ default: SettingsPage })));
 const InstallationsPage = lazy(() => import("./pages/Installations"));
 const InstallationRegistrationPage = lazy(() => import("./pages/InstallationRegistration"));
 const InstallationDetailsPage = lazy(() => import("./pages/InstallationDetails"));
 const InstallationEditingPage = lazy(() => import("./pages/InstallationEditing"));
 const NotFoundPage = lazy(() => import("./pages/NotFound"));
 
+function RouteFallback() {
+  return <div className="route-loading" role="status"><span>Carregando página…</span></div>;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <RegisterProvider>
         <CompanyRegisterProvider>
-          <Suspense fallback={<LoadingPage />}>
+          <AuthProvider>
+          <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route
                 path="/"
@@ -177,6 +184,8 @@ function App() {
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
+          <AccessibilityMenu />
+          </AuthProvider>
         </CompanyRegisterProvider>
       </RegisterProvider>
     </BrowserRouter>

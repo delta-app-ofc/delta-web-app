@@ -148,11 +148,11 @@ export function MonitoringPage() {
         />
       </div>
 
-      <section className="monitoring-page__content" aria-labelledby="monitoring-title">
+      <section id="page-content" tabIndex={-1} className="monitoring-page__content" aria-labelledby="monitoring-title">
         <header className="monitoring-header">
           <div className="monitoring-header__heading">
             <h1 id="monitoring-title">Monitoramento</h1>
-            <div className="monitoring-intervals" aria-label="Intervalo de monitoramento">
+            <div className="monitoring-intervals" role="group" aria-label="Intervalo de monitoramento">
               {monitoringIntervals.map((interval) => (
                 <button
                   className={`monitoring-interval ${monitoringInterval === interval ? "monitoring-interval--active" : ""}`}
@@ -210,6 +210,7 @@ export function MonitoringPage() {
 
           <div className="monitoring-card monitoring-table-wrapper">
             <table className="monitoring-table">
+              <caption className="sr-only">Consumo, vazão e status por instalação</caption>
               <thead>
                 <tr>
                   <th scope="col">Instalação</th>

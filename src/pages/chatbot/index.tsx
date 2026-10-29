@@ -142,6 +142,8 @@ export function ChatbotPage() {
       </div>
 
       <section
+        id="page-content"
+        tabIndex={-1}
         className={`chatbot-page__content ${hasConversation ? "chatbot-page__content--conversation" : ""}`}
         aria-labelledby="chatbot-title"
       >
@@ -207,6 +209,7 @@ export function ChatbotPage() {
                 type="text"
                 placeholder="Pergunte algo ao Gluh!"
                 value={question}
+                maxLength={1000}
                 onChange={(event) => setQuestion(event.target.value)}
                 autoComplete="off"
               />

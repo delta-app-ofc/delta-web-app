@@ -108,7 +108,7 @@ export function LeaksPage() {
         />
       </div>
 
-      <section className="leaks-page__content" aria-labelledby="leaks-title">
+      <section id="page-content" tabIndex={-1} className="leaks-page__content" aria-labelledby="leaks-title">
         <header className="leaks-header">
           <h1 id="leaks-title">Vazamentos</h1>
           <button className="leaks-export" type="button" onClick={() => window.print()}>
@@ -210,6 +210,7 @@ export function LeaksPage() {
           <h2 id="leaks-history-title">Histórico de ocorrências</h2>
           <div className="leaks-card leaks-table-wrapper">
             <table className="leaks-table">
+              <caption className="sr-only">Histórico de ocorrências de vazamento</caption>
               <thead>
                 <tr>
                   <th scope="col">Instalação</th>

@@ -264,9 +264,10 @@ export function CompanyRegisterForm({ step }: CompanyRegisterFormProps) {
       <fieldset className="company-register__fieldset">
         <legend className="sr-only">Tipo da indústria</legend>
         <div className="company-register__choices company-register__choices--stacked">
-          {industryClassifications.map((classification) => (
-            <label className="company-register__choice" key={classification}>
+          {industryClassifications.map((classification, index) => (
+            <label className="company-register__choice" htmlFor={`classification-${index}`} key={classification}>
               <input
+                id={`classification-${index}`}
                 type="radio"
                 name="classification"
                 value={classification}
@@ -289,8 +290,9 @@ export function CompanyRegisterForm({ step }: CompanyRegisterFormProps) {
           <legend>Quais os dias de operação?</legend>
           <div className="company-register__choices">
             {weekDays.map((day) => (
-              <label className="company-register__choice" key={day.id}>
+              <label className="company-register__choice" htmlFor={`operation-day-${day.id}`} key={day.id}>
                 <input
+                  id={`operation-day-${day.id}`}
                   type="checkbox"
                   checked={companyData.operationDays.includes(day.id)}
                   onChange={() => toggleOperationDay(day.id)}
@@ -304,9 +306,10 @@ export function CompanyRegisterForm({ step }: CompanyRegisterFormProps) {
         <fieldset className="company-register__fieldset">
           <legend>Qual o horário de funcionamento total da unidade?</legend>
           <div className="company-register__time-range">
-            <label>
+            <label htmlFor="operation-start">
               <span className="sr-only">Horário inicial</span>
               <input
+                id="operation-start"
                 type="time"
                 value={companyData.operationStart}
                 onChange={(event) =>
@@ -316,9 +319,10 @@ export function CompanyRegisterForm({ step }: CompanyRegisterFormProps) {
               />
             </label>
             <span aria-hidden="true">às</span>
-            <label>
+            <label htmlFor="operation-end">
               <span className="sr-only">Horário final</span>
               <input
+                id="operation-end"
                 type="time"
                 value={companyData.operationEnd}
                 onChange={(event) =>
@@ -341,8 +345,9 @@ export function CompanyRegisterForm({ step }: CompanyRegisterFormProps) {
           <legend>Qual a quantidade de turnos?</legend>
           <div className="company-register__choices">
             {([1, 2, 3, 4] as const).map((count) => (
-              <label className="company-register__choice" key={count}>
+              <label className="company-register__choice" htmlFor={`shift-count-${count}`} key={count}>
                 <input
+                  id={`shift-count-${count}`}
                   type="radio"
                   name="shiftCount"
                   checked={companyData.shiftCount === count}
@@ -362,9 +367,10 @@ export function CompanyRegisterForm({ step }: CompanyRegisterFormProps) {
                 <div className="company-register__shift" key={shift.id}>
                   <span>{position + 1}º turno</span>
                   <div className="company-register__time-range">
-                    <label>
+                    <label htmlFor={`shift-${shift.id}-start`}>
                       <span className="sr-only">Início do {position + 1}º turno</span>
                       <input
+                        id={`shift-${shift.id}-start`}
                         type="time"
                         value={shift.start}
                         onChange={(event) =>
@@ -373,9 +379,10 @@ export function CompanyRegisterForm({ step }: CompanyRegisterFormProps) {
                       />
                     </label>
                     <span aria-hidden="true">às</span>
-                    <label>
+                    <label htmlFor={`shift-${shift.id}-end`}>
                       <span className="sr-only">Fim do {position + 1}º turno</span>
                       <input
+                        id={`shift-${shift.id}-end`}
                         type="time"
                         value={shift.end}
                         onChange={(event) =>
@@ -400,9 +407,10 @@ export function CompanyRegisterForm({ step }: CompanyRegisterFormProps) {
         <fieldset className="company-register__fieldset">
           <legend>Para que a indústria usa a água?</legend>
           <div className="company-register__choices company-register__choices--grid">
-            {waterUses.map((use) => (
-              <label className="company-register__choice" key={use}>
+            {waterUses.map((use, index) => (
+              <label className="company-register__choice" htmlFor={`water-use-${index}`} key={use}>
                 <input
+                  id={`water-use-${index}`}
                   type="checkbox"
                   checked={companyData.waterUses.includes(use)}
                   onChange={() => toggleWaterUse(use)}
@@ -416,9 +424,10 @@ export function CompanyRegisterForm({ step }: CompanyRegisterFormProps) {
         <fieldset className="company-register__fieldset">
           <legend>Qual é a principal fonte de água da unidade?</legend>
           <div className="company-register__choices company-register__choices--grid">
-            {waterSources.map((source) => (
-              <label className="company-register__choice" key={source}>
+            {waterSources.map((source, index) => (
+              <label className="company-register__choice" htmlFor={`water-source-${index}`} key={source}>
                 <input
+                  id={`water-source-${index}`}
                   type="radio"
                   name="waterSource"
                   checked={companyData.waterSource === source}
