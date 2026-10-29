@@ -24,7 +24,7 @@ function Field({ name, label, error, children }: {
   return <div className={styles.field}>
     <label className="sr-only" htmlFor={`installation-${name}`}>{label}</label>
     {children}
-    {error && <p className={styles.fieldError} id={`installation-${name}-error`}>{error}</p>}
+    {error && <p className={styles.fieldError} id={`installation-${name}-error`} role="alert">{error}</p>}
   </div>;
 }
 
@@ -124,9 +124,9 @@ export function InstallationRegistrationForm({ onSave, mode = "create", initialD
       <fieldset className={`${styles.card} ${styles.device} ${errors.deviceId ? styles.invalidCard : ""}`} disabled={saving} aria-labelledby="device-title">
         <h2 id="device-title">{editing && apiConnected ? "Cadastrar outro dispositivo" : "Vincular dispositivo"}</h2>
         <label className={editing && errors.deviceId ? "sr-only" : styles.deviceLabel} htmlFor="installation-deviceId">ID do hidrômetro</label>
-        {editing && errors.deviceId && <p className={styles.deviceErrorTitle} id="installation-deviceId-error">{errors.deviceId}</p>}
+        {editing && errors.deviceId && <p className={styles.deviceErrorTitle} id="installation-deviceId-error" role="alert">{errors.deviceId}</p>}
         <input {...attributes("deviceId")} className={styles.deviceInput} placeholder="Ex. DELTA-ESP32-000184" autoCapitalize="none" spellCheck={false} maxLength={100} required={!editing} />
-        {!editing && errors.deviceId && <p className={styles.fieldError} id="installation-deviceId-error">{errors.deviceId}</p>}
+        {!editing && errors.deviceId && <p className={styles.fieldError} id="installation-deviceId-error" role="alert">{errors.deviceId}</p>}
         {editing && <p className={styles.hint} id="installation-device-help">{apiConnected ? "Opcional. Informe um dispositivo novo para cadastrá-lo nesta instalação. Os dispositivos atuais serão mantidos." : "O vínculo atual ainda não está disponível para consulta. Deixe em branco para mantê-lo."}</p>}
       </fieldset>
       {message && <p className={styles.feedback} role="alert">{message}</p>}

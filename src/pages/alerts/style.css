@@ -1,6 +1,6 @@
 .alerts-page {
   --alerts-border: rgba(99, 133, 190, 0.58);
-  --alerts-muted: #7185a3;
+  --alerts-muted: #9aacc7;
   --alerts-card: rgba(24, 28, 32, 0.72);
   --installation-border: rgba(82, 125, 197, 0.72);
   width: 100%;
@@ -193,7 +193,7 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #657691;
+  color: #9aacc7;
   font-size: 24px;
   font-weight: 300;
   line-height: 1;

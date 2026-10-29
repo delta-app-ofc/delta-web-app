@@ -70,7 +70,7 @@ export function RankingPage() {
         />
       </div>
 
-      <section className="ranking-page__content" aria-labelledby="ranking-title">
+      <section id="page-content" tabIndex={-1} className="ranking-page__content" aria-labelledby="ranking-title">
         <header className="ranking-header">
           <h1 id="ranking-title">Ranking</h1>
         </header>
@@ -104,7 +104,7 @@ export function RankingPage() {
 
           <article className="ranking-page-card ranking-comparison">
             <h2>Evolução comparada (m³)</h2>
-            <div className="ranking-comparison__chart" aria-label="Comparação entre as cinco instalações">
+            <div className="ranking-comparison__chart" role="img" aria-label="Comparação entre as cinco instalações">
               {comparisonData.map((installation) => (
                 <div className="ranking-comparison__column" key={installation.id}>
                   <div className="ranking-comparison__track">

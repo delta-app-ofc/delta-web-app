@@ -223,7 +223,7 @@
 
 .monitoring-chart__column small {
   margin-top: 14px;
-  color: #7185a3;
+  color: #9aacc7;
   font-size: 11px;
   line-height: 1;
 }
@@ -257,7 +257,7 @@
 }
 
 .monitoring-table th {
-  color: #7588a6;
+  color: #9aacc7;
   font-size: 16px;
   font-weight: 500;
 }
@@ -283,7 +283,7 @@
 
 .monitoring-table td small {
   margin-top: 4px;
-  color: #60728d;
+  color: #9aacc7;
   font-size: 11px;
 }
 

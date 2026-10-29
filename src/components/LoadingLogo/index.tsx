@@ -14,6 +14,8 @@ export function LoadingLogo() {
       <img
         src={logoLoading}
         alt=""
+        width="180"
+        height="180"
         className="loading-logo__base"
       />
 
@@ -21,6 +23,8 @@ export function LoadingLogo() {
       <img
         src={logoLoadingGota}
         alt=""
+        width="180"
+        height="180"
         className="loading-logo__gota"
       />
     </div>

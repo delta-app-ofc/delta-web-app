@@ -1,0 +1,551 @@
+.investments-page {
+  --investments-border: rgba(99, 133, 190, 0.58);
+  --investments-muted: #9aacc7;
+  --investments-card: rgba(24, 28, 32, 0.72);
+  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 30px;
+  padding: 34px 28px 28px;
+  background: var(--background-dark);
+  color: var(--white);
+}
+
+.investments-page__sidebar {
+  height: calc(100vh - 68px);
+  min-height: 620px;
+  position: sticky;
+  top: 34px;
+}
+
+.investments-page__content {
+  min-width: 0;
+  max-width: 1120px;
+  padding: 20px 6px 42px 0;
+}
+
+.investments-header {
+  min-height: 92px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.investments-header h1 {
+  font-size: clamp(30px, 3vw, 40px);
+  font-weight: 650;
+  line-height: 1.1;
+}
+
+.investments-export {
+  min-height: 43px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 9px 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #2c3b51;
+  color: #eef5ff;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.investments-export img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.investments-export:hover {
+  background: #374a66;
+}
+
+.investments-export:focus-visible,
+.investment-scenario:focus-visible,
+.investment-impact__tabs button:focus-visible,
+.financial-impact__chart button:focus-visible {
+  outline: 3px solid var(--blue-light);
+  outline-offset: 3px;
+}
+
+.investments-step__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.investments-step__heading > span {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  flex: none;
+  place-items: center;
+  border-radius: 8px;
+  background: #174365;
+  color: #5eb5eb;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.investments-step__heading h2 {
+  color: #dde5f0;
+  font-size: 18px;
+  font-weight: 550;
+}
+
+.investments-step__heading p {
+  margin-top: 9px;
+  color: #9aacc7;
+  font-size: 10px;
+}
+
+.investment-scenarios {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin-top: 22px;
+}
+
+.investment-scenario {
+  min-height: 154px;
+  position: relative;
+  padding: 20px 26px;
+  border: 1px solid var(--investments-border);
+  border-radius: 30px;
+  background: var(--investments-card);
+  color: #e9eef5;
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.investment-scenario:hover,
+.investment-scenario--selected {
+  border-color: #6896e9;
+  background: rgba(36, 45, 58, 0.88);
+}
+
+.investment-scenario:active {
+  transform: translateY(1px);
+}
+
+.investment-scenario__radio {
+  width: 18px;
+  height: 18px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  border: 1px solid #546379;
+  border-radius: 50%;
+}
+
+.investment-scenario--selected .investment-scenario__radio {
+  border: 5px solid #3d7df2;
+  background: #dbe8ff;
+}
+
+.investment-scenario > strong {
+  display: block;
+  padding-right: 30px;
+  font-size: 16px;
+  font-weight: 550;
+}
+
+.investment-scenario > p {
+  min-height: 36px;
+  margin-top: 7px;
+  color: #9aacc7;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.investment-scenario dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 14px;
+}
+
+.investment-scenario dl div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.investment-scenario dt {
+  color: #9aacc7;
+  font-size: 9px;
+}
+
+.investment-scenario dd {
+  color: #f1f5fa;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.investment-scenario dd.investment-scenario__positive {
+  color: #4be19a;
+}
+
+.investments-results {
+  margin-top: 38px;
+}
+
+.investment-indicators {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.investments-card {
+  border: 1px solid var(--investments-border);
+  border-radius: 30px;
+  background: var(--investments-card);
+}
+
+.investment-indicator {
+  min-height: 112px;
+  padding: 17px 20px;
+}
+
+.investment-indicator > div {
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 11px;
+  color: var(--investments-muted);
+  font-size: 11px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.investment-indicator img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.investment-indicator > strong {
+  display: block;
+  color: #f4f7fb;
+  font-size: clamp(22px, 2.4vw, 34px);
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.investment-indicator:first-child > strong {
+  font-size: 21px;
+}
+
+.investment-indicator small {
+  display: block;
+  margin-top: 7px;
+  color: #4be19a;
+  font-size: 8px;
+}
+
+.investment-impact {
+  min-height: 300px;
+  margin-top: 16px;
+  padding: 18px 22px 22px;
+  border-radius: 34px;
+}
+
+.investment-impact__tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.investment-impact__tabs button {
+  min-height: 38px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #494d52;
+  color: #f0f2f5;
+  font-size: 11px;
+  transition: background-color 150ms ease;
+}
+
+.investment-impact__tabs button:hover,
+.investment-impact__tabs button.investment-impact__tab--active {
+  background: #356ce0;
+}
+
+.consumption-impact,
+.financial-impact {
+  padding: 20px 12px 0;
+}
+
+.consumption-impact h3,
+.financial-impact h3 {
+  color: #9aacc7;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.consumption-impact__chart {
+  height: 185px;
+  display: flex;
+  align-items: flex-end;
+  gap: 58px;
+  margin-top: 12px;
+}
+
+.consumption-impact__chart > div {
+  width: 120px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.consumption-impact__chart strong,
+.financial-impact__chart strong {
+  margin-bottom: 8px;
+  font-size: 10px;
+}
+
+.consumption-impact__bar {
+  width: 74px;
+  height: 100%;
+  display: block;
+  border-radius: 17px 17px 3px 3px;
+}
+
+.consumption-impact__bar--current {
+  background: #293647;
+}
+
+.consumption-impact__bar--projected {
+  height: var(--bar-height);
+  background: #49e58f;
+}
+
+.consumption-impact__chart small,
+.financial-impact__chart small {
+  margin-top: 8px;
+  color: #9aacc7;
+  font-size: 9px;
+  text-align: center;
+}
+
+.consumption-impact > p {
+  margin-top: 10px;
+  color: #49e58f;
+  font-size: 10px;
+}
+
+.financial-impact__chart {
+  height: 200px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
+  align-items: end;
+  gap: 70px;
+  margin-top: 18px;
+}
+
+.financial-impact__chart button {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: flex-end;
+  border: 0;
+  background: transparent;
+  color: #f4f6f9;
+}
+
+.financial-impact__chart button > span {
+  width: 84px;
+  display: block;
+  border-radius: 18px 18px 3px 3px;
+  background: #293647;
+  transition: height 220ms ease, background-color 150ms ease;
+}
+
+.financial-impact__chart button:hover > span,
+.financial-impact__chart button.financial-impact__scenario--selected > span {
+  background: #356ce0;
+}
+
+.financial-impact > p {
+  margin-top: 18px;
+  color: #9aacc7;
+  font-size: 10px;
+}
+
+.environmental-impact {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  padding: 64px 16px 24px;
+}
+
+.environmental-impact article {
+  min-height: 150px;
+  padding: 28px 30px;
+  border: 1px solid var(--investments-border);
+  border-radius: 30px;
+}
+
+.environmental-impact article > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #8ea4c4;
+  font-size: 14px;
+  font-weight: 550;
+}
+
+.environmental-impact article img {
+  width: 23px;
+  height: 23px;
+  object-fit: contain;
+}
+
+.environmental-impact article strong {
+  display: block;
+  margin-top: 30px;
+  color: #f4f6f9;
+  font-size: clamp(24px, 2.7vw, 38px);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .investments-page {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 20px;
+    padding-inline: 20px;
+  }
+
+  .investment-scenario {
+    padding-inline: 20px;
+  }
+
+  .investment-indicator {
+    padding-inline: 14px;
+  }
+
+  .financial-impact__chart {
+    gap: 30px;
+  }
+
+  .environmental-impact article {
+    padding-inline: 20px;
+  }
+}
+
+@media (max-width: 960px) {
+  .investments-page {
+    grid-template-columns: 185px minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .investments-page__sidebar {
+    min-height: 680px;
+  }
+
+  .investment-indicators {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .environmental-impact {
+    grid-template-columns: 1fr;
+    padding-top: 28px;
+  }
+
+  .environmental-impact article {
+    min-height: 125px;
+  }
+
+  .environmental-impact article strong {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 700px) {
+  .investments-page {
+    display: block;
+    padding: 18px;
+  }
+
+  .investments-page__sidebar {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    position: static;
+    margin-bottom: 24px;
+  }
+
+  .investments-page__content {
+    padding: 0 0 30px;
+  }
+
+  .investment-scenarios {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .investments-header {
+    align-items: stretch;
+    flex-direction: column;
+    margin-bottom: 30px;
+  }
+
+  .investments-export {
+    align-self: stretch;
+  }
+
+  .investment-indicators {
+    grid-template-columns: 1fr;
+  }
+
+  .investment-impact__tabs {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .financial-impact__chart {
+    height: 185px;
+    grid-template-columns: repeat(3, minmax(78px, 1fr));
+    gap: 10px;
+  }
+
+  .financial-impact__chart button > span {
+    width: 58px;
+  }
+
+  .consumption-impact__chart {
+    justify-content: center;
+    gap: 20px;
+  }
+}
+
+@media print {
+  .investments-page {
+    display: block;
+    padding: 0;
+    color: #111;
+    background: #fff;
+  }
+
+  .investments-page__sidebar,
+  .investments-export {
+    display: none;
+  }
+
+  .investments-page__content {
+    max-width: none;
+  }
+}
+

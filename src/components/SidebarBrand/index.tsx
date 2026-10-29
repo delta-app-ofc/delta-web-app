@@ -10,10 +10,10 @@ interface SidebarBrandProps {
 export function SidebarBrand({ className = "" }: SidebarBrandProps) {
   return (
     <div className={`${styles.brand} ${className}`} role="img" aria-label="Delta — Ambiente industrial">
-      <img className={styles.symbol} src={symbol} alt="" />
+      <img className={styles.symbol} src={symbol} alt="" width="50" height="50" />
       <div className={styles.text}>
-        <img className={styles.wordmark} src={wordmark} alt="" />
-        <img className={styles.description} src={description} alt="" />
+        <img className={styles.wordmark} src={wordmark} alt="" width="77" height="20" />
+        <img className={styles.description} src={description} alt="" width="95" height="8" />
       </div>
     </div>
   );

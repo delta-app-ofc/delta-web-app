@@ -1,0 +1,81 @@
+.accessibility-trigger {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid #79a8ff;
+  border-radius: 50%;
+  background: #2d5ed0;
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .34);
+  cursor: pointer;
+}
+
+.accessibility-trigger svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.accessibility-trigger span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.accessibility-trigger:hover { background: #376edc; }
+
+.accessibility-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 22px;
+  background: rgba(5, 8, 12, .58);
+}
+
+.accessibility-panel {
+  width: min(390px, 100%);
+  max-height: calc(100vh - 44px);
+  overflow-y: auto;
+  border: 1px solid #607fae;
+  border-radius: 24px;
+  background: #171c23;
+  color: #f5f8ff;
+  box-shadow: 0 22px 65px rgba(0, 0, 0, .52);
+}
+
+.accessibility-panel header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 24px 24px 18px; border-bottom: 1px solid #34445d; }
+.accessibility-panel h2 { margin: 0; font-size: 23px; }
+.accessibility-panel header p { margin: 6px 0 0; color: #a2b9d8; font-size: 14px; }
+.accessibility-close { display: grid; place-items: center; flex: none; width: 40px; height: 40px; padding: 0; border: 1px solid #526b90; border-radius: 50%; background: #243247; color: #fff; cursor: pointer; }
+.accessibility-close svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-width: 2; }
+.accessibility-options { padding: 6px 24px; }
+.accessibility-option { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 76px; border-bottom: 1px solid #2d3748; }
+.accessibility-option:last-child { border-bottom: 0; }
+.accessibility-option > div { display: flex; flex-direction: column; gap: 4px; }
+.accessibility-option strong { font-size: 15px; }
+.accessibility-option span { color: #a2b9d8; font-size: 12px; line-height: 1.35; }
+
+.accessibility-switch { position: relative; flex: none; width: 50px; height: 28px; padding: 0; border: 1px solid #607fae; border-radius: 999px; background: #2d3748; cursor: pointer; }
+.accessibility-switch span { position: absolute; top: 4px; left: 4px; width: 18px; height: 18px; border-radius: 50%; background: #b8c6d9; transition: transform 160ms ease, background 160ms ease; }
+.accessibility-switch[aria-checked="true"] { border-color: #79a8ff; background: #2d5ed0; }
+.accessibility-switch[aria-checked="true"] span { transform: translateX(22px); background: #fff; }
+
+.accessibility-panel footer { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 24px 24px; border-top: 1px solid #34445d; }
+.accessibility-panel footer button { min-height: 42px; padding: 0 17px; border: 1px solid #607fae; border-radius: 999px; background: transparent; color: #fff; font: 500 14px/1 var(--font-primary); cursor: pointer; }
+.accessibility-panel footer .accessibility-done { border-color: #3672ea; background: #3672ea; }
+
+html.a11y-high-contrast body { background: #000 !important; }
+html.a11y-high-contrast :where(main, aside, article, section[class*="card"], div[class*="card"], form[class*="card"]) { border-color: #fff !important; }
+html.a11y-high-contrast :where(h1, h2, h3, h4, p, span, small, strong, label, legend, dt, dd, th, td, a) { color: #fff !important; }
+html.a11y-high-contrast :where(input, select, textarea) { border: 2px solid #fff !important; background: #000 !important; color: #fff !important; }
+html.a11y-large-text body { zoom: 1.1; }
+html.a11y-grayscale main { filter: grayscale(1); }
+html.a11y-underline-links a:not([role="button"]) { text-decoration: underline !important; text-decoration-thickness: 2px !important; text-underline-offset: 3px; }
+html.a11y-reduced-motion *, html.a11y-reduced-motion *::before, html.a11y-reduced-motion *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+
+@media (max-width: 600px) {
+  .accessibility-trigger { right: 14px; bottom: 14px; }
+  .accessibility-backdrop { padding: 10px; }
+  .accessibility-panel { max-height: calc(100vh - 20px); border-radius: 20px; }
+  .accessibility-panel footer { flex-wrap: wrap; }
+}

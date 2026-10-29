@@ -127,7 +127,7 @@ export function GoalsPage() {
         />
       </div>
 
-      <section className="goals-page__content" aria-labelledby="goals-title">
+      <section id="page-content" tabIndex={-1} className="goals-page__content" aria-labelledby="goals-title">
         <header className="goals-header">
           <h1 id="goals-title">Metas</h1>
           <button className="goals-export" type="button" onClick={() => window.print()}>

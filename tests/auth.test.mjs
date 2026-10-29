@@ -13,6 +13,15 @@ const validSession = () => ({
   expiresAt: Date.now() + 60000, refreshExpiresAt: Date.now() + 86400000,
 });
 
+function currentReferenceMonth() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit",
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year").value;
+  const month = parts.find((part) => part.type === "month").value;
+  return `${year}-${month}-01`;
+}
+
 async function detailHarness(overrides = {}, associations = [{ userId: 7, propertyId: 15 }], serviceName = "installationDetails") {
   const paths = [];
   const routes = {
@@ -37,7 +46,7 @@ async function detailHarness(overrides = {}, associations = [{ userId: 7, proper
 }
 
 test("edição preenche tipo, CEP e UF e converte o consumo de litros para m³", async () => {
-  const month = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).slice(0, 7) + "-01";
+  const month = currentReferenceMonth();
   const { service, paths } = await detailHarness({
     "/delta/property/15": { id: 15, name: "Loja", type: "PRÉDIO", addressId: 3 },
     "/delta/address/3": { id: 3, cep: "02940013", city: "São Paulo", state: "São Paulo" },
@@ -61,7 +70,7 @@ test("edição não carrega imóvel nem endereço quando não há associação a
 });
 
 test("edição diferencia consumo zero de ausência de leitura no mês atual", async () => {
-  const month = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).slice(0, 7) + "-01";
+  const month = currentReferenceMonth();
   for (const [rows, expected] of [
     [[{ propertyId: 15, referenceMonth: month, totalLiters: 0 }], "0"],
     [[], ""],
