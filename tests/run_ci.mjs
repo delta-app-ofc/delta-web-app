@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { realpathSync } from "node:fs";
+import { mkdirSync, realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,6 +7,7 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 // Realpath evita que o c8 perca os módulos VM quando o worktree é acessado
 // pelo alias OneDrive-local no Windows.
 const root = realpathSync(resolve(scriptDirectory, ".."));
+mkdirSync(join(root, "reports"), { recursive: true });
 const coverageCli = join(root, "node_modules", "c8", "bin", "c8.js");
 
 const result = spawnSync(
