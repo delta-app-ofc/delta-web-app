@@ -15,7 +15,7 @@ function validate(data: InstallationRegistrationData, mode: "create" | "edit") {
 }
 
 function addressBody(data: InstallationRegistrationData) {
-  return { regionId: Number(data.regionId), cep: data.cep.replace(/\D/g, ""), city: data.city.trim(), state: data.state };
+  return { cep: data.cep.replace(/\D/g, ""), city: data.city.trim(), state: data.state };
 }
 
 function propertyBody(data: InstallationRegistrationData, addressId: number, original?: InstallationRecord) {
