@@ -6,6 +6,7 @@ import { listAddresses } from "./addresses";
 import { getCurrentUser } from "./auth";
 import { ApiError, writeJson } from "./http";
 import { getInstallation } from "./installations";
+import { listOrganizations } from "./organizations";
 import { verifyTariffRegion } from "./tariffRegions";
 
 function validate(data: InstallationRegistrationData, mode: "create" | "edit") {
@@ -18,10 +19,10 @@ function addressBody(data: InstallationRegistrationData) {
   return { cep: data.cep.replace(/\D/g, ""), city: data.city.trim(), state: data.state };
 }
 
-function propertyBody(data: InstallationRegistrationData, addressId: number, original?: InstallationRecord) {
+function propertyBody(data: InstallationRegistrationData, addressId: number, original?: InstallationRecord, organizationId?: number) {
   return {
     name: data.name.trim(), type: data.type, classification: data.classification, addressId,
-    ...(original ? { organizationId: original.organizationId ?? null, builtAreaM2: original.builtAreaM2 ?? null } : {}),
+    ...(original ? { organizationId: original.organizationId ?? null, builtAreaM2: original.builtAreaM2 ?? null } : organizationId === undefined ? {} : { organizationId }),
   };
 }
 
@@ -77,12 +78,14 @@ export function createInstallationWorkflow() {
     const user = await getCurrentUser(signal);
     if (userId !== undefined && userId !== user.id) throw new RegistrationSubmitError("A conta mudou. Reabra o cadastro para continuar.");
     userId = user.id;
+    const organizations = await listOrganizations(signal);
+    const organizationId = organizations.length === 1 ? organizations[0].id : undefined;
     if (propertyId !== undefined) await getInstallation(propertyId, signal);
     try {
       await validateRegion(Number(data.regionId), signal);
       const signature = JSON.stringify(addressBody(data));
       if (!address || address.signature !== signature) address = { id: await post("/delta/address", addressBody(data), signal), signature };
-      const body = propertyBody(data, address.id);
+      const body = propertyBody(data, address.id, undefined, organizationId);
       if (propertyId === undefined) {
         propertyId = await post("/delta/property", { ...body, userId: user.id }, signal);
         lastProperty = JSON.stringify(body);

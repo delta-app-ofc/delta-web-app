@@ -20,6 +20,7 @@ async function backend(options = {}) {
     calls.push({ path, method, body });
     assert.equal(init.headers.Authorization, "Bearer access");
     if (path === "/delta/auth/me") return response({ id: 7, name: "Pessoa", email: "pessoa@example.test" });
+    if (path === "/delta/organizations") return response([{ id: 9, corporateName: "Organização", tradeName: "Organização", cnpj: "12345678000190", businessSegment: "VAREJO" }]);
     if (path === "/delta/user-properties/7") return response(options.denied ? [] : [...properties.keys()].map(propertyId => ({ userId: 7, propertyId })));
     if (path.startsWith("/delta/region-rate/")) return response(options.noRates ? [] : [{ id: 25, regionName: "GRANDE_SP" }]);
     if (path === "/delta/address" && method === "POST") {
@@ -57,6 +58,7 @@ test("cadastro grava endereço, propriedade associada ao usuário e identidade e
   assert.deepEqual(writes.map(call => call.path), ["/delta/address", "/delta/property", "/delta/device"]);
   assert.equal(writes[0].body.cep, "02940013");
   assert.equal(writes[1].body.userId, 7);
+  assert.equal(writes[1].body.organizationId, 9);
   assert.equal(writes[1].body.addressId, writes[0].body.id ?? 4);
   assert.equal(writes[2].body.deviceId, "Delta-001");
   assert.equal(properties.size, 1);
