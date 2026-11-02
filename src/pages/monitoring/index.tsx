@@ -21,7 +21,7 @@ export function MonitoringPage() {
 
   return (
     <main className="monitoring-page">
-      <div className="monitoring-page__sidebar"><AppSidebar label="Navegação principal" profile={{ name: "Talita", email: "talita@delta.com.br" }} /></div>
+      <div className="monitoring-page__sidebar"><AppSidebar label="Navegação principal" /></div>
       <section id="page-content" tabIndex={-1} className="monitoring-page__content" aria-labelledby="monitoring-title">
         <header className="monitoring-header"><div className="monitoring-header__heading"><h1 id="monitoring-title">Monitoramento</h1><div className="monitoring-intervals" role="group" aria-label="Intervalo de monitoramento">{monitoringIntervals.map((interval) => <button className={`monitoring-interval ${monitoringInterval === interval ? "monitoring-interval--active" : ""}`} type="button" key={interval} aria-pressed={monitoringInterval === interval} onClick={() => setMonitoringInterval(interval)}>{interval} min</button>)}</div></div><button className="monitoring-export" type="button" onClick={() => window.print()}><img src={exportIcon} alt="" /><span>Exportar para PDF</span></button></header>
 

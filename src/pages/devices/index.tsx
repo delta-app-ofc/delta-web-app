@@ -38,7 +38,7 @@ export function DevicesPage() {
 
   return (
     <main className="devices-page">
-      <div className="devices-page__sidebar"><AppSidebar label="Navegação principal" profile={{ name: "Talita", email: "talita@delta.com.br" }} /></div>
+      <div className="devices-page__sidebar"><AppSidebar label="Navegação principal" /></div>
       <section id="page-content" tabIndex={-1} className="devices-page__content" aria-labelledby="devices-title">
         <header className="devices-header">
           <h1 id="devices-title">Dispositivos</h1>

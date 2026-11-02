@@ -106,10 +106,7 @@ export function DeviceLinkPage() {
   return (
     <main className="device-link-page">
       <div className="device-link-page__sidebar">
-        <AppSidebar
-          label="Navegação principal"
-          profile={{ name: "Talita", email: "talita@delta.com.br" }}
-        />
+        <AppSidebar label="Navegação principal" />
       </div>
 
       <section id="page-content" tabIndex={-1} className="device-link-page__content" aria-labelledby="device-link-page-title">

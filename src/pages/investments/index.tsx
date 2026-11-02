@@ -71,7 +71,7 @@ export function InvestmentsPage() {
   return (
     <main className="investments-page">
       <div className="investments-page__sidebar">
-        <AppSidebar label="Navegação principal" profile={{ name: "Talita", email: "talita@delta.com.br" }} />
+        <AppSidebar label="Navegação principal" />
       </div>
       <section id="page-content" tabIndex={-1} className="investments-page__content" aria-labelledby="investments-title">
         <header className="investments-header">

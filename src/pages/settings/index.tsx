@@ -377,7 +377,7 @@ export function SettingsPage() {
   return (
     <main className="settings-page">
       <div className="settings-page__sidebar">
-        <AppSidebar label="Navegação principal" profile={{ name: "Talita", email: "talita@delta.com.br" }} />
+        <AppSidebar label="Navegação principal" />
       </div>
 
       <section id="page-content" tabIndex={-1} className="settings-page__content" aria-labelledby="settings-title">

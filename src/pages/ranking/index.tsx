@@ -66,7 +66,6 @@ export function RankingPage() {
       <div className="ranking-page__sidebar">
         <AppSidebar
           label="Navegação principal"
-          profile={{ name: "Talita", email: "talita@delta.com.br" }}
         />
       </div>
 

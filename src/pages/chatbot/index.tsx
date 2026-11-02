@@ -132,10 +132,7 @@ export function ChatbotPage() {
   return (
     <main className="chatbot-page">
       <div className="chatbot-page__sidebar">
-        <AppSidebar
-          label="Navegação principal"
-          profile={{ name: "Talita", email: "talita@delta.com.br" }}
-        />
+        <AppSidebar label="Navegação principal" />
       </div>
 
       <section

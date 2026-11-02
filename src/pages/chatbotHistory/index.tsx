@@ -42,7 +42,7 @@ export function ChatbotHistoryPage() {
 
   return (
     <main className="chatbot-history-page">
-      <div className="chatbot-history-page__sidebar"><AppSidebar label="Navegação principal" profile={{ name: "Talita", email: "talita@delta.com.br" }} /></div>
+      <div className="chatbot-history-page__sidebar"><AppSidebar label="Navegação principal" /></div>
       <section id="page-content" tabIndex={-1} className="chatbot-history-page__content" aria-labelledby="conversation-history-title">
         <header className="chatbot-history-page__header">
           <div className="chatbot-history-page__heading"><div className="chatbot-history-page__title-row"><button type="button" aria-label="Voltar para o Gluh" onClick={() => navigate("/gluh")}><img src={backArrowIcon} alt="" /></button><h1 id="conversation-history-title">Histórico de conversas</h1></div><p>Clique em uma conversa para reabri-la ou inicie uma nova sessão.</p></div>
