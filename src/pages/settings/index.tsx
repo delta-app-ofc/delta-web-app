@@ -10,24 +10,9 @@ import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { useSettingsData } from "../../hooks/useSettingsData";
 import { updateCurrentUser } from "../../services/auth";
 import { ApiError } from "../../services/http";
-import { validateOrganization, validatePasswordChange, validateProfile } from "../../utils/settingsValidation";
+import { validateOrganization, validateProfile } from "../../utils/settingsValidation";
 
 import "./style.css";
-
-function Toggle({ checked, label, onChange }: { checked: boolean; label: string; onChange: () => void }) {
-  return (
-    <button
-      className={`settings-toggle ${checked ? "settings-toggle--active" : ""}`}
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onChange}
-    >
-      <span />
-    </button>
-  );
-}
 
 interface SettingsSelectProps {
   label: string;
@@ -138,17 +123,11 @@ export function SettingsPage() {
     dateFormat: "DD/MM/AAAA",
     unit: "Metros cúbicos (m³)",
   });
-  const [twoFactor, setTwoFactor] = useState(false);
-  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const [passwordLastChanged, setPasswordLastChanged] = useState("Última alteração há 94 dias");
-  const [passwords, setPasswords] = useState({ current: "", next: "", confirmation: "" });
-  const [passwordError, setPasswordError] = useState("");
   const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
   const [deleteAccountPassword, setDeleteAccountPassword] = useState("");
   const [feedback, setFeedback] = useState("");
   const [formError, setFormError] = useState("");
   const generalDialogRef = useDialogFocus<HTMLElement>(generalOpen, () => setGeneralOpen(false));
-  const passwordDialogRef = useDialogFocus<HTMLFormElement>(passwordModalOpen, closePasswordModal);
   const deleteDialogRef = useDialogFocus<HTMLFormElement>(deleteAccountModalOpen, closeDeleteAccountModal);
 
   useEffect(() => () => profileRequestRef.current?.abort(), []);
@@ -224,26 +203,6 @@ export function SettingsPage() {
     setOrganization(organizationDraft);
     setOrganizationOpen(false);
     showFeedback("Dados da organização salvos.");
-  }
-
-  function openPasswordModal() {
-    setPasswords({ current: "", next: "", confirmation: "" });
-    setPasswordError("");
-    setPasswordModalOpen(true);
-  }
-
-  function closePasswordModal() {
-    setPasswordModalOpen(false);
-    setPasswordError("");
-  }
-
-  function changePassword(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const error = validatePasswordChange(passwords);
-    if (error) { setPasswordError(error); return; }
-    setPasswordLastChanged("Última alteração agora");
-    closePasswordModal();
-    showFeedback("Senha alterada com sucesso.");
   }
 
   function openDeleteAccountModal() {
@@ -329,18 +288,6 @@ export function SettingsPage() {
           </section>
         </div>
 
-        <section className="settings-section" aria-labelledby="security-title">
-          <h2 id="security-title">Segurança</h2>
-          <div className="settings-paired-grid">
-            <section className="settings-card settings-security-card">
-              <div className="settings-card-title"><h3>Login e senha</h3></div>
-              <button className="security-row" type="button" onClick={openPasswordModal}><div><strong>Alterar senha</strong><span>{passwordLastChanged}</span></div><img className="settings-inline-arrow" src={arrowIcon} alt="" /></button>
-              <div className="security-row"><div><strong>Autenticação em duas etapas</strong><span>{twoFactor ? "Ativada" : "Desativada"}</span></div><Toggle checked={twoFactor} label="Autenticação em duas etapas" onChange={() => setTwoFactor((value) => !value)} /></div>
-            </section>
-
-          </div>
-        </section>
-
         <section className="settings-section settings-data" aria-labelledby="data-title">
           <h2 id="data-title">Dados</h2>
           <section className="settings-card">
@@ -360,17 +307,6 @@ export function SettingsPage() {
           <div className="settings-field-label"><span>Unidade de medida</span><SettingsSelect label="Unidade de medida" value={general.unit} options={["Metros cúbicos (m³)", "Litros (L)", "Galões (US gal)"]} onChange={(value) => setGeneral({ ...general, unit: value })} /></div>
           <footer><button className="settings-secondary-button" type="button" onClick={() => setGeneralOpen(false)}>Cancelar</button><button className="settings-primary-button" type="button" onClick={() => { setGeneralOpen(false); showFeedback("Configurações gerais salvas."); }}>Salvar</button></footer>
         </section>
-      </div>}
-
-      {passwordModalOpen && <div className="settings-modal-backdrop settings-modal-backdrop--centered" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePasswordModal(); }}>
-        <form ref={passwordDialogRef} className="settings-modal settings-password-modal" role="dialog" aria-modal="true" aria-labelledby="password-modal-title" onSubmit={changePassword}>
-          <header><div><h2 id="password-modal-title">Alterar senha</h2><p>Crie uma nova senha segura para acessar sua conta.</p></div><button className="settings-icon-button" type="button" aria-label="Fechar" onClick={closePasswordModal}><img src={xIcon} alt="" /></button></header>
-          <div className="settings-field-label"><label htmlFor="settings-current-password">Senha atual</label><input id="settings-current-password" type="password" autoComplete="current-password" maxLength={256} value={passwords.current} onChange={(event) => setPasswords({ ...passwords, current: event.target.value })} required /></div>
-          <div className="settings-field-label"><label htmlFor="settings-new-password">Nova senha</label><input id="settings-new-password" type="password" autoComplete="new-password" minLength={8} maxLength={128} value={passwords.next} onChange={(event) => { setPasswords({ ...passwords, next: event.target.value }); setPasswordError(""); }} required /></div>
-          <div className="settings-field-label"><label htmlFor="settings-confirm-password">Confirmar nova senha</label><input id="settings-confirm-password" type="password" autoComplete="new-password" minLength={8} maxLength={128} value={passwords.confirmation} onChange={(event) => { setPasswords({ ...passwords, confirmation: event.target.value }); setPasswordError(""); }} required /></div>
-          {passwordError && <p className="settings-form-error" role="alert">{passwordError}</p>}
-          <footer><button className="settings-secondary-button" type="button" onClick={closePasswordModal}>Cancelar</button><button className="settings-primary-button" type="submit">Alterar senha</button></footer>
-        </form>
       </div>}
 
       {deleteAccountModalOpen && <div className="settings-modal-backdrop settings-modal-backdrop--centered" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDeleteAccountModal(); }}>
