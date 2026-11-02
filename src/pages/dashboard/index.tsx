@@ -41,6 +41,10 @@ function formatCurrency(value: number | null): string {
   return value === null ? "—" : currencyFormatter.format(value);
 }
 
+function formatTemperature(value: number | null): string {
+  return value === null ? "—" : `${numberFormatter.format(value)} °C`;
+}
+
 function formatVariation(current: number | null, previous: number | null): string {
   if (current === null || previous === null || previous === 0) return "Variação indisponível";
   const variation = ((current - previous) / previous) * 100;
@@ -106,7 +110,9 @@ export function DashboardPage() {
             </article>
             <div className="dashboard-summary-stack">
               <article className="dashboard-card forecast-card"><h2>Projeção simples para o próximo mês</h2><strong>{formatCurrency(state.data.projectedCost)}</strong><small>Baseada na variação entre os dois últimos meses</small></article>
-              <article className="dashboard-card weather-card dashboard-card--unavailable"><div><h2>Clima agora</h2><p className="dashboard-unavailable">Não disponível na API.</p></div></article>
+              <article className={`dashboard-card weather-card${state.data.weather ? "" : " dashboard-card--unavailable"}`}>
+                {state.data.weather ? <div><h2>Clima agora</h2><strong>{formatTemperature(state.data.weather.temperatureC)}</strong><small>{state.data.weather.condition} · {state.data.weather.city}</small></div> : <div><h2>Clima agora</h2><p className="dashboard-unavailable">Localização sem coordenadas ou clima indisponível.</p></div>}
+              </article>
             </div>
           </div>
         </>}

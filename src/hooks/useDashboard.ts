@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { getCurrentUser } from "../services/auth";
 import { listMonthlyConsumption } from "../services/consumption";
+import { listAddresses } from "../services/addresses";
 import { ApiError } from "../services/http";
 import { listInstallations } from "../services/installations";
 import { calculateWaterCost } from "../services/waterCost";
+import { getCurrentWeather } from "../services/weather";
 import type { DashboardData } from "../types/dashboard";
 import { getCurrentReferenceMonth } from "../utils/installations";
 
@@ -36,6 +38,19 @@ export function useDashboard() {
           listInstallations(signal),
         ]);
         signal.throwIfAborted();
+
+        let weather = null;
+        let weatherUnavailable = false;
+        const latest = records[0];
+        if (latest?.addressId !== null && latest?.addressId !== undefined) {
+          const addressResult = await Promise.allSettled([listAddresses([latest.addressId], signal)]);
+          const address = addressResult[0].status === "fulfilled" ? addressResult[0].value[0] : undefined;
+          if (address?.latitude !== null && address?.latitude !== undefined && address?.longitude !== null && address?.longitude !== undefined) {
+            const weatherResult = await Promise.allSettled([getCurrentWeather(address.latitude, address.longitude, address.city, signal)]);
+            if (weatherResult[0].status === "fulfilled") weather = weatherResult[0].value;
+            else weatherUnavailable = true;
+          } else weatherUnavailable = true;
+        } else weatherUnavailable = true;
 
         const monthlyResults = await Promise.allSettled(records.map((record) => listMonthlyConsumption(record.id, signal)));
         signal.throwIfAborted();
@@ -105,6 +120,7 @@ export function useDashboard() {
         if (monthlyFailures > 0) warnings.push("Não foi possível carregar o consumo de algumas instalações.");
         if (costFailures > 0) warnings.push("Não foi possível calcular o custo de algumas instalações.");
         if (projectedFailures > 0) warnings.push("Não foi possível calcular a projeção de algumas instalações.");
+        if (weatherUnavailable) warnings.push("Não foi possível carregar o clima da instalação mais recente.");
         const data: DashboardData = {
           user: userResult,
           referenceMonth,
@@ -113,6 +129,7 @@ export function useDashboard() {
           previousLiters: previousCount > 0 ? previousLiters : null,
           estimatedCost: currentByProperty.size === 0 ? null : costFailures === 0 && costSuccesses === currentByProperty.size ? estimatedCost : null,
           projectedCost: projectedEntries.length === 0 || projectedFailures > 0 || projectedSuccesses !== projectedEntries.length ? null : projectedCost,
+          weather,
           warnings,
         };
         if (!signal.aborted) setState({ status: "success", data });
