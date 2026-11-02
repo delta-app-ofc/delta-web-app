@@ -2,50 +2,68 @@ import { FormEvent, useEffect, useId, useRef, useState, type KeyboardEvent } fro
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { AppSidebar } from "../../components/AppSidebar";
+import { AsyncFeedback } from "../../components/AsyncFeedback";
+import { createDevice } from "../../services/devices";
+import { listInstallations } from "../../services/installations";
+import { ApiError } from "../../services/http";
+import type { InstallationRecord } from "../../types/installation";
 import backArrowIcon from "../../assets/devices/arrow2.png";
 import selectArrowIcon from "../../assets/devices/arrow.png";
 
 import "./style.css";
 
 interface Installation {
-  id: string;
+  id: number;
   name: string;
-  region: string;
+  region: string | null;
 }
 
 interface DeviceLinkLocationState {
   installation?: Installation;
 }
 
-const installations: readonly Installation[] = [
-  { id: "vila-leopoldina", name: "Loja swift - Vila Leopoldina", region: "São Paulo - SP" },
-  { id: "vila-romana", name: "Loja swift - Vila Romana", region: "São Paulo - SP" },
-  { id: "perdizes", name: "Loja swift - Perdizes", region: "São Paulo - SP" },
-  { id: "pinheiros", name: "Loja swift - Pinheiros", region: "São Paulo - SP" },
-  { id: "moema", name: "Loja swift - Moema", region: "São Paulo - SP" },
-  { id: "sorocaba", name: "Loja swift - Sorocaba", region: "São Paulo - SP" },
-  { id: "mooca", name: "Loja swift - Mooca", region: "São Paulo - SP" },
-];
-
 export function DeviceLinkPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = location.state as DeviceLinkLocationState | null;
-  const initialInstallation = locationState?.installation ?? installations[0];
+  const initialInstallation = locationState?.installation;
+  const [installations, setInstallations] = useState<Installation[]>(initialInstallation ? [initialInstallation] : []);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [deviceId, setDeviceId] = useState("");
-  const [installationId, setInstallationId] = useState(initialInstallation.id);
+  const [installationId, setInstallationId] = useState<number | null>(initialInstallation?.id ?? null);
   const [isInstallationListOpen, setIsInstallationListOpen] = useState(false);
   const listboxId = useId();
   const selectTriggerRef = useRef<HTMLButtonElement>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const selectedInstallation = installations.find((installation) => installation.id === installationId)
-    ?? installations[0];
+  const selectedInstallation = installations.find((installation) => installation.id === installationId) ?? installations[0];
+
+  useEffect(() => {
+    const controller = new AbortController();
+    async function load(): Promise<void> {
+      try {
+        const records = await listInstallations(controller.signal);
+        if (controller.signal.aborted) return;
+        const values = records.map((record: InstallationRecord) => ({ id: record.id, name: record.name, region: null }));
+        setInstallations(values);
+        setInstallationId((current) => current !== null && values.some((item) => item.id === current) ? current : values[0]?.id ?? null);
+      } catch (error: unknown) {
+        if (!controller.signal.aborted) setLoadError(error instanceof ApiError ? error.message : "Não foi possível carregar as instalações.");
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
+    }
+    void load();
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (!isInstallationListOpen) return;
     const selectedIndex = Math.max(0, installations.findIndex((item) => item.id === installationId));
     requestAnimationFrame(() => optionRefs.current[selectedIndex]?.focus());
-  }, [installationId, isInstallationListOpen]);
+  }, [installationId, installations, isInstallationListOpen]);
 
   function closeInstallationList(returnFocus = false) {
     setIsInstallationListOpen(false);
@@ -64,26 +82,25 @@ export function DeviceLinkPage() {
     optionRefs.current[next]?.focus();
   }
 
-  function saveDevice(event: FormEvent<HTMLFormElement>) {
+  async function saveDevice(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const normalizedDeviceId = deviceId.trim().toUpperCase();
     const installation = installations.find((item) => item.id === installationId);
 
-    if (!normalizedDeviceId || !installation) {
+    if (!normalizedDeviceId || !installation || installationId === null || isSaving) {
       return;
     }
-
-    navigate("/dispositivos", {
-      state: {
-        linkedDevice: {
-          id: normalizedDeviceId,
-          installationId: installation.id,
-          installation: installation.name,
-          region: installation.region,
-        },
-      },
-    });
+    setSaveError(null);
+    setIsSaving(true);
+    try {
+      await createDevice(installationId, normalizedDeviceId, new AbortController().signal);
+      navigate("/dispositivos");
+    } catch (error: unknown) {
+      setSaveError(error instanceof ApiError ? error.message : "Não foi possível salvar o dispositivo.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -103,6 +120,9 @@ export function DeviceLinkPage() {
           <span>Vincular novo dispositivo</span>
         </button>
 
+        {isLoading && <AsyncFeedback status="loading" message="Carregando instalações…" />}
+        {loadError && <AsyncFeedback status="error" message={loadError} onRetry={() => window.location.reload()} />}
+        {saveError && <p className="device-link-error" role="alert">{saveError}</p>}
         <form className="device-link-form" onSubmit={saveDevice}>
           <div className="device-link-form__fields">
             <section className="device-link-card" aria-labelledby="device-data-title">
@@ -143,7 +163,7 @@ export function DeviceLinkPage() {
                   aria-controls={listboxId}
                   onClick={() => setIsInstallationListOpen((currentValue) => !currentValue)}
                 >
-                  <span>{selectedInstallation.name}</span>
+                  <span>{selectedInstallation?.name ?? "Selecione uma instalação"}</span>
                   <img src={selectArrowIcon} alt="" aria-hidden="true" />
                 </button>
 
@@ -169,15 +189,12 @@ export function DeviceLinkPage() {
                   </ul>
                 )}
               </div>
-              <p>
-                Depois de pareado, o dispositivo aparece conectado e com bateria 100%; o status real passa a
-                ser reportado nas próximas leituras.
-              </p>
+              <p>O vínculo será salvo no backend. Status de conectividade e bateria dependem de leituras que ainda não fazem parte deste contrato.</p>
             </section>
           </div>
 
-          <button className="device-link-form__submit" type="submit" disabled={!deviceId.trim()}>
-            Salvar dispositivo
+          <button className="device-link-form__submit" type="submit" disabled={!deviceId.trim() || !selectedInstallation || isLoading || isSaving}>
+            {isSaving ? "Salvando…" : "Salvar dispositivo"}
           </button>
         </form>
       </section>
