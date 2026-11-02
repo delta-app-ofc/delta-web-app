@@ -21,6 +21,12 @@ async function backend(options = {}) {
     assert.equal(init.headers.Authorization, "Bearer access");
     if (path === "/delta/auth/me") return response({ id: 7, name: "Pessoa", email: "pessoa@example.test" });
     if (path === "/delta/organizations") return response([{ id: 9, corporateName: "Organização", tradeName: "Organização", cnpj: "12345678000190", businessSegment: "VAREJO" }]);
+    if (path === "/delta/auth/complete-registration" && method === "POST") {
+      if (options.propertyTimeout) throw new TypeError("Failed to fetch");
+      const row = { id: 15, name: body.property.name, type: body.property.type, classification: body.property.classification, addressId: 4, organizationId: body.property.organizationId ?? null };
+      properties.set(15, row);
+      return response({ userId: 7, completed: true, address: { id: 4, ...body.address }, property: row, habits: [] });
+    }
     if (path === "/delta/user-properties/7") return response(options.denied ? [] : [...properties.keys()].map(propertyId => ({ userId: 7, propertyId })));
     if (path.startsWith("/delta/region-rate/")) return response(options.noRates ? [] : [{ id: 25, regionName: "GRANDE_SP" }]);
     if (path === "/delta/address" && method === "POST") {
@@ -55,12 +61,12 @@ test("cadastro grava endereço, propriedade associada ao usuário e identidade e
   const save = service.createInstallationWorkflow();
   assert.equal(await save({ ...form, userId: 99 }, signal()), 15);
   const writes = calls.filter(call => call.method === "POST");
-  assert.deepEqual(writes.map(call => call.path), ["/delta/address", "/delta/property", "/delta/device"]);
-  assert.equal(writes[0].body.cep, "02940013");
-  assert.equal(writes[1].body.userId, 7);
-  assert.equal(writes[1].body.organizationId, 9);
-  assert.equal(writes[1].body.addressId, writes[0].body.id ?? 4);
-  assert.equal(writes[2].body.deviceId, "Delta-001");
+  assert.deepEqual(writes.map(call => call.path), ["/delta/auth/complete-registration", "/delta/device"]);
+  assert.equal(writes[0].body.address.cep, "02940013");
+  assert.equal(writes[0].body.property.userId, undefined);
+  assert.equal(writes[0].body.property.organizationId, 9);
+  assert.deepEqual(writes[0].body.habits, []);
+  assert.equal(writes[1].body.deviceId, "Delta-001");
   assert.equal(properties.size, 1);
   assert.ok(writes.every(call => !("monthlyGoal" in call.body) && !("monthlyConsumption" in call.body)));
 });
@@ -70,8 +76,8 @@ test("falha de dispositivo permite corrigir o ID sem duplicar endereço e instal
   const save = service.createInstallationWorkflow();
   await assert.rejects(save(form, signal()), error => error.field === "deviceId" && error.installationId === 15);
   assert.equal(await save({ ...form, deviceId: "Delta-002" }, signal()), 15);
-  assert.equal(calls.filter(call => call.path === "/delta/property" && call.method === "POST").length, 1);
-  assert.equal(calls.filter(call => call.path === "/delta/address" && call.method === "POST").length, 1);
+  assert.equal(calls.filter(call => call.path === "/delta/auth/complete-registration" && call.method === "POST").length, 1);
+  assert.equal(calls.filter(call => call.path === "/delta/address" && call.method === "POST").length, 0);
 });
 
 test("POST com resultado desconhecido não é repetido automaticamente", async () => {

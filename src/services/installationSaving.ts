@@ -4,7 +4,7 @@ import { isRecord, readId } from "../utils/apiValidation";
 import { formatCep, normalizeState, RegistrationSubmitError, validateRegistration } from "../utils/installationRegistration";
 import { listAddresses } from "./addresses";
 import { getCurrentUser } from "./auth";
-import { ApiError, writeJson } from "./http";
+import { ApiError, getJson, writeJson } from "./http";
 import { getInstallation } from "./installations";
 import { listOrganizations } from "./organizations";
 import { verifyTariffRegion } from "./tariffRegions";
@@ -26,6 +26,13 @@ function propertyBody(data: InstallationRegistrationData, addressId: number, ori
   };
 }
 
+function completePropertyBody(data: InstallationRegistrationData, organizationId?: number) {
+  return {
+    name: data.name.trim(), type: data.type, classification: data.classification,
+    ...(organizationId === undefined ? {} : { organizationId }),
+  };
+}
+
 function createdId(value: unknown) {
   if (!isRecord(value)) throw new Error("Resposta inválida.");
   return readId(value.id);
@@ -40,6 +47,18 @@ function deviceError(error: unknown, id: number): RegistrationSubmitError {
     ? "Este ID de hidrômetro já está cadastrado. Informe outro dispositivo; a instalação já foi salva."
     : "A instalação foi salva, mas não foi possível confirmar o cadastro do hidrômetro. Confira a instalação antes de tentar novamente.";
   return new RegistrationSubmitError(message, "deviceId", id);
+}
+
+async function completeFirstRegistration(data: InstallationRegistrationData, organizationId: number | undefined, userId: number, signal: AbortSignal): Promise<number> {
+  const result = await writeJson("POST", "/delta/auth/complete-registration", {
+    address: addressBody(data),
+    property: completePropertyBody(data, organizationId),
+    habits: [],
+  }, signal);
+  if (!isRecord(result) || !isRecord(result.property)) throw new ApiError("A API não confirmou a criação da instalação.");
+  const propertyId = readId(result.property.id);
+  if (result.userId !== undefined && readId(result.userId) !== userId) throw new ApiError("A API retornou um cadastro de outro usuário.");
+  return propertyId;
 }
 
 async function validateRegion(id: number, signal: AbortSignal) {
@@ -72,6 +91,13 @@ export function createInstallationWorkflow() {
       throw error;
     }
   }
+  async function postComplete(data: InstallationRegistrationData, organizationId: number | undefined, userId: number, signal: AbortSignal) {
+    try { return await completeFirstRegistration(data, organizationId, userId, signal); }
+    catch (error) {
+      if (!(error instanceof ApiError) || error.status === null || error.status >= 500 || signal.aborted) uncertainPost = true;
+      throw error;
+    }
+  }
   return async (data: InstallationRegistrationData, signal: AbortSignal): Promise<number> => {
     validate(data, "create");
     if (uncertainPost) throw new RegistrationSubmitError("Não foi possível confirmar a tentativa anterior. Confira a lista de instalações antes de iniciar outro cadastro.", undefined, propertyId);
@@ -80,23 +106,36 @@ export function createInstallationWorkflow() {
     userId = user.id;
     const organizations = await listOrganizations(signal);
     const organizationId = organizations.length === 1 ? organizations[0].id : undefined;
+    const associations = await getJson(`/delta/user-properties/${user.id}`, signal);
+    const hasExistingProperty = Array.isArray(associations) && associations.length > 0;
     if (propertyId !== undefined) await getInstallation(propertyId, signal);
     try {
       await validateRegion(Number(data.regionId), signal);
-      const signature = JSON.stringify(addressBody(data));
-      if (!address || address.signature !== signature) address = { id: await post("/delta/address", addressBody(data), signal), signature };
-      const body = propertyBody(data, address.id, undefined, organizationId);
       if (propertyId === undefined) {
-        propertyId = await post("/delta/property", { ...body, userId: user.id }, signal);
-        lastProperty = JSON.stringify(body);
+        if (!hasExistingProperty) {
+          propertyId = await postComplete(data, organizationId, user.id, signal);
+          lastProperty = "complete-registration";
+        } else {
+          const signature = JSON.stringify(addressBody(data));
+          if (!address || address.signature !== signature) address = { id: await post("/delta/address", addressBody(data), signal), signature };
+          const body = propertyBody(data, address.id, undefined, organizationId);
+          propertyId = await post("/delta/property", { ...body, userId: user.id }, signal);
+          lastProperty = JSON.stringify(body);
+        }
+      } else if (lastProperty !== "complete-registration") {
+        const signature = JSON.stringify(addressBody(data));
+        if (!address || address.signature !== signature) address = { id: await post("/delta/address", addressBody(data), signal), signature };
+        const body = propertyBody(data, address.id, undefined, organizationId);
+        // O POST de propriedade cria a associação; confirma-a antes de cadastrar o dispositivo.
+        const current = await getInstallation(propertyId, signal);
+        if (lastProperty !== JSON.stringify(body)) {
+          const updated = await writeJson("PUT", `/delta/property/${propertyId}`, propertyBody(data, address.id, current), signal);
+          if (createdId(updated) !== propertyId) throw new ApiError("A atualização não pôde ser confirmada.");
+          lastProperty = JSON.stringify(body);
+        }
       }
-      // O POST de propriedade cria a associação; confirma-a antes de cadastrar o dispositivo.
-      const current = await getInstallation(propertyId, signal);
-      if (lastProperty !== JSON.stringify(body)) {
-        const updated = await writeJson("PUT", `/delta/property/${propertyId}`, propertyBody(data, address.id, current), signal);
-        if (createdId(updated) !== propertyId) throw new ApiError("A atualização não pôde ser confirmada.");
-        lastProperty = JSON.stringify(body);
-      }
+      if (propertyId === undefined) throw new ApiError("A API não retornou o ID da instalação.");
+      if (lastProperty === "complete-registration") await getInstallation(propertyId, signal);
       if (uncertainDevice === data.deviceId) throw deviceError(null, propertyId);
       try { await registerDevice(propertyId, data.deviceId, signal); }
       catch (error) {
