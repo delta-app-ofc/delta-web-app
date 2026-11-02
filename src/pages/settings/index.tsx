@@ -4,33 +4,15 @@ import { AppSidebar } from "../../components/AppSidebar";
 import { AsyncFeedback } from "../../components/AsyncFeedback";
 import arrowIcon from "../../assets/settings/Arrow 1.png";
 import organizationIcon from "../../assets/settings/organizations.png";
-import plusIcon from "../../assets/settings/plus.png";
 import settingsIcon from "../../assets/settings/settings.png";
 import xIcon from "../../assets/settings/x.png";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { useSettingsData } from "../../hooks/useSettingsData";
 import { updateCurrentUser } from "../../services/auth";
 import { ApiError } from "../../services/http";
-import { validateOrganization, validatePasswordChange, validateProfile, validateRecipients } from "../../utils/settingsValidation";
+import { validateOrganization, validatePasswordChange, validateProfile } from "../../utils/settingsValidation";
 
 import "./style.css";
-
-type AlertLevel = "critical" | "attention" | "informative";
-type NotificationChannel = "email" | "whatsapp" | "push";
-
-interface NotificationRule {
-  label: string;
-  channels: Record<NotificationChannel, boolean>;
-  recipients: readonly string[];
-}
-
-interface ScheduledReport {
-  id: number;
-  report: string;
-  frequency: string;
-  channel: string;
-  recipients: string;
-}
 
 interface SessionItem {
   id: number;
@@ -38,31 +20,6 @@ interface SessionItem {
   location: string;
   current?: boolean;
 }
-
-const recipientOptions = ["Gestor da unidade", "Gestor regional", "Diretoria"] as const;
-
-const initialNotifications: Record<AlertLevel, NotificationRule> = {
-  critical: {
-    label: "Crítico",
-    channels: { email: true, whatsapp: true, push: true },
-    recipients: ["Gestor da unidade", "Gestor regional"],
-  },
-  attention: {
-    label: "Atenção",
-    channels: { email: true, whatsapp: false, push: true },
-    recipients: ["Gestor da unidade"],
-  },
-  informative: {
-    label: "Informativo",
-    channels: { email: true, whatsapp: false, push: false },
-    recipients: ["Gestor da unidade"],
-  },
-};
-
-const initialReports: readonly ScheduledReport[] = [
-  { id: 1, report: "Dashboard geral", frequency: "Semanal · segunda-feira", channel: "E-mail", recipients: "diretoria@swift.com.br" },
-  { id: 2, report: "Ranking de unidades", frequency: "Mensal · dia 1", channel: "E-mail", recipients: "diretoria@swift.com.br" },
-];
 
 const initialSessions: readonly SessionItem[] = [
   { id: 1, device: "Chrome · Windows", location: "São Paulo, SP · agora", current: true },
@@ -179,7 +136,6 @@ export function SettingsPage() {
   const settingsState = useSettingsData(settingsRequestVersion);
   const [profileSaving, setProfileSaving] = useState(false);
   const profileRequestRef = useRef<AbortController | null>(null);
-  const [notifications, setNotifications] = useState(initialNotifications);
   const [organizationOpen, setOrganizationOpen] = useState(false);
   const [organization, setOrganization] = useState({
     legalName: "Swift Distribuidora de Alimentos Ltda.",
@@ -195,9 +151,6 @@ export function SettingsPage() {
     dateFormat: "DD/MM/AAAA",
     unit: "Metros cúbicos (m³)",
   });
-  const [escalationEnabled, setEscalationEnabled] = useState(true);
-  const [escalationChannel, setEscalationChannel] = useState("WhatsApp");
-  const [attachReport, setAttachReport] = useState(true);
   const [twoFactor, setTwoFactor] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [passwordLastChanged, setPasswordLastChanged] = useState("Última alteração há 94 dias");
@@ -205,14 +158,7 @@ export function SettingsPage() {
   const [passwordError, setPasswordError] = useState("");
   const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
   const [deleteAccountPassword, setDeleteAccountPassword] = useState("");
-  const [reports, setReports] = useState<readonly ScheduledReport[]>(initialReports);
   const [sessions, setSessions] = useState<readonly SessionItem[]>(initialSessions);
-  const [newReport, setNewReport] = useState({
-    report: "Dashboard geral",
-    frequency: "Semanal · segunda-feira",
-    channel: "E-mail",
-    recipients: "",
-  });
   const [feedback, setFeedback] = useState("");
   const [formError, setFormError] = useState("");
   const generalDialogRef = useDialogFocus<HTMLElement>(generalOpen, () => setGeneralOpen(false));
@@ -294,40 +240,6 @@ export function SettingsPage() {
     showFeedback("Dados da organização salvos.");
   }
 
-  function toggleChannel(level: AlertLevel, channel: NotificationChannel) {
-    setNotifications((current) => ({
-      ...current,
-      [level]: {
-        ...current[level],
-        channels: { ...current[level].channels, [channel]: !current[level].channels[channel] },
-      },
-    }));
-  }
-
-  function toggleRecipient(level: AlertLevel, recipient: string) {
-    setNotifications((current) => {
-      const selected = current[level].recipients.includes(recipient);
-      return {
-        ...current,
-        [level]: {
-          ...current[level],
-          recipients: selected
-            ? current[level].recipients.filter((item) => item !== recipient)
-            : [...current[level].recipients, recipient],
-        },
-      };
-    });
-  }
-
-  function addReport(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const error = validateRecipients(newReport.recipients);
-    if (error) { setFormError(error); return; }
-    setReports((current) => [...current, { ...newReport, id: Date.now(), recipients: newReport.recipients.trim() }]);
-    setNewReport((current) => ({ ...current, recipients: "" }));
-    showFeedback("Relatório agendado.");
-  }
-
   function openPasswordModal() {
     setPasswords({ current: "", next: "", confirmation: "" });
     setPasswordError("");
@@ -365,7 +277,7 @@ export function SettingsPage() {
   }
 
   function exportData() {
-    const data = JSON.stringify({ profile, preferences: general, notifications, reports }, null, 2);
+    const data = JSON.stringify({ profile, preferences: general }, null, 2);
     const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
     const link = document.createElement("a");
     link.href = url;
@@ -384,7 +296,7 @@ export function SettingsPage() {
         <header className="settings-header">
           <div>
             <h1 id="settings-title">Configurações</h1>
-            <p>Gerencie seu perfil, preferências, notificações e segurança.</p>
+            <p>Gerencie seu perfil, preferências e segurança.</p>
           </div>
           {feedback && <span className="settings-feedback" role="status">{feedback}</span>}
           {formError && <span className="settings-feedback settings-feedback--error" role="alert">{formError}</span>}
@@ -430,53 +342,6 @@ export function SettingsPage() {
             </div>
           </section>
         </div>
-
-        <section className="settings-section" aria-labelledby="notifications-title">
-          <h2 id="notifications-title">Notificações e relatórios</h2>
-          <div className="settings-card notification-card">
-            <div className="settings-card-title"><div><h3>Notificações por canal</h3><p>Escolha por onde cada tipo de alerta chega, e para quem.</p></div></div>
-            <div className="notification-table-scroll"><div className="notification-table" role="table" aria-label="Notificações por tipo de alerta">
-              <div className="notification-row notification-row--header" role="row"><span role="columnheader">Tipo de alerta</span><span role="columnheader">E-mail</span><span role="columnheader">WhatsApp</span><span role="columnheader">Push</span><span role="columnheader">Destinatários</span></div>
-              {(Object.entries(notifications) as [AlertLevel, NotificationRule][]).map(([level, rule]) => (
-                <div className="notification-row" role="row" key={level}>
-                  <strong role="rowheader" className={`notification-level notification-level--${level}`}>{rule.label}</strong>
-                  {(["email", "whatsapp", "push"] as const).map((channel) => <span role="cell" key={channel}><Toggle checked={rule.channels[channel]} label={`${channel} para alertas ${rule.label}`} onChange={() => toggleChannel(level, channel)} /></span>)}
-                  <div className="notification-recipients" role="cell">
-                    {recipientOptions.map((recipient) => <button className={rule.recipients.includes(recipient) ? "selected" : ""} type="button" key={recipient} aria-pressed={rule.recipients.includes(recipient)} onClick={() => toggleRecipient(level, recipient)}>{recipient}</button>)}
-                  </div>
-                </div>
-              ))}
-            </div></div>
-          </div>
-
-          <div className="settings-paired-grid">
-            <section className="settings-card settings-escalation">
-              <div className="settings-card-title settings-card-title--action"><div><div><h3>Escalonamento automático</h3><p>Se um alerta crítico não for tratado, o sistema escala sozinho.</p></div></div><Toggle checked={escalationEnabled} label="Ativar escalonamento automático" onChange={() => setEscalationEnabled((value) => !value)} /></div>
-              <div className="escalation-rule"><span>Sem resposta por</span><input aria-label="Horas sem resposta" type="number" min="1" defaultValue="4" /><span>horas → notifica o gestor regional por</span><SettingsSelect className="settings-custom-select--compact" label="Canal de escalonamento" value={escalationChannel} options={["WhatsApp", "E-mail", "Push"]} onChange={setEscalationChannel} /></div>
-              <div className="settings-switch-label"><Toggle checked={attachReport} label="Anexar relatório da unidade" onChange={() => setAttachReport((value) => !value)} /><span>Anexar relatório da unidade junto com a notificação de escalonamento</span></div>
-            </section>
-
-            <section className="settings-card settings-tariffs">
-              <div className="settings-card-title"><div><h3>Tarifas por região</h3><p>Tarifa vigente por m³, conforme cadastro de cada região.</p></div></div>
-              {[['São Paulo (Capital)', 'Sabesp · vigente desde 01/07/2026', 'R$ 15,08'], ['Interior de SP', 'Sabesp / autarquias municipais · vigente desde 15/06/2026', 'R$ 13,42'], ['Litoral de SP', 'Sabesp · vigente desde 01/08/2026', 'R$ 16,35']].map(([region, note, value]) => <div className="tariff-row" key={region}><div><strong>{region}</strong><span>{note}</span></div><strong>{value}<small>/m³</small></strong></div>)}
-            </section>
-          </div>
-
-          <section className="settings-card scheduled-reports">
-            <div className="settings-card-title"><div><h3>Relatórios agendados</h3><p>Escolha quais relatórios enviar automaticamente, com que frequência e por qual canal.</p></div></div>
-            <div className="report-table-scroll"><div className="report-table" role="table" aria-label="Relatórios agendados">
-              <div className="report-row report-row--header" role="row"><span role="columnheader">Relatório</span><span role="columnheader">Frequência</span><span role="columnheader">Canal</span><span role="columnheader">Destinatários</span><span role="columnheader"><span className="sr-only">Ações</span></span></div>
-              {reports.map((report) => <div className="report-row" role="row" key={report.id}><strong role="cell">{report.report}</strong><strong role="cell">{report.frequency}</strong><strong role="cell">{report.channel}</strong><strong role="cell">{report.recipients}</strong><span role="cell"><button className="settings-icon-button" type="button" aria-label={`Remover ${report.report}`} onClick={() => setReports((current) => current.filter((item) => item.id !== report.id))}><img src={xIcon} alt="" /></button></span></div>)}
-            </div></div>
-            <form className="report-form" onSubmit={addReport}>
-              <SettingsSelect label="Relatório" value={newReport.report} options={["Dashboard geral", "Ranking de unidades", "Consumo mensal"]} onChange={(value) => setNewReport({ ...newReport, report: value })} />
-              <SettingsSelect label="Frequência" value={newReport.frequency} options={["Semanal · segunda-feira", "Mensal · dia 1", "Diário"]} onChange={(value) => setNewReport({ ...newReport, frequency: value })} />
-              <SettingsSelect label="Canal" value={newReport.channel} options={["E-mail", "WhatsApp"]} onChange={(value) => setNewReport({ ...newReport, channel: value })} />
-              <input aria-label="Destinatários" placeholder="E-mail ou lista de destinatários" value={newReport.recipients} onChange={(event) => setNewReport({ ...newReport, recipients: event.target.value })} maxLength={500} required />
-              <button className="settings-primary-button settings-schedule-button" type="submit"><img src={plusIcon} alt="" />Agendar</button>
-            </form>
-          </section>
-        </section>
 
         <section className="settings-section" aria-labelledby="security-title">
           <h2 id="security-title">Segurança</h2>
