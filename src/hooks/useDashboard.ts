@@ -84,7 +84,8 @@ export function useDashboard() {
 
         const projectedEntries = [...currentByProperty.entries()]
           .filter(([propertyId]) => previousByProperty.has(propertyId))
-          .map(([propertyId, current]) => [propertyId, Math.max(0, current + (current - previousByProperty.get(propertyId)!))] as const);
+          .map(([propertyId, current]) => [propertyId, current + (current - previousByProperty.get(propertyId)!)] as const)
+          .filter(([, liters]) => liters > 0);
         const projectedResults = await Promise.allSettled(projectedEntries.map(([propertyId, liters]) =>
           liters <= 0 ? Promise.resolve(null) : calculateWaterCost(propertyId, liters / 1000, referenceMonth, signal),
         ));
