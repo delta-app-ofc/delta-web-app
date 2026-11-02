@@ -7,7 +7,6 @@ import { AsyncFeedback } from "../../components/AsyncFeedback";
 import dashboardIcon from "../../assets/installations/dashboard.svg";
 import devicesIcon from "../../assets/installations/devices.svg";
 import gluhIcon from "../../assets/installations/gluh.svg";
-import goalsIcon from "../../assets/installations/goals.svg";
 import installationsIcon from "../../assets/installations/installations.svg";
 import investmentsIcon from "../../assets/installations/investments.svg";
 import leaksIcon from "../../assets/installations/leaks.svg";
@@ -26,7 +25,6 @@ const navigationItems: readonly SidebarNavigationItem[] = [
   { id: "alerts", label: "Alertas", icon: alertsIcon, path: "/alertas" },
   { id: "leaks", label: "Vazamentos", icon: leaksIcon, path: "/vazamentos" },
   { id: "ranking", label: "Ranking", icon: rankingIcon, path: "/ranking" },
-  { id: "goals", label: "Metas", icon: goalsIcon, path: "/metas" },
   { id: "devices", label: "Dispositivos", icon: devicesIcon, path: "/dispositivos" },
   { id: "gluh", label: "Gluh", icon: gluhIcon, path: "/gluh" },
   { id: "settings", label: "Configurações", icon: settingsIcon, path: "/configuracoes" },
@@ -80,11 +78,6 @@ export function DashboardPage() {
               <div className="metric-card__label"><img src={investmentsIcon} alt="" /><span>Custo estimado</span></div>
               <strong>{formatCurrency(state.data.estimatedCost)}</strong>
               <small className="metric-card__change">Calculado pela tarifa vigente</small>
-            </article>
-            <article className="dashboard-card metric-card dashboard-card--unavailable">
-              <div className="metric-card__label"><img src={goalsIcon} alt="" /><span>Meta geral</span></div>
-              <strong>—</strong>
-              <small className="metric-card__change">Não disponível na API</small>
             </article>
           </section>
 

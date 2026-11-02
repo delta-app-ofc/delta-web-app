@@ -6,7 +6,6 @@
     .ranking-page,
     .alerts-page,
     .leaks-page,
-    .goals-page,
     .chatbot-page,
     .chatbot-history-page,
     .devices-page,
@@ -25,7 +24,6 @@
     .ranking-page__sidebar,
     .alerts-page__sidebar,
     .leaks-page__sidebar,
-    .goals-page__sidebar,
     .chatbot-page__sidebar,
     .chatbot-history-page__sidebar,
     .devices-page__sidebar,
@@ -47,7 +45,6 @@
     .ranking-page__content,
     .alerts-page__content,
     .leaks-page__content,
-    .goals-page__content,
     .chatbot-page__content,
     .chatbot-history-page__content,
     .devices-page__content,
@@ -63,7 +60,6 @@
   :is(
     .monitoring-header,
     .leaks-header,
-    .goals-header,
     .investments-header,
     .devices-header__top,
     .chatbot-history-page__header
@@ -75,7 +71,6 @@
   :is(
     .monitoring-page,
     .leaks-page,
-    .goals-page,
     .investments-page,
     .devices-page,
     .device-link-page,
@@ -93,7 +88,6 @@
     .ranking-page,
     .alerts-page,
     .leaks-page,
-    .goals-page,
     .chatbot-page,
     .chatbot-history-page,
     .devices-page,
