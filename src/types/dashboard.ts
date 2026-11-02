@@ -7,5 +7,6 @@ export interface DashboardData {
   currentLiters: number | null;
   previousLiters: number | null;
   estimatedCost: number | null;
+  projectedCost: number | null;
   warnings: string[];
 }

@@ -44,6 +44,7 @@ export function useDashboard() {
         let currentCount = 0;
         let previousCount = 0;
         const currentByProperty = new Map<number, number>();
+        const previousByProperty = new Map<number, number>();
         let monthlyFailures = 0;
 
         records.forEach((record, index) => {
@@ -62,6 +63,7 @@ export function useDashboard() {
           if (previous) {
             previousLiters += previous.totalLiters;
             previousCount += 1;
+            previousByProperty.set(record.id, previous.totalLiters);
           }
         });
 
@@ -80,9 +82,28 @@ export function useDashboard() {
           }
         });
 
+        const projectedEntries = [...currentByProperty.entries()]
+          .filter(([propertyId]) => previousByProperty.has(propertyId))
+          .map(([propertyId, current]) => [propertyId, Math.max(0, current + (current - previousByProperty.get(propertyId)!))] as const);
+        const projectedResults = await Promise.allSettled(projectedEntries.map(([propertyId, liters]) =>
+          liters <= 0 ? Promise.resolve(null) : calculateWaterCost(propertyId, liters / 1000, referenceMonth, signal),
+        ));
+        signal.throwIfAborted();
+        let projectedCost = 0;
+        let projectedFailures = 0;
+        let projectedSuccesses = 0;
+        projectedResults.forEach((result) => {
+          if (result.status === "rejected") projectedFailures += 1;
+          else {
+            projectedSuccesses += 1;
+            if (result.value) projectedCost += result.value.estimatedCost;
+          }
+        });
+
         const warnings: string[] = [];
         if (monthlyFailures > 0) warnings.push("Não foi possível carregar o consumo de algumas instalações.");
         if (costFailures > 0) warnings.push("Não foi possível calcular o custo de algumas instalações.");
+        if (projectedFailures > 0) warnings.push("Não foi possível calcular a projeção de algumas instalações.");
         const data: DashboardData = {
           user: userResult,
           referenceMonth,
@@ -90,6 +111,7 @@ export function useDashboard() {
           currentLiters: currentCount > 0 ? currentLiters : null,
           previousLiters: previousCount > 0 ? previousLiters : null,
           estimatedCost: currentByProperty.size === 0 ? null : costFailures === 0 && costSuccesses === currentByProperty.size ? estimatedCost : null,
+          projectedCost: projectedEntries.length === 0 || projectedFailures > 0 || projectedSuccesses !== projectedEntries.length ? null : projectedCost,
           warnings,
         };
         if (!signal.aborted) setState({ status: "success", data });
