@@ -221,16 +221,6 @@ export function SettingsPage() {
     showFeedback("Solicitação de exclusão enviada para confirmação administrativa.");
   }
 
-  function exportData() {
-    const data = JSON.stringify({ profile, preferences: general }, null, 2);
-    const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "meus-dados-delta.json";
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
     <main className="settings-page">
       <div className="settings-page__sidebar">
@@ -292,7 +282,6 @@ export function SettingsPage() {
           <h2 id="data-title">Dados</h2>
           <section className="settings-card">
             <div className="settings-card-title settings-danger-title"><h3>Dados &amp; privacidade</h3></div>
-            <div className="data-row"><div><strong>Exportar meus dados</strong><span>Baixe um arquivo com seu perfil, instalações e histórico de alertas.</span></div><button className="settings-secondary-button" type="button" onClick={exportData}>Exportar</button></div>
             <div className="data-row"><div><strong>Excluir conta</strong><span>Ação permanente e irreversível</span></div><button className="settings-danger-button" type="button" onClick={openDeleteAccountModal}>Excluir</button></div>
           </section>
         </section>
