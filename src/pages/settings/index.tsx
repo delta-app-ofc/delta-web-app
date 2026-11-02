@@ -14,19 +14,6 @@ import { validateOrganization, validatePasswordChange, validateProfile } from ".
 
 import "./style.css";
 
-interface SessionItem {
-  id: number;
-  device: string;
-  location: string;
-  current?: boolean;
-}
-
-const initialSessions: readonly SessionItem[] = [
-  { id: 1, device: "Chrome · Windows", location: "São Paulo, SP · agora", current: true },
-  { id: 2, device: "App Delta · iPhone 14", location: "São Paulo, SP · há 2 horas" },
-  { id: 3, device: "Edge · Windows", location: "Campinas, SP · há 3 dias" },
-];
-
 function Toggle({ checked, label, onChange }: { checked: boolean; label: string; onChange: () => void }) {
   return (
     <button
@@ -158,7 +145,6 @@ export function SettingsPage() {
   const [passwordError, setPasswordError] = useState("");
   const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
   const [deleteAccountPassword, setDeleteAccountPassword] = useState("");
-  const [sessions, setSessions] = useState<readonly SessionItem[]>(initialSessions);
   const [feedback, setFeedback] = useState("");
   const [formError, setFormError] = useState("");
   const generalDialogRef = useDialogFocus<HTMLElement>(generalOpen, () => setGeneralOpen(false));
@@ -352,10 +338,6 @@ export function SettingsPage() {
               <div className="security-row"><div><strong>Autenticação em duas etapas</strong><span>{twoFactor ? "Ativada" : "Desativada"}</span></div><Toggle checked={twoFactor} label="Autenticação em duas etapas" onChange={() => setTwoFactor((value) => !value)} /></div>
             </section>
 
-            <section className="settings-card settings-sessions">
-              <div className="settings-card-title settings-card-title--action"><div><div><h3>Sessões ativas</h3><p>Dispositivos com acesso à sua conta no momento.</p></div></div><button className="settings-secondary-button" type="button" onClick={() => setSessions((current) => current.filter((session) => session.current))}>Encerrar todas as outras</button></div>
-              {sessions.map((session) => <div className="session-row" key={session.id}><div><strong>{session.device}</strong><span>{session.location}</span></div>{session.current ? <em>Sessão atual</em> : <button type="button" onClick={() => setSessions((current) => current.filter((item) => item.id !== session.id))}>Encerrar sessão</button>}</div>)}
-            </section>
           </div>
         </section>
 
