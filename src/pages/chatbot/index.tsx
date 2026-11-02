@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { AppSidebar } from "../../components/AppSidebar";
-import { sendAiMessage, getAiSuggestions } from "../../services/ai";
+import { getAiSessionMessages, sendAiMessage, getAiSuggestions } from "../../services/ai";
 import { ApiError } from "../../services/http";
 import arrowIcon from "../../assets/chatbot/arrow.png";
 import historicalIcon from "../../assets/chatbot/historical.png";
@@ -45,6 +45,23 @@ export function ChatbotPage() {
     });
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    if (!sessionId || messages.length > 0) return;
+    const controller = new AbortController();
+    void getAiSessionMessages(sessionId, controller.signal).then((history) => {
+      if (!controller.signal.aborted) {
+        setMessages(history.map((message, index) => ({
+          id: `${message.role}-${index}`,
+          author: message.role === "user" ? "user" : "assistant",
+          content: message.content,
+        })));
+      }
+    }).catch((failure: unknown) => {
+      if (!controller.signal.aborted) setError(failure instanceof ApiError ? failure.message : "Não foi possível carregar a conversa.");
+    });
+    return () => controller.abort();
+  }, [messages.length, sessionId]);
 
   useEffect(() => {
     if (messages.length === 0) {
