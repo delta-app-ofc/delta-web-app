@@ -4,7 +4,7 @@ import { isRecord, readId } from "../utils/apiValidation";
 import { formatCep, normalizeState, RegistrationSubmitError, validateRegistration } from "../utils/installationRegistration";
 import { listAddresses } from "./addresses";
 import { getCurrentUser } from "./auth";
-import { ApiError, getJson, writeJson } from "./http";
+import { ApiError, writeJson } from "./http";
 import { getInstallation } from "./installations";
 import { listOrganizations } from "./organizations";
 import { verifyTariffRegion } from "./tariffRegions";
@@ -106,22 +106,15 @@ export function createInstallationWorkflow() {
     userId = user.id;
     const organizations = await listOrganizations(signal);
     const organizationId = organizations.length === 1 ? organizations[0].id : undefined;
-    const associations = await getJson(`/delta/user-properties/${user.id}`, signal);
-    const hasExistingProperty = Array.isArray(associations) && associations.length > 0;
     if (propertyId !== undefined) await getInstallation(propertyId, signal);
     try {
       await validateRegion(Number(data.regionId), signal);
       if (propertyId === undefined) {
-        if (!hasExistingProperty) {
-          propertyId = await postComplete(data, organizationId, user.id, signal);
-          lastProperty = "complete-registration";
-        } else {
-          const signature = JSON.stringify(addressBody(data));
-          if (!address || address.signature !== signature) address = { id: await post("/delta/address", addressBody(data), signal), signature };
-          const body = propertyBody(data, address.id, undefined, organizationId);
-          propertyId = await post("/delta/property", { ...body, userId: user.id }, signal);
-          lastProperty = JSON.stringify(body);
-        }
+        // O contrato exige que addressId já esteja vinculado ao usuário.
+        // O complete-registration faz o vínculo de endereço e propriedade
+        // atomicamente, inclusive para usuários que já possuem instalações.
+        propertyId = await postComplete(data, organizationId, user.id, signal);
+        lastProperty = "complete-registration";
       } else if (lastProperty !== "complete-registration") {
         const signature = JSON.stringify(addressBody(data));
         if (!address || address.signature !== signature) address = { id: await post("/delta/address", addressBody(data), signal), signature };

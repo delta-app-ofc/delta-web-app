@@ -80,6 +80,14 @@ test("falha de dispositivo permite corrigir o ID sem duplicar endereço e instal
   assert.equal(calls.filter(call => call.path === "/delta/address" && call.method === "POST").length, 0);
 });
 
+test("novo cadastro usa complete-registration mesmo quando o usuário já possui instalação", async () => {
+  const { service, calls } = await backend({ existing: true });
+  const save = service.createInstallationWorkflow();
+  assert.equal(await save({ ...form, name: "Segunda unidade" }, signal()), 15);
+  assert.equal(calls.filter(call => call.path === "/delta/auth/complete-registration" && call.method === "POST").length, 1);
+  assert.equal(calls.filter(call => call.path === "/delta/property" && call.method === "POST").length, 0);
+});
+
 test("POST com resultado desconhecido não é repetido automaticamente", async () => {
   const { service, calls } = await backend({ propertyTimeout: true });
   const save = service.createInstallationWorkflow();
