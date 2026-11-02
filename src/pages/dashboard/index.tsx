@@ -105,7 +105,7 @@ export function DashboardPage() {
               <p className="dashboard-unavailable">Alertas ainda não estão disponíveis no contrato REST.</p>
             </article>
             <div className="dashboard-summary-stack">
-              <article className="dashboard-card forecast-card dashboard-card--unavailable"><h2>Previsão financeira</h2><p className="dashboard-unavailable">Não disponível na API.</p></article>
+              <article className="dashboard-card forecast-card"><h2>Previsão financeira</h2><strong>{formatCurrency(state.data.estimatedCost)}</strong><small>Projeção baseada no consumo atual</small></article>
               <article className="dashboard-card weather-card dashboard-card--unavailable"><div><h2>Clima agora</h2><p className="dashboard-unavailable">Não disponível na API.</p></div></article>
             </div>
           </div>
