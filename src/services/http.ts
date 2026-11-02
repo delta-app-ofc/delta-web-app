@@ -51,6 +51,12 @@ export async function postPublicJson(path: string, body: unknown, signal?: Abort
   return readJson(response);
 }
 
+export async function getPublicJsonFrom(baseUrl: string | undefined, path: string, signal?: AbortSignal): Promise<unknown> {
+  const response = await request(path, { method: "GET", signal }, baseUrl);
+  if (!response.ok) throw new ApiError("Não foi possível consultar a telemetria.", response.status);
+  return readJson(response);
+}
+
 let pendingRefresh: { token: string; promise: Promise<void> } | null = null;
 
 async function refreshSession(current: Session): Promise<void> {

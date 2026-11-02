@@ -10,6 +10,17 @@ export interface DeviceView {
   record: DeviceRecord;
   installationName: string;
   region: string | null;
+  telemetry: DeviceTelemetry | null;
+}
+
+export interface DeviceTelemetry {
+  deviceId: string;
+  lastPingAt: string;
+  wifiSignalRssi: string;
+  firmwareVersion: string;
+  connectivityStatus: string;
+  batteryLevel: number;
+  unavailabilityReason: string | null;
 }
 
 export interface UnlinkedInstallationView {
