@@ -18,6 +18,14 @@ function formatDate(value: string | null): string {
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("pt-BR").format(date);
 }
 
+function batteryClass(level: number): "good" | "warning" | "critical" {
+  return level <= 20 ? "critical" : level <= 50 ? "warning" : "good";
+}
+
+function isOnline(status: string | undefined): boolean {
+  return status?.toLocaleLowerCase("pt-BR") === "online" || status?.toLocaleLowerCase("pt-BR") === "connected";
+}
+
 export function DevicesPage() {
   const navigate = useNavigate();
   const { state, retry } = useDevices();
@@ -47,15 +55,15 @@ export function DevicesPage() {
           <section className="devices-indicators" aria-label="Resumo dos dispositivos">
             {[
               { id: "paired", label: "Dispositivos pareados", value: String(state.data.devices.filter(({ record }) => record.isActive).length), icon: devicesIcon },
-              { id: "online", label: "Online agora", value: "Não informado", icon: onlineIcon },
-              { id: "battery", label: "Bateria baixa", value: "Não informado", icon: lowBatteryIcon },
+              { id: "online", label: "Online agora", value: String(state.data.devices.filter(({ telemetry }) => isOnline(telemetry?.connectivityStatus)).length), icon: onlineIcon },
+              { id: "battery", label: "Bateria baixa", value: String(state.data.devices.filter(({ telemetry }) => telemetry !== null && telemetry.batteryLevel <= 20).length), icon: lowBatteryIcon },
               { id: "unlinked", label: "Sem vínculo", value: String(state.data.unlinkedInstallations.length), icon: noLinkIcon },
-            ].map((indicator) => <article className="devices-card devices-indicator" key={indicator.id}><div className="devices-indicator__label"><img src={indicator.icon} alt="" /><span>{indicator.label}</span></div><strong>{indicator.value}</strong>{indicator.id === "online" || indicator.id === "battery" ? <small>Não disponível no contrato atual</small> : null}</article>)}
+            ].map((indicator) => <article className="devices-card devices-indicator" key={indicator.id}><div className="devices-indicator__label"><img src={indicator.icon} alt="" /><span>{indicator.label}</span></div><strong>{indicator.value}</strong>{indicator.id === "online" || indicator.id === "battery" ? <small>Com base na última telemetria recebida</small> : null}</article>)}
           </section>
 
           <div className="devices-card devices-table-wrapper">
-            <table className="devices-table"><caption className="sr-only">Dispositivos vinculados às instalações</caption><thead><tr><th scope="col">Dispositivo</th><th scope="col">Instalação</th><th scope="col">Status</th><th scope="col">Data do vínculo</th></tr></thead>
-              <tbody>{filteredDevices.map(({ record, installationName, region }) => <tr key={record.id}><td>{record.deviceId}</td><td><strong>{installationName}</strong><small>{region ?? "Região não informada"}</small></td><td><span className={`devices-connectivity devices-connectivity--${record.isActive ? "online" : "offline"}`}>{record.isActive ? "Ativo" : "Inativo"}</span></td><td>{formatDate(record.installationDate)}</td></tr>)}</tbody>
+            <table className="devices-table"><caption className="sr-only">Dispositivos vinculados às instalações</caption><thead><tr><th scope="col">Dispositivo</th><th scope="col">Instalação</th><th scope="col">Conectividade</th><th scope="col">Bateria</th><th scope="col">Último ping</th></tr></thead>
+              <tbody>{filteredDevices.map(({ record, installationName, region, telemetry }) => <tr key={record.id}><td>{record.deviceId}</td><td><strong>{installationName}</strong><small>{region ?? "Região não informada"}</small></td><td><span className={`devices-connectivity devices-connectivity--${isOnline(telemetry?.connectivityStatus) ? "online" : "offline"}`}>{telemetry?.connectivityStatus ?? "Sem telemetria"}</span></td><td>{telemetry ? <span className={`devices-battery devices-battery--${batteryClass(telemetry.batteryLevel)}`}><span>{telemetry.batteryLevel}%</span></span> : "Não informado"}</td><td>{telemetry ? formatDate(telemetry.lastPingAt) : formatDate(record.installationDate)}</td></tr>)}</tbody>
             </table>
             {filteredDevices.length === 0 && <p className="devices-empty">Nenhum dispositivo encontrado.</p>}
           </div>
