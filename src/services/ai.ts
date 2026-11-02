@@ -4,6 +4,13 @@ import { ApiError, getJsonFrom, writeJsonFrom } from "./http";
 
 const aiBaseUrl = () => import.meta.env.VITE_AI_API_URL?.trim();
 
+function aiAuthError(error: unknown): never {
+  if (error instanceof ApiError && error.status === 401) {
+    throw new ApiError("A API de IA não reconheceu sua sessão. Verifique se o JWT da IA usa a mesma configuração de autenticação do login.", 401);
+  }
+  throw error;
+}
+
 function optionalDate(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   return readText(value, 80);
@@ -38,7 +45,8 @@ export async function getAiSuggestions(signal: AbortSignal): Promise<string[]> {
     if (!isRecord(value)) throw new Error();
     return readArray(value.suggestions, (item) => readText(item, 200)).slice(0, 3);
   } catch (error: unknown) {
-    if (signal.aborted || error instanceof ApiError) throw error;
+    if (signal.aborted) throw error;
+    if (error instanceof ApiError) aiAuthError(error);
     throw new ApiError("A API de IA retornou sugestões inválidas.");
   }
 }
@@ -47,7 +55,8 @@ export async function sendAiMessage(message: string, sessionId: string | null, s
   try {
     return parseChat(await writeJsonFrom(aiBaseUrl(), "POST", "/chat", { message, ...(sessionId ? { session_id: sessionId } : {}) }, signal));
   } catch (error: unknown) {
-    if (signal.aborted || error instanceof ApiError) throw error;
+    if (signal.aborted) throw error;
+    if (error instanceof ApiError) aiAuthError(error);
     throw new ApiError("A API de IA retornou uma resposta inválida.");
   }
 }
@@ -58,7 +67,8 @@ export async function listAiSessions(limit: number, offset: number, signal: Abor
     if (!isRecord(value)) throw new Error();
     return { sessions: readArray(value.sessions, parseSession), total: typeof value.total === "number" ? value.total : 0 };
   } catch (error: unknown) {
-    if (signal.aborted || error instanceof ApiError) throw error;
+    if (signal.aborted) throw error;
+    if (error instanceof ApiError) aiAuthError(error);
     throw new ApiError("A API de IA retornou um histórico inválido.");
   }
 }
@@ -72,7 +82,8 @@ export async function getAiSessionMessages(sessionId: string, signal: AbortSigna
       return { role: item.role, content: readText(item.content, 10000), timestamp: optionalDate(item.timestamp) };
     });
   } catch (error: unknown) {
-    if (signal.aborted || error instanceof ApiError) throw error;
+    if (signal.aborted) throw error;
+    if (error instanceof ApiError) aiAuthError(error);
     throw new ApiError("A API de IA retornou mensagens inválidas.");
   }
 }
