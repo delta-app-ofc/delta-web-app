@@ -82,7 +82,7 @@ async function refreshSession(current: Session): Promise<void> {
   finally { if (pendingRefresh?.promise === promise) pendingRefresh = null; }
 }
 
-async function authenticatedRequest(path: string, signal: AbortSignal, method: "GET" | "POST" | "PUT", body?: unknown, configuredBaseUrl?: string, clearSessionOnUnauthorized = true): Promise<unknown> {
+async function authenticatedRequest(path: string, signal: AbortSignal, method: "GET" | "POST" | "PUT", body?: unknown, configuredBaseUrl?: string, clearSessionOnUnauthorized = true, retryOnUnauthorized = true): Promise<unknown> {
   const initial = getSession();
   if (!initial) throw new ApiError("Entre na sua conta para continuar.", 401);
   if (initial.expiresAt <= Date.now() + 5000) await refreshSession(initial);
@@ -94,7 +94,7 @@ async function authenticatedRequest(path: string, signal: AbortSignal, method: "
     headers: { ...(body === undefined ? {} : { "Content-Type": "application/json" }), Authorization: `Bearer ${current.accessToken}` },
   };
   let response = await request(path, options, configuredBaseUrl);
-  if (response.status === 401) {
+  if (response.status === 401 && retryOnUnauthorized) {
     // Outras consultas podem ter renovado o token enquanto esta estava em trânsito.
     if (getSession() === current) await refreshSession(current);
     signal.throwIfAborted();
@@ -116,7 +116,7 @@ export function getJson(path: string, signal: AbortSignal): Promise<unknown> {
 }
 
 export function getJsonFrom(baseUrl: string | undefined, path: string, signal: AbortSignal): Promise<unknown> {
-  return authenticatedRequest(path, signal, "GET", undefined, baseUrl, false);
+  return authenticatedRequest(path, signal, "GET", undefined, baseUrl, false, false);
 }
 
 // Escritas só são repetidas após um 401; falhas de rede nunca repetem um POST automaticamente.
@@ -125,5 +125,5 @@ export function writeJson(method: "POST" | "PUT", path: string, body: unknown, s
 }
 
 export function writeJsonFrom(baseUrl: string | undefined, method: "POST" | "PUT", path: string, body: unknown, signal: AbortSignal): Promise<unknown> {
-  return authenticatedRequest(path, signal, method, body, baseUrl, false);
+  return authenticatedRequest(path, signal, method, body, baseUrl, false, false);
 }
