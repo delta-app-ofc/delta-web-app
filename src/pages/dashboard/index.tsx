@@ -14,7 +14,7 @@ import monitoringIcon from "../../assets/installations/monitoring.svg";
 import rankingIcon from "../../assets/installations/ranking.svg";
 import settingsIcon from "../../assets/installations/menu-settings.svg";
 import { useDashboard } from "../../hooks/useDashboard";
-import { getMonthLabel } from "../../utils/installations";
+import { getMonthLabel, getShortMonthLabel } from "../../utils/installations";
 
 import "./style.css";
 
@@ -85,9 +85,9 @@ export function DashboardPage() {
             <article className="dashboard-card history-card">
               <header className="dashboard-card__header"><h2>Evolução histórica</h2><span>Meses disponíveis · litros</span></header>
               <div className="history-chart" role="img" aria-label="Consumo mensal atual e anterior">
-                {[{ label: getMonthLabel(state.data.previousMonth), value: state.data.previousLiters }, { label: getMonthLabel(state.data.referenceMonth), value: state.data.currentLiters }].map((month) => {
+                {[{ referenceMonth: state.data.previousMonth, label: getMonthLabel(state.data.previousMonth), value: state.data.previousLiters }, { referenceMonth: state.data.referenceMonth, label: getMonthLabel(state.data.referenceMonth), value: state.data.currentLiters }].map((month) => {
                   const max = Math.max(state.data.currentLiters ?? 0, state.data.previousLiters ?? 0, 1);
-                  return <div className="history-chart__column" key={month.label}><div className="history-chart__track"><span style={{ height: `${month.value === null ? 0 : month.value / max * 100}%` }} /></div><small>{month.label}</small></div>;
+                  return <div className="history-chart__column" key={month.referenceMonth}><div className="history-chart__track"><span style={{ height: `${month.value === null ? 0 : month.value / max * 100}%` }} /></div><small>{getShortMonthLabel(month.referenceMonth)}</small></div>;
                 })}
               </div>
               <p className="dashboard-card__note">O contrato atual fornece o mês corrente e o anterior para esta composição.</p>
