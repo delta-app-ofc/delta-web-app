@@ -1,12 +1,16 @@
 import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { AppSidebar } from "../../components/AppSidebar";
+import { AsyncFeedback } from "../../components/AsyncFeedback";
 import arrowIcon from "../../assets/settings/Arrow 1.png";
 import organizationIcon from "../../assets/settings/organizations.png";
 import plusIcon from "../../assets/settings/plus.png";
 import settingsIcon from "../../assets/settings/settings.png";
 import xIcon from "../../assets/settings/x.png";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
+import { useSettingsData } from "../../hooks/useSettingsData";
+import { updateCurrentUser } from "../../services/auth";
+import { ApiError } from "../../services/http";
 import { validateOrganization, validatePasswordChange, validateProfile, validateRecipients } from "../../utils/settingsValidation";
 
 import "./style.css";
@@ -166,10 +170,15 @@ function SettingsSelect({ label, value, options, onChange, className = "" }: Set
 
 export function SettingsPage() {
   const [profile, setProfile] = useState({
-    name: "Carlos Alberto Rodrigues",
-    email: "carlos.rodrigues@swift.com.br",
-    phone: "(11) 95064-6508",
+    name: "",
+    email: "",
+    phone: "",
+    birthDate: "",
   });
+  const [settingsRequestVersion, setSettingsRequestVersion] = useState(0);
+  const settingsState = useSettingsData(settingsRequestVersion);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const profileRequestRef = useRef<AbortController | null>(null);
   const [notifications, setNotifications] = useState(initialNotifications);
   const [organizationOpen, setOrganizationOpen] = useState(false);
   const [organization, setOrganization] = useState({
@@ -210,6 +219,29 @@ export function SettingsPage() {
   const passwordDialogRef = useDialogFocus<HTMLFormElement>(passwordModalOpen, closePasswordModal);
   const deleteDialogRef = useDialogFocus<HTMLFormElement>(deleteAccountModalOpen, closeDeleteAccountModal);
 
+  useEffect(() => () => profileRequestRef.current?.abort(), []);
+
+  useEffect(() => {
+    if (settingsState.status !== "success") return;
+    setProfile({
+      name: settingsState.user.name,
+      email: settingsState.user.email,
+      phone: settingsState.user.phone ?? "",
+      birthDate: settingsState.user.birthDate ?? "",
+    });
+    const firstOrganization = settingsState.organizations[0];
+    if (firstOrganization) {
+      setOrganization({
+        legalName: firstOrganization.corporateName,
+        tradeName: firstOrganization.tradeName,
+        cnpj: firstOrganization.cnpj,
+        segment: firstOrganization.businessSegment ?? "Não informado",
+      });
+    } else {
+      setOrganization({ legalName: "", tradeName: "Não disponível", cnpj: "", segment: "Não informado" });
+    }
+  }, [settingsState]);
+
   const generalSummary = useMemo(
     () => `${general.language} · ${general.timezone.replace("América/São Paulo ", "")}`,
     [general.language, general.timezone],
@@ -221,17 +253,31 @@ export function SettingsPage() {
     window.setTimeout(() => setFeedback(""), 3000);
   }
 
-  function saveProfile(event: FormEvent<HTMLFormElement>) {
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const error = validateProfile(profile);
     if (error) { setFormError(error); return; }
-    setProfile((current) => ({ ...current, name: current.name.trim(), email: current.email.trim() }));
-    showFeedback("Alterações do perfil salvas.");
+    if (!profile.birthDate) { setFormError("A data de nascimento do perfil não foi disponibilizada pela API."); return; }
+    profileRequestRef.current?.abort();
+    const controller = new AbortController();
+    profileRequestRef.current = controller;
+    setProfileSaving(true);
+    try {
+      const updated = await updateCurrentUser(profile, controller.signal);
+      if (!controller.signal.aborted) {
+        setProfile({ name: updated.name, email: updated.email, phone: updated.phone ?? "", birthDate: updated.birthDate ?? "" });
+        showFeedback("Alterações do perfil salvas.");
+      }
+    } catch (requestError: unknown) {
+      if (!controller.signal.aborted) setFormError(requestError instanceof ApiError ? requestError.message : "Não foi possível salvar o perfil.");
+    } finally {
+      if (profileRequestRef.current === controller) profileRequestRef.current = null;
+      if (!controller.signal.aborted) setProfileSaving(false);
+    }
   }
 
   function openOrganization() {
-    setOrganizationDraft(organization);
-    setOrganizationOpen(true);
+    setFormError("A API permite consultar a organização, mas ainda não permite editá-la.");
   }
 
   function closeOrganization() {
@@ -344,13 +390,17 @@ export function SettingsPage() {
           {formError && <span className="settings-feedback settings-feedback--error" role="alert">{formError}</span>}
         </header>
 
+        {settingsState.status === "loading" && <AsyncFeedback status="loading" message="Carregando configurações…" />}
+        {settingsState.status === "error" && <AsyncFeedback status="error" message={settingsState.error} onRetry={() => setSettingsRequestVersion((version) => version + 1)} />}
+        {settingsState.status === "success" && settingsState.warnings.map((warning) => <p className="settings-data-warning" role="alert" key={warning}>{warning}</p>)}
+
         <div className="settings-top-grid">
           <form className="settings-card settings-profile" onSubmit={saveProfile}>
             <h2>Perfil do gestor</h2>
             <div className="settings-field-label"><label htmlFor="settings-profile-name">Nome completo</label><input id="settings-profile-name" value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} maxLength={100} required /></div>
             <div className="settings-field-label"><label htmlFor="settings-profile-email">E-mail</label><input id="settings-profile-email" type="email" value={profile.email} onChange={(event) => setProfile({ ...profile, email: event.target.value })} maxLength={255} required /></div>
             <div className="settings-field-label"><label htmlFor="settings-profile-phone">Telefone</label><input id="settings-profile-phone" type="tel" value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} maxLength={20} /></div>
-            <button className="settings-primary-button" type="submit">Salvar alterações</button>
+            <button className="settings-primary-button" type="submit" disabled={profileSaving || settingsState.status !== "success"}>{profileSaving ? "Salvando…" : "Salvar alterações"}</button>
           </form>
 
           <section className="settings-card settings-preferences" aria-labelledby="preferences-title">
