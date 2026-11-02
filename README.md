@@ -1,4 +1,49 @@
-# React + TypeScript + Vite
+# Delta · Aplicação Web
+
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-4-646CFF?logo=vite&logoColor=white)
+![React Router](https://img.shields.io/badge/React%20Router-6-CA4245?logo=reactrouter&logoColor=white)
+![jsPDF](https://img.shields.io/badge/jsPDF-4-F40F02?logo=adobeacrobatreader&logoColor=white)
+
+A aplicação web do Delta liga a sessão do usuário às instalações associadas: consulta consumo autorizado, conduz o cadastro e a edição de imóveis e gera relatórios PDF no navegador. A interface conversa com a API configurada no ambiente; funcionalidades sem suporte no contrato da API permanecem sinalizadas como indisponíveis.
+
+**Tags:** `react` · `typescript` · `vite` · `react-router` · `autenticação` · `api` · `consumo-de-água` · `pdf`
+
+## Visão geral
+
+| Área | Descrição |
+|---|---|
+| Responsabilidade | Interface web de autenticação, instalações residenciais e leitura do consumo retornado pela API |
+| Tecnologias | React 18, TypeScript 5, Vite 4, React Router 6 e jsPDF |
+| Integração | API Delta configurada por `VITE_POSTGRES_API_URL`; regiões tarifárias podem ser substituídas por `VITE_TARIFF_REGIONS` |
+| Sessão | Tokens restritos à aba pelo `sessionStorage`; as consultas autenticadas usam Bearer |
+| Relatórios | PDFs gerados localmente com jsPDF e AutoTable, sem envio a serviço externo |
+
+## Sumário
+
+- [Início rápido](#início-rápido)
+- [API e autenticação](#api-e-autenticação)
+- [Cadastro de instalação](#cadastro-de-instalação)
+- [Detalhe da instalação](#detalhe-da-instalação)
+- [Edição da instalação](#edição-da-instalação)
+- [Exportação PDF](#exportação-pdf)
+- [Arquitetura, qualidade e acessibilidade](#arquitetura-qualidade-e-acessibilidade)
+- [Publicação](#publicação)
+- [Fonte Clayful](#fonte-clayful)
+
+## Início rápido
+
+Requer Node.js e npm. Na raiz do repositório:
+
+```bash
+npm ci
+cp .env.example .env.local
+npm run dev
+```
+
+Preencha `VITE_POSTGRES_API_URL` em `.env.local` com a origem da API, sem o sufixo `/delta`. No PowerShell, use `Copy-Item .env.example .env.local` para copiar a configuração de exemplo. O servidor informa o endereço local após iniciar.
+
 
 ## API e autenticação
 
@@ -61,29 +106,3 @@ Ainda não há uma implantação pública configurada neste repositório. Antes 
 A fonte **Clayful**, criada por **Namara Creative**, foi incluída localmente no formato `.otf` para compor o texto de destaque “gota por gota”. Ela foi obtida na [página da Clayful no DaFont](https://www.dafont.com/pt/clayful.font).
 
 A licença que acompanha o arquivo permite **somente uso pessoal** e proíbe uso comercial. Para utilizar a fonte em qualquer atividade comercial, é necessário adquirir previamente a licença adequada na [página oficial de licenciamento da Clayful](https://onedsgn.com/product/clayful-typeface/).
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-   },
-```
-
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
