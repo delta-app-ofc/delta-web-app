@@ -1,288 +1,123 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AppSidebar } from "../../components/AppSidebar";
+import { AsyncFeedback } from "../../components/AsyncFeedback";
 import exportIcon from "../../assets/investments/export.png";
 import investmentIcon from "../../assets/investments/investment.png";
-import lowBatteryIcon from "../../assets/investments/low-battery.png";
 import monthsIcon from "../../assets/investments/months.png";
 import noLinkIcon from "../../assets/investments/no-link.png";
 import pipeTrucksIcon from "../../assets/investments/pipe-trucks.png";
 import sceneryIcon from "../../assets/investments/scenery.png";
 import waterIcon from "../../assets/investments/water.png";
+import lowBatteryIcon from "../../assets/investments/low-battery.png";
+import { ApiError } from "../../services/http";
+import { listCapexComparisons } from "../../services/investments";
+import type { CapexComparison } from "../../types/investment";
 
 import "./style.css";
 
-type ScenarioId = "current" | "faucets" | "reuse" | "rain";
 type ImpactTab = "consumption" | "financial" | "environmental";
-
-interface Scenario {
-  id: ScenarioId;
-  name: string;
-  shortName: string;
-  description: string;
-  investment: string;
-  investmentValue: number;
-  reduction: number;
-  payback: string;
-  projectedConsumption: number;
-  annualSavings: number;
-  waterSaved: number;
-  trucks: number;
-  familyMonths: number;
-}
-
-const scenarios: readonly Scenario[] = [
-  {
-    id: "current",
-    name: "Situação atual",
-    shortName: "Situação atual",
-    description: "Baseline: nenhuma intervenção adicional.",
-    investment: "R$ 0",
-    investmentValue: 0,
-    reduction: 0,
-    payback: "—",
-    projectedConsumption: 1022353,
-    annualSavings: 0,
-    waterSaved: 0,
-    trucks: 0,
-    familyMonths: 0,
-  },
-  {
-    id: "faucets",
-    name: "Torneiras econômicas",
-    shortName: "Com torneiras econômicas",
-    description: "Troca de torneiras e válvulas por modelos de fechamento automático: baixo risco em todas as unidades da rede.",
-    investment: "R$ 18 mil",
-    investmentValue: 18000,
-    reduction: 12,
-    payback: "9,7 meses",
-    projectedConsumption: 899546,
-    annualSavings: 22200,
-    waterSaved: 1472149,
-    trucks: 147,
-    familyMonths: 98,
-  },
-  {
-    id: "reuse",
-    name: "Reuso de água",
-    shortName: "Reuso de água",
-    description: "Estação de tratamento e reaproveitamento de água cinza para limpeza e descargas sanitárias.",
-    investment: "R$ 75 mil",
-    investmentValue: 75000,
-    reduction: 28,
-    payback: "17,3 meses",
-    projectedConsumption: 736094,
-    annualSavings: 51800,
-    waterSaved: 3435015,
-    trucks: 344,
-    familyMonths: 229,
-  },
-  {
-    id: "rain",
-    name: "Captação de chuva",
-    shortName: "Captação da chuva",
-    description: "Captação e reservação de água de chuva para uso não potável: limpeza externa, irrigação e apoio operacional.",
-    investment: "R$ 42 mil",
-    investmentValue: 42000,
-    reduction: 19,
-    payback: "14,2 meses",
-    projectedConsumption: 828106,
-    annualSavings: 35200,
-    waterSaved: 2330903,
-    trucks: 233,
-    familyMonths: 155,
-  },
-];
-
 const impactTabs: readonly { id: ImpactTab; label: string }[] = [
   { id: "consumption", label: "Redução de Consumo" },
   { id: "financial", label: "Impacto Financeiro" },
   { id: "environmental", label: "Impacto Ambiental" },
 ];
-
 const numberFormatter = new Intl.NumberFormat("pt-BR");
+const currencyFormatter = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+type LoadingState =
+  | { status: "loading" }
+  | { status: "success"; data: CapexComparison[] }
+  | { status: "error"; error: string };
+
+function formatCurrency(value: number | null): string {
+  return value === null ? "—" : currencyFormatter.format(value);
+}
+
+function formatNumber(value: number | null, suffix = ""): string {
+  return value === null ? "—" : `${numberFormatter.format(value)}${suffix}`;
+}
+
+function formatPayback(value: number | null): string {
+  return value === null ? "—" : `${numberFormatter.format(value)} meses`;
+}
 
 export function InvestmentsPage() {
-  const [selectedScenarioId, setSelectedScenarioId] = useState<ScenarioId>("faucets");
+  const [state, setState] = useState<LoadingState>({ status: "loading" });
+  const [requestVersion, setRequestVersion] = useState(0);
+  const [selectedScenarioId, setSelectedScenarioId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<ImpactTab>("consumption");
-  const selectedScenario = scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? scenarios[1];
-  const investmentScenarios = scenarios.filter((scenario) => scenario.id !== "current");
-  const maxAnnualSavings = Math.max(...investmentScenarios.map((scenario) => scenario.annualSavings));
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setState({ status: "loading" });
+    void listCapexComparisons(controller.signal).then(
+      (data) => { if (!controller.signal.aborted) setState({ status: "success", data }); },
+      (error: unknown) => {
+        if (!controller.signal.aborted) setState({ status: "error", error: error instanceof ApiError ? error.message : "Não foi possível carregar os investimentos." });
+      },
+    );
+    return () => controller.abort();
+  }, [requestVersion]);
+
+  const scenarios = useMemo(() => state.status === "success" ? state.data : [], [state]);
+  const selectedScenario = scenarios.find((scenario) => scenario.scenarioId === selectedScenarioId) ?? scenarios[0];
+  const maxAnnualSavings = useMemo(() => Math.max(0, ...scenarios.map((scenario) => scenario.annualSavingsValue ?? 0)), [scenarios]);
+
+  useEffect(() => {
+    if (selectedScenario && selectedScenario.scenarioId !== selectedScenarioId) setSelectedScenarioId(selectedScenario.scenarioId);
+  }, [selectedScenario, selectedScenarioId]);
 
   return (
     <main className="investments-page">
       <div className="investments-page__sidebar">
-        <AppSidebar
-          label="Navegação principal"
-          profile={{ name: "Talita", email: "talita@delta.com.br" }}
-        />
+        <AppSidebar label="Navegação principal" profile={{ name: "Talita", email: "talita@delta.com.br" }} />
       </div>
-
       <section id="page-content" tabIndex={-1} className="investments-page__content" aria-labelledby="investments-title">
         <header className="investments-header">
           <h1 id="investments-title">Simulador de Investimentos</h1>
-          <button className="investments-export" type="button" onClick={() => window.print()}>
-            <img src={exportIcon} alt="" />
-            <span>Exportar para PDF</span>
-          </button>
+          <button className="investments-export" type="button" onClick={() => window.print()}><img src={exportIcon} alt="" /><span>Exportar para PDF</span></button>
         </header>
 
         <section className="investments-step" aria-labelledby="investment-step-one">
-          <div className="investments-step__heading">
-            <span aria-hidden="true">1</span>
-            <div>
-              <h2 id="investment-step-one">Escolha o cenário de investimento</h2>
-              <p>Compare as opções e clique em uma para ver o impacto projetado na rede completa.</p>
-            </div>
-          </div>
-
-          <div className="investment-scenarios" role="radiogroup" aria-label="Cenário de investimento">
+          <div className="investments-step__heading"><span aria-hidden="true">1</span><div><h2 id="investment-step-one">Escolha o cenário de investimento</h2><p>Compare as opções retornadas pelo backend e clique em uma para ver os impactos disponíveis.</p></div></div>
+          {state.status === "loading" && <AsyncFeedback status="loading" message="Carregando cenários de investimento…" />}
+          {state.status === "error" && <AsyncFeedback status="error" message={state.error} onRetry={() => setRequestVersion((version) => version + 1)} />}
+          {state.status === "success" && scenarios.length === 0 && <p className="investments-empty" role="status">Nenhum cenário de investimento foi retornado pela API.</p>}
+          {state.status === "success" && scenarios.length > 0 && <div className="investment-scenarios" role="radiogroup" aria-label="Cenário de investimento">
             {scenarios.map((scenario) => {
-              const isSelected = scenario.id === selectedScenarioId;
-
-              return (
-                <button
-                  className={`investment-scenario ${isSelected ? "investment-scenario--selected" : ""}`}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
-                  key={scenario.id}
-                  onClick={() => setSelectedScenarioId(scenario.id)}
-                >
-                  <span className="investment-scenario__radio" aria-hidden="true" />
-                  <strong>{scenario.name}</strong>
-                  <p>{scenario.description}</p>
-                  <dl>
-                    <div>
-                      <dt>Investimento</dt>
-                      <dd>{scenario.investment}</dd>
-                    </div>
-                    <div>
-                      <dt>Redução</dt>
-                      <dd className="investment-scenario__positive">{scenario.reduction}%</dd>
-                    </div>
-                    <div>
-                      <dt>Payback</dt>
-                      <dd>{scenario.payback}</dd>
-                    </div>
-                  </dl>
-                </button>
-              );
+              const isSelected = scenario.scenarioId === selectedScenario?.scenarioId;
+              return <button className={`investment-scenario ${isSelected ? "investment-scenario--selected" : ""}`} type="button" role="radio" aria-checked={isSelected} key={scenario.scenarioId} onClick={() => setSelectedScenarioId(scenario.scenarioId)}>
+                <span className="investment-scenario__radio" aria-hidden="true" /><strong>{scenario.name}</strong><p>Cenário retornado pela API.</p>
+                <dl><div><dt>Investimento</dt><dd>{formatCurrency(scenario.investmentValue)}</dd></div><div><dt>Redução</dt><dd className="investment-scenario__positive">{formatNumber(scenario.reductionPct, "%")}</dd></div><div><dt>Payback</dt><dd>{formatPayback(scenario.paybackMonths)}</dd></div></dl>
+              </button>;
             })}
-          </div>
+          </div>}
         </section>
 
-        <section className="investments-step investments-results" aria-labelledby="investment-step-two">
-          <div className="investments-step__heading">
-            <span aria-hidden="true">2</span>
-            <div>
-              <h2 id="investment-step-two">Impactos projetados</h2>
-              <p>Resultado do cenário selecionado acima, para toda a rede.</p>
-            </div>
-          </div>
-
+        {selectedScenario && <section className="investments-step investments-results" aria-labelledby="investment-step-two">
+          <div className="investments-step__heading"><span aria-hidden="true">2</span><div><h2 id="investment-step-two">Impactos projetados</h2><p>Resultado do cenário selecionado, limitado aos dados fornecidos pela API.</p></div></div>
           <div className="investment-indicators" role="region" aria-label="Resumo do cenário selecionado">
-            <article className="investments-card investment-indicator">
-              <div><img src={sceneryIcon} alt="" /><span>Cenário selecionado</span></div>
-              <strong>{selectedScenario.name}</strong>
-            </article>
-            <article className="investments-card investment-indicator">
-              <div><img src={investmentIcon} alt="" /><span>Investimento</span></div>
-              <strong>{selectedScenario.investmentValue === 0 ? "R$ 0" : `R$ ${numberFormatter.format(selectedScenario.investmentValue)}`}</strong>
-            </article>
-            <article className="investments-card investment-indicator">
-              <div><img src={lowBatteryIcon} alt="" /><span>Bateria baixa</span></div>
-              <strong>2</strong>
-              <small>Trocar em breve</small>
-            </article>
-            <article className="investments-card investment-indicator">
-              <div><img src={noLinkIcon} alt="" /><span>Sem vínculo</span></div>
-              <strong>2 de 10</strong>
-            </article>
+            <article className="investments-card investment-indicator"><div><img src={sceneryIcon} alt="" /><span>Cenário selecionado</span></div><strong>{selectedScenario.name}</strong></article>
+            <article className="investments-card investment-indicator"><div><img src={investmentIcon} alt="" /><span>Investimento</span></div><strong>{formatCurrency(selectedScenario.investmentValue)}</strong></article>
+            <article className="investments-card investment-indicator"><div><img src={lowBatteryIcon} alt="" /><span>Bateria baixa</span></div><strong>—</strong><small>Não informado pela API</small></article>
+            <article className="investments-card investment-indicator"><div><img src={noLinkIcon} alt="" /><span>Sem vínculo</span></div><strong>—</strong><small>Não informado pela API</small></article>
           </div>
 
           <section className="investments-card investment-impact" aria-label="Detalhamento dos impactos">
             <div className="investment-impact__tabs" role="tablist" aria-label="Tipo de impacto">
-              {impactTabs.map((tab) => (
-                <button
-                  className={activeTab === tab.id ? "investment-impact__tab--active" : ""}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === tab.id}
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
+              {impactTabs.map((tab) => <button className={activeTab === tab.id ? "investment-impact__tab--active" : ""} type="button" role="tab" aria-selected={activeTab === tab.id} key={tab.id} onClick={() => setActiveTab(tab.id)}>{tab.label}</button>)}
             </div>
-
-            {activeTab === "consumption" && (
-              <div className="consumption-impact" role="tabpanel">
-                <h3>Projeção para a rede completa</h3>
-                <div className="consumption-impact__chart">
-                  <div>
-                    <strong>{numberFormatter.format(scenarios[0].projectedConsumption)} L</strong>
-                    <span className="consumption-impact__bar consumption-impact__bar--current" />
-                    <small>Situação atual</small>
-                  </div>
-                  <div>
-                    <strong>{numberFormatter.format(selectedScenario.projectedConsumption)} L</strong>
-                    <span
-                      className="consumption-impact__bar consumption-impact__bar--projected"
-                      style={{ "--bar-height": `${Math.max(22, selectedScenario.projectedConsumption / scenarios[0].projectedConsumption * 100)}%` } as CSSProperties}
-                    />
-                    <small>{selectedScenario.shortName}</small>
-                  </div>
-                </div>
-                <p>Redução de {selectedScenario.reduction}% no consumo total da rede com torneiras econômicas.</p>
-              </div>
-            )}
-
-            {activeTab === "financial" && (
-              <div className="financial-impact" role="tabpanel">
-                <h3>Economia anual por cenário</h3>
-                <div className="financial-impact__chart">
-                  {investmentScenarios.map((scenario) => (
-                    <button
-                      type="button"
-                      className={scenario.id === selectedScenarioId ? "financial-impact__scenario--selected" : ""}
-                      key={scenario.id}
-                      onClick={() => setSelectedScenarioId(scenario.id)}
-                    >
-                      <strong>R$ {(scenario.annualSavings / 1000).toFixed(1)} mil</strong>
-                      <span
-                        style={{ height: `${Math.max(34, scenario.annualSavings / maxAnnualSavings * 100)}%` }}
-                        aria-hidden="true"
-                      />
-                      <small>{scenario.shortName}</small>
-                    </button>
-                  ))}
-                </div>
-                <p>Clique numa barra para trocar o cenário selecionado no passo 1.</p>
-              </div>
-            )}
-
-            {activeTab === "environmental" && (
-              <div className="environmental-impact" role="tabpanel">
-                <article>
-                  <div><img src={waterIcon} alt="" /><span>Água economizada/ano</span></div>
-                  <strong>{numberFormatter.format(selectedScenario.waterSaved)} L</strong>
-                </article>
-                <article>
-                  <div><img src={pipeTrucksIcon} alt="" /><span>Equiv. em caminhões-pipa</span></div>
-                  <strong>{numberFormatter.format(selectedScenario.trucks)} caminhões</strong>
-                </article>
-                <article>
-                  <div><img src={monthsIcon} alt="" /><span>Meses de consumo de 1 família</span></div>
-                  <strong>{numberFormatter.format(selectedScenario.familyMonths)} meses</strong>
-                </article>
-              </div>
-            )}
+            {activeTab === "consumption" && <div className="consumption-impact" role="tabpanel"><h3>Redução de consumo informada pela API</h3><div className="consumption-impact__unavailable" role="status"><strong>{formatNumber(selectedScenario.reductionPct, "%")}</strong><small>A API não informa a projeção de consumo em litros.</small></div><p>O cenário informa a redução percentual, mas não fornece uma linha de base em litros.</p></div>}
+            {activeTab === "financial" && <div className="financial-impact" role="tabpanel"><h3>Economia anual por cenário</h3><div className="financial-impact__chart">{scenarios.map((scenario) => <button type="button" className={scenario.scenarioId === selectedScenario.scenarioId ? "financial-impact__scenario--selected" : ""} key={scenario.scenarioId} onClick={() => setSelectedScenarioId(scenario.scenarioId)}><strong>{formatCurrency(scenario.annualSavingsValue)}</strong><span style={{ height: `${maxAnnualSavings > 0 ? Math.max(34, (scenario.annualSavingsValue ?? 0) / maxAnnualSavings * 100) : 34}%` }} aria-hidden="true" /><small>{scenario.name}</small></button>)}</div><p>Clique numa barra para trocar o cenário selecionado.</p></div>}
+            {activeTab === "environmental" && <div className="environmental-impact" role="tabpanel">
+              <article><div><img src={waterIcon} alt="" /><span>Água economizada/ano</span></div><strong>—</strong><small>Não informado pela API</small></article>
+              <article><div><img src={pipeTrucksIcon} alt="" /><span>Equiv. em caminhões-pipa</span></div><strong>—</strong><small>Não informado pela API</small></article>
+              <article><div><img src={monthsIcon} alt="" /><span>Meses de consumo de 1 família</span></div><strong>—</strong><small>Não informado pela API</small></article>
+            </div>}
           </section>
-        </section>
+        </section>}
       </section>
     </main>
   );
 }
-
