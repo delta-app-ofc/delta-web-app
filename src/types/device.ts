@@ -34,3 +34,12 @@ export interface DevicesResult {
   unlinkedInstallations: UnlinkedInstallationView[];
   warnings: string[];
 }
+
+export interface ConsumptionSummary {
+  id: string | null;
+  deviceId: string;
+  windowStartedAt: string;
+  windowFinishedAt: string;
+  consumptionLiters: number;
+  lpmAverage: number | null;
+}
