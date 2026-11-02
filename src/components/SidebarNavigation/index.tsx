@@ -6,7 +6,6 @@ import alerts from "../../assets/installations/alerts.svg";
 import leaks from "../../assets/installations/leaks.svg";
 import ranking from "../../assets/installations/ranking.svg";
 import goals from "../../assets/installations/goals.svg";
-import investments from "../../assets/installations/investments.svg";
 import devices from "../../assets/installations/devices.svg";
 import gluh from "../../assets/installations/gluh.svg";
 import settings from "../../assets/installations/menu-settings.svg";
@@ -33,7 +32,6 @@ const navigation: readonly SidebarNavigationItem[] = [
   { id: "leaks", label: "Vazamentos", icon: leaks, path: "/vazamentos" },
   { id: "ranking", label: "Ranking", icon: ranking, path: "/ranking" },
   { id: "goals", label: "Metas", icon: goals, path: "/metas" },
-  { id: "investments", label: "Investimentos", icon: investments, path: "/investimentos" },
   { id: "devices", label: "Dispositivos", icon: devices, path: "/dispositivos" },
   { id: "gluh", label: "Gluh", icon: gluh, path: "/gluh" },
   { id: "settings", label: "Configurações", icon: settings, path: "/configuracoes" },

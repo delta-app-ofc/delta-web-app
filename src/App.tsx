@@ -24,7 +24,6 @@ const ChatbotPage = lazy(() => import("./pages/chatbot").then(({ ChatbotPage }) 
 const ChatbotHistoryPage = lazy(() => import("./pages/chatbotHistory").then(({ ChatbotHistoryPage }) => ({ default: ChatbotHistoryPage })));
 const DevicesPage = lazy(() => import("./pages/devices").then(({ DevicesPage }) => ({ default: DevicesPage })));
 const DeviceLinkPage = lazy(() => import("./pages/deviceLink").then(({ DeviceLinkPage }) => ({ default: DeviceLinkPage })));
-const InvestmentsPage = lazy(() => import("./pages/investments").then(({ InvestmentsPage }) => ({ default: InvestmentsPage })));
 const SettingsPage = lazy(() => import("./pages/settings").then(({ SettingsPage }) => ({ default: SettingsPage })));
 const InstallationsPage = lazy(() => import("./pages/Installations"));
 const InstallationRegistrationPage = lazy(() => import("./pages/InstallationRegistration"));
@@ -164,11 +163,6 @@ function App() {
                 <Route
                   path="/dispositivos/vincular"
                   element={<DeviceLinkPage />}
-                />
-
-                <Route
-                  path="/investimentos"
-                  element={<InvestmentsPage />}
                 />
 
                 <Route

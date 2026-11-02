@@ -27,7 +27,6 @@ const navigationItems: readonly SidebarNavigationItem[] = [
   { id: "leaks", label: "Vazamentos", icon: leaksIcon, path: "/vazamentos" },
   { id: "ranking", label: "Ranking", icon: rankingIcon, path: "/ranking" },
   { id: "goals", label: "Metas", icon: goalsIcon, path: "/metas" },
-  { id: "investments", label: "Investimentos", icon: investmentsIcon, path: "/investimentos" },
   { id: "devices", label: "Dispositivos", icon: devicesIcon, path: "/dispositivos" },
   { id: "gluh", label: "Gluh", icon: gluhIcon, path: "/gluh" },
   { id: "settings", label: "Configurações", icon: settingsIcon, path: "/configuracoes" },
