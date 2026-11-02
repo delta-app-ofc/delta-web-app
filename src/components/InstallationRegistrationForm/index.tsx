@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import backArrow from "../../assets/installation-registration/back-arrow.svg";
 import unitChevron from "../../assets/installation-registration/unit-chevron.svg";
 import { brazilianStates, initialRegistrationData, tariffClassifications } from "../../types/installationRegistration";
 import { configuredTariffRegions } from "../../services/tariffRegions";
+import { lookupPostalCode } from "../../services/postalCode";
 import type { InstallationRegistrationData, RegistrationErrors, RegistrationField } from "../../types/installationRegistration";
 import { formatCep, RegistrationSubmitError, validateRegistration } from "../../utils/installationRegistration";
 import styles from "./styles.module.css";
@@ -40,6 +41,19 @@ export function InstallationRegistrationForm({ onSave, mode = "create", initialD
   });
   const submitting = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (editing || data.cep.replace(/\D/g, "").length !== 8) return;
+    const controller = new AbortController();
+    lookupPostalCode(data.cep, controller.signal).then((address) => {
+      if (!address) return;
+      setData((previous) => previous.cep === data.cep ? { ...previous, city: address.city, state: address.state } : previous);
+      setErrors((previous) => ({ ...previous, cep: undefined, city: undefined, state: undefined }));
+    }).catch((error: unknown) => {
+      if (!(error instanceof DOMException && error.name === "AbortError")) return;
+    });
+    return () => controller.abort();
+  }, [data.cep, editing]);
 
   function update(name: RegistrationField, value: string) {
     setData((previous) => ({ ...previous, [name]: name === "cep" ? formatCep(value) : value }));
