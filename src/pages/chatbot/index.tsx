@@ -2,6 +2,8 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { AppSidebar } from "../../components/AppSidebar";
+import { getAiSessionMessages, sendAiMessage, getAiSuggestions } from "../../services/ai";
+import { ApiError } from "../../services/http";
 import arrowIcon from "../../assets/chatbot/arrow.png";
 import historicalIcon from "../../assets/chatbot/historical.png";
 import newConversationIcon from "../../assets/chatbot/new-conversation.png";
@@ -19,38 +21,6 @@ interface ChatbotLocationState {
   conversation?: ArchivedConversation;
 }
 
-const suggestions = [
-  "Onde investir para economizar mais?",
-  "Tem algum vazamento crítico no momento?",
-  "Qual foi o maior consumo entre as unidades?",
-  "Iremos ultrapassar a meta?",
-] as const;
-
-const suggestedAnswers: Record<(typeof suggestions)[number], string> = {
-  "Onde investir para economizar mais?":
-    "A unidade de Pinheiros deve ser priorizada: ela apresenta o maior consumo e também possui um vazamento ativo.",
-  "Tem algum vazamento crítico no momento?":
-    "Sim. Existem dois vazamentos ativos, e o caso de Pinheiros requer atenção imediata.",
-  "Qual foi o maior consumo entre as unidades?":
-    "A Loja Swift de Pinheiros registrou o maior consumo mensal, com 12.300 litros.",
-  "Iremos ultrapassar a meta?":
-    "A unidade Vila Leopoldina está acima da referência, com 112% da meta de consumo.",
-};
-
-function getAnswer(question: string) {
-  const normalizedQuestion = question.toLocaleLowerCase("pt-BR");
-
-  if (normalizedQuestion.includes("unidades") && normalizedQuestion.includes("crític")) {
-    return "Encontrei 2 unidades em estado crítico:\n• Loja Swift - Pinheiros — 112% da meta, consumo de 12.300 L\n• Centro de Distribuição - Campinas — 118% da meta, consumo de 15.680 L\nRecomendo priorizar a inspeção dessas unidades esta semana.";
-  }
-
-  if (question in suggestedAnswers) {
-    return suggestedAnswers[question as keyof typeof suggestedAnswers];
-  }
-
-  return "Recebi sua pergunta. Quando a integração com os dados em tempo real estiver disponível, poderei responder com uma análise completa.";
-}
-
 export function ChatbotPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -59,10 +29,39 @@ export function ChatbotPage() {
   const [messages, setMessages] = useState<readonly ChatMessage[]>(
     () => locationState?.conversation?.messages ?? [],
   );
+  const [sessionId, setSessionId] = useState<string | null>(() => locationState?.conversation?.id ?? null);
+  const [suggestions, setSuggestions] = useState<readonly string[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [conversationHistory, setConversationHistory] = useState<readonly ArchivedConversation[]>(
     defaultConversations,
   );
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void getAiSuggestions(controller.signal).then(setSuggestions).catch((failure: unknown) => {
+      if (!controller.signal.aborted) setError(failure instanceof ApiError ? failure.message : "Não foi possível carregar as sugestões.");
+    });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!sessionId || messages.length > 0) return;
+    const controller = new AbortController();
+    void getAiSessionMessages(sessionId, controller.signal).then((history) => {
+      if (!controller.signal.aborted) {
+        setMessages(history.map((message, index) => ({
+          id: `${message.role}-${index}`,
+          author: message.role === "user" ? "user" : "assistant",
+          content: message.content,
+        })));
+      }
+    }).catch((failure: unknown) => {
+      if (!controller.signal.aborted) setError(failure instanceof ApiError ? failure.message : "Não foi possível carregar a conversa.");
+    });
+    return () => controller.abort();
+  }, [messages.length, sessionId]);
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -79,31 +78,28 @@ export function ChatbotPage() {
     return () => window.cancelAnimationFrame(animationFrame);
   }, [messages.length]);
 
-  function sendMessage(content: string) {
+  async function sendMessage(content: string) {
     const normalizedContent = content.trim();
 
-    if (!normalizedContent) {
+    if (!normalizedContent || isSending) {
       return;
     }
-
-    setMessages((currentMessages) => {
-      const messageIndex = currentMessages.length;
-
-      return [
-        ...currentMessages,
-        {
-          id: `user-${messageIndex}`,
-          author: "user",
-          content: normalizedContent,
-        },
-        {
-          id: `assistant-${messageIndex + 1}`,
-          author: "assistant",
-          content: getAnswer(normalizedContent),
-        },
-      ];
-    });
     setQuestion("");
+    setError(null);
+    setIsSending(true);
+    const controller = new AbortController();
+    const messageIndex = messages.length;
+    setMessages((currentMessages) => [...currentMessages, { id: `user-${messageIndex}`, author: "user", content: normalizedContent }]);
+    try {
+      const result = await sendAiMessage(normalizedContent, sessionId, controller.signal);
+      setSessionId(result.sessionId);
+      setMessages((currentMessages) => [...currentMessages, { id: `assistant-${messageIndex + 1}`, author: "assistant", content: result.response }]);
+      if (result.suggestions.length > 0) setSuggestions(result.suggestions);
+    } catch (failure: unknown) {
+      setError(failure instanceof ApiError ? failure.message : "Não foi possível enviar a pergunta.");
+    } finally {
+      setIsSending(false);
+    }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -127,6 +123,7 @@ export function ChatbotPage() {
     }
 
     setMessages([]);
+    setSessionId(null);
     setQuestion("");
   }
 
@@ -135,10 +132,7 @@ export function ChatbotPage() {
   return (
     <main className="chatbot-page">
       <div className="chatbot-page__sidebar">
-        <AppSidebar
-          label="Navegação principal"
-          profile={{ name: "Talita", email: "talita@delta.com.br" }}
-        />
+        <AppSidebar label="Navegação principal" />
       </div>
 
       <section
@@ -188,6 +182,8 @@ export function ChatbotPage() {
           </>
         )}
 
+        {error && <p className="chatbot-error" role="alert">{error}</p>}
+
         {hasConversation && (
           <section className="chatbot-messages" aria-label="Conversa com o Gluh" aria-live="polite">
             {messages.map((message) => (
@@ -213,7 +209,7 @@ export function ChatbotPage() {
                 onChange={(event) => setQuestion(event.target.value)}
                 autoComplete="off"
               />
-              <button type="submit" aria-label="Enviar pergunta" disabled={!question.trim()}>
+              <button type="submit" aria-label="Enviar pergunta" disabled={!question.trim() || isSending}>
                 <img src={sendIcon} alt="" />
               </button>
             </form>

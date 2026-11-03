@@ -25,6 +25,11 @@ export function getMonthLabel(referenceMonth: string): string {
     .format(new Date(`${referenceMonth}T00:00:00Z`));
 }
 
+export function getShortMonthLabel(referenceMonth: string): string {
+  return new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric", timeZone: "UTC" })
+    .format(new Date(`${referenceMonth}T00:00:00Z`)).replace(". de ", "/").replace(" de ", "/").replace(/\.$/, "");
+}
+
 export function isInSaoPaulo(installation: Installation): boolean {
   const state = normalizeSearch(installation.state ?? "");
   return state === "sp" || state === "sao paulo";

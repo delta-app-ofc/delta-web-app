@@ -1,264 +1,79 @@
 import { useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { AppSidebar } from "../../components/AppSidebar";
+import { AsyncFeedback } from "../../components/AsyncFeedback";
+import { useDevices } from "../../hooks/useDevices";
 import devicesIcon from "../../assets/devices/devices.png";
 import onlineIcon from "../../assets/devices/online.png";
 import lowBatteryIcon from "../../assets/devices/low-battery.png";
 import noLinkIcon from "../../assets/devices/no-link.png";
 import linkIcon from "../../assets/devices/link.png";
-import batteryFullIcon from "../../assets/devices/battery1.png";
-import batteryLowIcon from "../../assets/devices/battery2.png";
-import batteryMediumIcon from "../../assets/devices/battery3.png";
-import batteryCriticalIcon from "../../assets/devices/battery4.png";
-import batteryGoodIcon from "../../assets/devices/baterry5.png";
 
 import "./style.css";
 
-interface Device {
-  id: string;
-  installation: string;
-  location: string;
-  connectivity: "Online" | "Offline";
-  battery: number;
-  batteryIcon: string;
-  batteryType: "good" | "warning" | "critical";
+function formatDate(value: string | null): string {
+  if (!value) return "Não informado";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("pt-BR").format(date);
 }
 
-interface UnlinkedInstallation {
-  id: string;
-  name: string;
-  region: string;
+function batteryClass(level: number): "good" | "warning" | "critical" {
+  return level <= 20 ? "critical" : level <= 50 ? "warning" : "good";
 }
 
-interface DevicesLocationState {
-  linkedDevice?: {
-    id: string;
-    installationId: string;
-    installation: string;
-    region: string;
-  };
+function isOnline(status: string | undefined): boolean {
+  return status?.toLocaleLowerCase("pt-BR") === "online" || status?.toLocaleLowerCase("pt-BR") === "connected";
 }
-
-const initialDevices: readonly Device[] = [
-  {
-    id: "DELTA-ESP32-000184",
-    installation: "Loja swift - Vila Leopoldina",
-    location: "São Paulo - SP",
-    connectivity: "Online",
-    battery: 100,
-    batteryIcon: batteryFullIcon,
-    batteryType: "good",
-  },
-  {
-    id: "DELTA-ESP32-000067",
-    installation: "Loja swift - Vila Romana",
-    location: "São Paulo - SP",
-    connectivity: "Online",
-    battery: 20,
-    batteryIcon: batteryLowIcon,
-    batteryType: "critical",
-  },
-  {
-    id: "DELTA-ESP32-000133",
-    installation: "Loja swift - Perdizes",
-    location: "São Paulo - SP",
-    connectivity: "Online",
-    battery: 67,
-    batteryIcon: batteryMediumIcon,
-    batteryType: "warning",
-  },
-  {
-    id: "DELTA-ESP32-000143",
-    installation: "Loja swift - Pinheiros",
-    location: "São Paulo - SP",
-    connectivity: "Offline",
-    battery: 85,
-    batteryIcon: batteryGoodIcon,
-    batteryType: "good",
-  },
-  {
-    id: "DELTA-ESP32-000134",
-    installation: "Loja swift - Moema",
-    location: "São Paulo - SP",
-    connectivity: "Offline",
-    battery: 10,
-    batteryIcon: batteryCriticalIcon,
-    batteryType: "critical",
-  },
-];
-
-const initialUnlinkedInstallations: readonly UnlinkedInstallation[] = [
-  { id: "sorocaba", name: "Loja swift - Sorocaba", region: "São Paulo - SP" },
-  { id: "mooca", name: "Loja swift - Mooca", region: "São Paulo - SP" },
-];
 
 export function DevicesPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const locationState = location.state as DevicesLocationState | null;
-  const linkedDevice = locationState?.linkedDevice;
+  const { state, retry } = useDevices();
   const [search, setSearch] = useState("");
-  const [devices] = useState<readonly Device[]>(() => linkedDevice
-    ? [
-        ...initialDevices,
-        {
-          id: linkedDevice.id,
-          installation: linkedDevice.installation,
-          location: linkedDevice.region,
-          connectivity: "Online",
-          battery: 100,
-          batteryIcon: batteryFullIcon,
-          batteryType: "good",
-        },
-      ]
-    : initialDevices,
-  );
-  const [unlinkedInstallations] = useState<readonly UnlinkedInstallation[]>(() =>
-    linkedDevice
-      ? initialUnlinkedInstallations.filter((installation) => installation.id !== linkedDevice.installationId)
-      : initialUnlinkedInstallations,
-  );
-
   const filteredDevices = useMemo(() => {
-    const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
-
-    if (!normalizedSearch) {
-      return devices;
-    }
-
-    return devices.filter((device) =>
-      `${device.id} ${device.installation}`.toLocaleLowerCase("pt-BR").includes(normalizedSearch),
-    );
-  }, [devices, search]);
-
-  const indicators = [
-    { id: "paired", label: "Dispositivos pareados", value: `${linkedDevice ? 9 : 8} de 10`, icon: devicesIcon },
-    { id: "online", label: "Online agora", value: `${linkedDevice ? 8 : 7} de 8`, icon: onlineIcon },
-    { id: "battery", label: "Bateria baixa", value: "2", detail: "Trocar em breve", icon: lowBatteryIcon },
-    { id: "unlinked", label: "Sem vínculo", value: `${unlinkedInstallations.length} de 10`, icon: noLinkIcon },
-  ] as const;
+    if (state.status !== "success") return [];
+    const query = search.trim().toLocaleLowerCase("pt-BR");
+    return state.data.devices.filter(({ record, installationName }) => `${record.deviceId} ${installationName}`.toLocaleLowerCase("pt-BR").includes(query));
+  }, [search, state]);
 
   return (
     <main className="devices-page">
-      <div className="devices-page__sidebar">
-        <AppSidebar
-          label="Navegação principal"
-          profile={{ name: "Talita", email: "talita@delta.com.br" }}
-        />
-      </div>
-
+      <div className="devices-page__sidebar"><AppSidebar label="Navegação principal" /></div>
       <section id="page-content" tabIndex={-1} className="devices-page__content" aria-labelledby="devices-title">
         <header className="devices-header">
           <h1 id="devices-title">Dispositivos</h1>
           <div className="devices-header__controls">
-            <label className="devices-search" htmlFor="device-search">
-              <span aria-hidden="true" />
-              <input
-                id="device-search"
-                type="search"
-                placeholder="Buscar por ID ou instalação"
-                value={search}
-                maxLength={100}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </label>
-            <button className="devices-link-button devices-link-button--primary" type="button" onClick={() => navigate("/dispositivos/vincular")}>
-              <img src={linkIcon} alt="" />
-              <span>Vincular dispositivo</span>
-            </button>
+            <label className="devices-search" htmlFor="device-search"><span aria-hidden="true" /><input id="device-search" type="search" placeholder="Buscar por ID ou instalação" value={search} maxLength={100} onChange={(event) => setSearch(event.target.value)} /></label>
+            <button className="devices-link-button devices-link-button--primary" type="button" onClick={() => navigate("/dispositivos/vincular")}><img src={linkIcon} alt="" /><span>Vincular dispositivo</span></button>
           </div>
         </header>
 
-        <section className="devices-indicators" aria-label="Resumo dos dispositivos">
-          {indicators.map((indicator) => (
-            <article className="devices-card devices-indicator" key={indicator.id}>
-              <div className="devices-indicator__label">
-                <img src={indicator.icon} alt="" />
-                <span>{indicator.label}</span>
-              </div>
-              <strong>{indicator.value}</strong>
-              {"detail" in indicator && <small>{indicator.detail}</small>}
-            </article>
-          ))}
-        </section>
+        {state.status === "loading" && <AsyncFeedback status="loading" message="Carregando dispositivos…" />}
+        {state.status === "error" && <AsyncFeedback status="error" message={state.error} onRetry={retry} />}
+        {state.status === "success" && <>
+          {state.data.warnings.map((warning) => <p className="devices-data-warning" role="alert" key={warning}>{warning}</p>)}
+          <section className="devices-indicators" aria-label="Resumo dos dispositivos">
+            {[
+              { id: "paired", label: "Dispositivos pareados", value: String(state.data.devices.filter(({ record }) => record.isActive).length), icon: devicesIcon },
+              { id: "online", label: "Online agora", value: String(state.data.devices.filter(({ telemetry }) => isOnline(telemetry?.connectivityStatus)).length), icon: onlineIcon },
+              { id: "battery", label: "Bateria baixa", value: String(state.data.devices.filter(({ telemetry }) => telemetry !== null && telemetry.batteryLevel <= 20).length), icon: lowBatteryIcon },
+              { id: "unlinked", label: "Sem vínculo", value: String(state.data.unlinkedInstallations.length), icon: noLinkIcon },
+            ].map((indicator) => <article className="devices-card devices-indicator" key={indicator.id}><div className="devices-indicator__label"><img src={indicator.icon} alt="" /><span>{indicator.label}</span></div><strong>{indicator.value}</strong>{indicator.id === "online" || indicator.id === "battery" ? <small>Com base na última telemetria recebida</small> : null}</article>)}
+          </section>
 
-        <div className="devices-card devices-table-wrapper">
-          <table className="devices-table">
-            <caption className="sr-only">Dispositivos vinculados às instalações</caption>
-            <thead>
-              <tr>
-                <th scope="col">Dispositivo</th>
-                <th scope="col">Instalação</th>
-                <th scope="col">Conectividade</th>
-                <th scope="col">Bateria</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDevices.map((device) => (
-                <tr key={device.id}>
-                  <td>{device.id}</td>
-                  <td>
-                    <strong>{device.installation}</strong>
-                    <small>{device.location}</small>
-                  </td>
-                  <td>
-                    <span className={`devices-connectivity devices-connectivity--${device.connectivity.toLowerCase()}`}>
-                      {device.connectivity}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`devices-battery devices-battery--${device.batteryType}`}>
-                      <img src={device.batteryIcon} alt="" />
-                      <span>{device.battery}%</span>
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filteredDevices.length === 0 && <p className="devices-empty">Nenhum dispositivo encontrado.</p>}
-        </div>
-
-        <section className="devices-unlinked" aria-labelledby="unlinked-installations-title">
-          <h2 id="unlinked-installations-title">Instalações sem dispositivo vinculado</h2>
-          <div className="devices-card devices-unlinked__table-wrapper">
-            <table>
-              <caption className="sr-only">Instalações sem dispositivo vinculado</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Instalação</th>
-                  <th scope="col">Região</th>
-                  <th scope="col"><span className="sr-only">Ações</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {unlinkedInstallations.map((installation) => (
-                  <tr key={installation.id}>
-                    <td>{installation.name}</td>
-                    <td>{installation.region}</td>
-                    <td>
-                      <button
-                        className="devices-link-button"
-                        type="button"
-                        onClick={() => navigate("/dispositivos/vincular", { state: { installation } })}
-                      >
-                        <img src={linkIcon} alt="" />
-                        <span>Vincular dispositivo</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+          <div className="devices-card devices-table-wrapper">
+            <table className="devices-table"><caption className="sr-only">Dispositivos vinculados às instalações</caption><thead><tr><th scope="col">Dispositivo</th><th scope="col">Instalação</th><th scope="col">Conectividade</th><th scope="col">Bateria</th><th scope="col">Último ping</th></tr></thead>
+              <tbody>{filteredDevices.map(({ record, installationName, region, telemetry }) => <tr key={record.id}><td>{record.deviceId}</td><td><strong>{installationName}</strong><small>{region ?? "Região não informada"}</small></td><td><span className={`devices-connectivity devices-connectivity--${isOnline(telemetry?.connectivityStatus) ? "online" : "offline"}`}>{telemetry?.connectivityStatus ?? "Sem telemetria"}</span></td><td>{telemetry ? <span className={`devices-battery devices-battery--${batteryClass(telemetry.batteryLevel)}`}><span>{telemetry.batteryLevel}%</span></span> : "Não informado"}</td><td>{telemetry ? formatDate(telemetry.lastPingAt) : formatDate(record.installationDate)}</td></tr>)}</tbody>
             </table>
-            {unlinkedInstallations.length === 0 && (
-              <p className="devices-empty">Todas as instalações possuem dispositivo vinculado.</p>
-            )}
+            {filteredDevices.length === 0 && <p className="devices-empty">Nenhum dispositivo encontrado.</p>}
           </div>
-        </section>
-      </section>
 
+          <section className="devices-unlinked" aria-labelledby="unlinked-installations-title"><h2 id="unlinked-installations-title">Instalações sem dispositivo vinculado</h2><div className="devices-card devices-unlinked__table-wrapper">
+            <table><caption className="sr-only">Instalações sem dispositivo vinculado</caption><thead><tr><th scope="col">Instalação</th><th scope="col">Região</th><th scope="col"><span className="sr-only">Ações</span></th></tr></thead><tbody>{state.data.unlinkedInstallations.map((installation) => <tr key={installation.id}><td>{installation.name}</td><td>{installation.region ?? "Região não informada"}</td><td><button className="devices-link-button" type="button" onClick={() => navigate("/dispositivos/vincular", { state: { installation } })}><img src={linkIcon} alt="" /><span>Vincular dispositivo</span></button></td></tr>)}</tbody></table>
+            {state.data.unlinkedInstallations.length === 0 && <p className="devices-empty">Todas as instalações possuem dispositivo vinculado.</p>}
+          </div></section>
+        </>}
+      </section>
     </main>
   );
 }
-

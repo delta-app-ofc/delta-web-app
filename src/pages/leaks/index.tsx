@@ -104,7 +104,6 @@ export function LeaksPage() {
       <div className="leaks-page__sidebar">
         <AppSidebar
           label="Navegação principal"
-          profile={{ name: "Talita", email: "talita@delta.com.br" }}
         />
       </div>
 

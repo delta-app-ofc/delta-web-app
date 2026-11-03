@@ -46,6 +46,25 @@
   font-size: 17px;
 }
 
+.ranking-state {
+  margin: 2rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--ranking-border);
+  border-radius: 0.75rem;
+  color: var(--ranking-muted);
+  background: var(--ranking-card);
+}
+
+.ranking-state button {
+  margin-top: 0.75rem;
+  padding: 0.55rem 0.9rem;
+  border: 0;
+  border-radius: 0.5rem;
+  color: #111820;
+  background: #d4e7ff;
+  cursor: pointer;
+}
+
 .ranking-winner__mascot {
   width: 98px;
   height: 98px;
@@ -201,6 +220,9 @@
   margin-top: 10px;
   color: #9aacc7;
   font-size: 9px;
+  max-width: 5.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

@@ -2,10 +2,14 @@
 .section h2 { margin: 0 0 25px 9px; font-size: 28px; font-weight: 400; }
 .card { padding: 28px 37px 30px; border: .5px solid var(--installation-border); border-radius: 45px; background: rgba(15,46,109,.05); }
 .canvas { min-height: 400px; display: flex; justify-content: center; align-items: center; padding: 25px; border-radius: 45px; background: rgba(15,46,109,.17); }
-.canvas img { display: block; max-width: 100%; height: auto; }
+.mapLayer { position: relative; width: min(100%, 592px); }
+.mapLayer img { display: block; width: 100%; height: auto; }
+.pin { position: absolute; width: 16px; height: 16px; border: 3px solid #fff; border-radius: 50%; background: #4f8dff; box-shadow: 0 0 0 4px rgba(79,141,255,.25), 0 3px 8px rgba(0,0,0,.35); transform: translate(-50%, -50%); transition: transform 150ms ease, background-color 150ms ease; }
+.pin:hover, .pin:focus-visible { z-index: 1; background: #43e690; transform: translate(-50%, -50%) scale(1.25); }
+.pin:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 .caption { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 23px 4px 0; font-size: 16px; }
 .legend { display: flex; align-items: center; gap: 8px; }
 .dot { width: 20px; height: 20px; border-radius: 50%; background: #b6d3ff; }
 .caption > span:last-child, .cities { color: var(--installation-muted); font-size: 14px; }
 .cities { margin-top: 15px; line-height: 1.6; }
-@media (max-width: 700px) { .card { padding: 16px; border-radius: 24px; } .canvas { min-height: 0; border-radius: 18px; padding: 15px; } .section h2 { font-size: 24px; } }
+@media (max-width: 700px) { .card { padding: 16px; border-radius: 24px; } .canvas { min-height: 0; border-radius: 18px; padding: 15px; } .section h2 { font-size: 24px; } .pin { width: 13px; height: 13px; border-width: 2px; } }

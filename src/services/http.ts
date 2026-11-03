@@ -8,15 +8,15 @@ export class ApiError extends Error {
   }
 }
 
-function apiUrl(path: string): string {
-  const baseUrl = import.meta.env.VITE_POSTGRES_API_URL?.trim();
+function apiUrl(path: string, configuredBaseUrl = import.meta.env.VITE_POSTGRES_API_URL?.trim()): string {
+  const baseUrl = configuredBaseUrl;
   if (!baseUrl) throw new ApiError("O serviço ainda não foi configurado.");
   return `${baseUrl.replace(/\/$/, "")}${path}`;
 }
 
-async function request(path: string, options: RequestInit): Promise<Response> {
+async function request(path: string, options: RequestInit, configuredBaseUrl?: string): Promise<Response> {
   try {
-    return await fetch(apiUrl(path), {
+    return await fetch(apiUrl(path, configuredBaseUrl), {
       ...options,
       headers: { Accept: "application/json", ...options.headers },
     });
@@ -51,6 +51,12 @@ export async function postPublicJson(path: string, body: unknown, signal?: Abort
   return readJson(response);
 }
 
+export async function getPublicJsonFrom(baseUrl: string | undefined, path: string, signal?: AbortSignal): Promise<unknown> {
+  const response = await request(path, { method: "GET", signal }, baseUrl);
+  if (!response.ok) throw new ApiError("Não foi possível consultar a telemetria.", response.status);
+  return readJson(response);
+}
+
 let pendingRefresh: { token: string; promise: Promise<void> } | null = null;
 
 async function refreshSession(current: Session): Promise<void> {
@@ -82,7 +88,7 @@ async function refreshSession(current: Session): Promise<void> {
   finally { if (pendingRefresh?.promise === promise) pendingRefresh = null; }
 }
 
-async function authenticatedRequest(path: string, signal: AbortSignal, method: "GET" | "POST" | "PUT", body?: unknown): Promise<unknown> {
+async function authenticatedRequest(path: string, signal: AbortSignal, method: "GET" | "POST" | "PUT", body?: unknown, configuredBaseUrl?: string, clearSessionOnUnauthorized = true, retryOnUnauthorized = true): Promise<unknown> {
   const initial = getSession();
   if (!initial) throw new ApiError("Entre na sua conta para continuar.", 401);
   if (initial.expiresAt <= Date.now() + 5000) await refreshSession(initial);
@@ -93,17 +99,17 @@ async function authenticatedRequest(path: string, signal: AbortSignal, method: "
     method, signal, body: body === undefined ? undefined : JSON.stringify(body),
     headers: { ...(body === undefined ? {} : { "Content-Type": "application/json" }), Authorization: `Bearer ${current.accessToken}` },
   };
-  let response = await request(path, options);
-  if (response.status === 401) {
+  let response = await request(path, options, configuredBaseUrl);
+  if (response.status === 401 && retryOnUnauthorized) {
     // Outras consultas podem ter renovado o token enquanto esta estava em trânsito.
     if (getSession() === current) await refreshSession(current);
     signal.throwIfAborted();
     current = getSession();
     if (!current) throw new ApiError("Sua sessão expirou. Entre novamente.", 401);
-    response = await request(path, { ...options, headers: { ...options.headers, Authorization: `Bearer ${current.accessToken}` } });
+    response = await request(path, { ...options, headers: { ...options.headers, Authorization: `Bearer ${current.accessToken}` } }, configuredBaseUrl);
   }
   if (!response.ok) {
-    if (response.status === 401 && getSession() === current) saveSession(null);
+    if (response.status === 401 && clearSessionOnUnauthorized && getSession() === current) saveSession(null);
     throw new ApiError(response.status === 401 ? "Sua sessão expirou. Entre novamente."
       : response.status === 403 ? "Sua conta não tem permissão para consultar estes dados."
       : "Não foi possível consultar os dados. Tente novamente.", response.status);
@@ -115,7 +121,15 @@ export function getJson(path: string, signal: AbortSignal): Promise<unknown> {
   return authenticatedRequest(path, signal, "GET");
 }
 
+export function getJsonFrom(baseUrl: string | undefined, path: string, signal: AbortSignal): Promise<unknown> {
+  return authenticatedRequest(path, signal, "GET", undefined, baseUrl, false, false);
+}
+
 // Escritas só são repetidas após um 401; falhas de rede nunca repetem um POST automaticamente.
 export function writeJson(method: "POST" | "PUT", path: string, body: unknown, signal: AbortSignal): Promise<unknown> {
   return authenticatedRequest(path, signal, method, body);
+}
+
+export function writeJsonFrom(baseUrl: string | undefined, method: "POST" | "PUT", path: string, body: unknown, signal: AbortSignal): Promise<unknown> {
+  return authenticatedRequest(path, signal, method, body, baseUrl, false, false);
 }

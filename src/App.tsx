@@ -19,12 +19,10 @@ const MonitoringPage = lazy(() => import("./pages/monitoring").then(({ Monitorin
 const RankingPage = lazy(() => import("./pages/ranking").then(({ RankingPage }) => ({ default: RankingPage })));
 const AlertsPage = lazy(() => import("./pages/alerts").then(({ AlertsPage }) => ({ default: AlertsPage })));
 const LeaksPage = lazy(() => import("./pages/leaks").then(({ LeaksPage }) => ({ default: LeaksPage })));
-const GoalsPage = lazy(() => import("./pages/goals").then(({ GoalsPage }) => ({ default: GoalsPage })));
 const ChatbotPage = lazy(() => import("./pages/chatbot").then(({ ChatbotPage }) => ({ default: ChatbotPage })));
 const ChatbotHistoryPage = lazy(() => import("./pages/chatbotHistory").then(({ ChatbotHistoryPage }) => ({ default: ChatbotHistoryPage })));
 const DevicesPage = lazy(() => import("./pages/devices").then(({ DevicesPage }) => ({ default: DevicesPage })));
 const DeviceLinkPage = lazy(() => import("./pages/deviceLink").then(({ DeviceLinkPage }) => ({ default: DeviceLinkPage })));
-const InvestmentsPage = lazy(() => import("./pages/investments").then(({ InvestmentsPage }) => ({ default: InvestmentsPage })));
 const SettingsPage = lazy(() => import("./pages/settings").then(({ SettingsPage }) => ({ default: SettingsPage })));
 const InstallationsPage = lazy(() => import("./pages/Installations"));
 const InstallationRegistrationPage = lazy(() => import("./pages/InstallationRegistration"));
@@ -129,7 +127,6 @@ function App() {
                 <Route path="/instalacoes/cadastrar" element={<InstallationRegistrationPage />} />
                 <Route path="/instalacoes/:installationId" element={<InstallationDetailsPage />} />
                 <Route path="/instalacoes/:installationId/editar" element={<InstallationEditingPage />} />
-                <Route path="/metas" element={<GoalsPage />} />
                 <Route path="/gluh" element={<ChatbotPage />} />
                 <Route path="/gluh/historico" element={<ChatbotHistoryPage />} />
                 <Route
@@ -164,11 +161,6 @@ function App() {
                 <Route
                   path="/dispositivos/vincular"
                   element={<DeviceLinkPage />}
-                />
-
-                <Route
-                  path="/investimentos"
-                  element={<InvestmentsPage />}
                 />
 
                 <Route

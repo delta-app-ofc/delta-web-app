@@ -45,6 +45,15 @@
   gap: 24px;
 }
 
+.devices-data-warning {
+  margin: 0 0 16px;
+  padding: 12px 18px;
+  border: 1px solid rgba(235, 190, 84, .55);
+  border-radius: 18px;
+  color: #f0d58b;
+  font-size: 11px;
+}
+
 .devices-search {
   width: 360px;
   min-height: 45px;

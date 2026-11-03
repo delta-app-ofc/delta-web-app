@@ -1,8 +1,20 @@
-import { ApiError, getJson, postPublicJson } from "./http";
+import { ApiError, getJson, postPublicJson, writeJson } from "./http";
 import { saveSession } from "./session";
 import { isRecord, readId, readText } from "../utils/apiValidation";
 
-export interface CurrentUser { id: number; name: string; email: string; }
+export interface CurrentUser { id: number; name: string; email: string; phone?: string | null; birthDate?: string | null; }
+
+function parseCurrentUser(data: unknown): CurrentUser {
+  if (!isRecord(data)) throw new ApiError("O serviço retornou um perfil inválido.");
+  const user: CurrentUser = {
+    id: readId(data.id),
+    name: readText(data.name, 100),
+    email: readText(data.email, 255),
+  };
+  if ("phone" in data) user.phone = data.phone == null ? null : readText(data.phone, 15);
+  if ("birthDate" in data) user.birthDate = data.birthDate == null ? null : readText(data.birthDate, 10);
+  return user;
+}
 
 export async function login(email: string, password: string, signal: AbortSignal): Promise<void> {
   const data = await postPublicJson("/delta/auth/login", { email: email.trim(), password }, signal);
@@ -21,6 +33,15 @@ export async function login(email: string, password: string, signal: AbortSignal
 
 export async function getCurrentUser(signal: AbortSignal): Promise<CurrentUser> {
   const data = await getJson("/delta/auth/me", signal);
-  if (!isRecord(data)) throw new ApiError("O serviço retornou um perfil inválido.");
-  return { id: readId(data.id), name: readText(data.name, 100), email: readText(data.email, 255) };
+  return parseCurrentUser(data);
+}
+
+export async function updateCurrentUser(user: Omit<CurrentUser, "id">, signal: AbortSignal): Promise<CurrentUser> {
+  const data = await writeJson("PUT", "/delta/auth/me", {
+    name: user.name.trim(),
+    email: user.email.trim(),
+    phone: user.phone?.trim() || null,
+    birthDate: user.birthDate,
+  }, signal);
+  return parseCurrentUser(data);
 }
