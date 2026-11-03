@@ -9,7 +9,8 @@ import goalIcon from "../../assets/installation-details/goal.svg";
 import editIcon from "../../assets/installation-details/edit.svg";
 import exportIcon from "../../assets/installation-details/export.svg";
 import type { InstallationDetails } from "../../types/installationDetails";
-import { formatLiters, getCurrentReferenceMonth } from "../../utils/installations";
+import { pickReferenceMonth, weightedFlow } from "../../utils/indicators";
+import { formatLiters } from "../../utils/installations";
 import { usePdfExport } from "../../hooks/usePdfExport";
 import styles from "./styles.module.css";
 
@@ -18,6 +19,9 @@ const number = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 const month = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "2-digit", timeZone: "UTC" });
 const date = new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" });
+const dateTime = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const flowFormat = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const severityLabel = { high: "Crítico", medium: "Atenção", low: "Informativo" } as const;
 
 function Indicator({ icon, title, value, caption }: { icon: string; title: string; value?: string; caption: string }) {
   return <article className={styles.indicator}>
@@ -29,11 +33,13 @@ function Indicator({ icon, title, value, caption }: { icon: string; title: strin
 
 export function InstallationDetailsContent({ data, onRetry }: { data: InstallationDetails; onRetry: () => void }) {
   const [active, setActive] = useState(0);
-  const referenceMonth = getCurrentReferenceMonth();
-  const reading = data.monthly.find(row => row.referenceMonth === referenceMonth);
-  const currentDays = data.daily.filter(row => row.fullDate.slice(0, 7) === referenceMonth.slice(0, 7));
-  const cost = currentDays.length > 0 && currentDays.every(row => row.costValue !== null)
-    ? currentDays.reduce((sum, row) => sum + (row.costValue ?? 0), 0) : null;
+  // Mês, custo e meta vêm da view dw.vw_ft_property_monthly (último mês fechado).
+  const referenceMonth = pickReferenceMonth(data.indicators.map(row => ({ referenceMonth: row.referenceMonth, isComplete: row.isCompleteMonth }))) ?? "";
+  const indicator = data.indicators.find(row => row.referenceMonth === referenceMonth);
+  const reading = indicator ? { totalLiters: indicator.totalLiters } : undefined;
+  const cost = indicator?.totalCost ?? null;
+  const flow = weightedFlow(data.hourly);
+  const goalPct = indicator?.goalPct ?? null;
   const history = data.monthly.filter(row => row.referenceMonth <= referenceMonth).slice(-6);
   const maximum = Math.max(1, ...history.map(row => row.totalLiters));
   const region = [data.address?.city, data.address?.state].filter(Boolean).join(" · ");
@@ -75,10 +81,10 @@ export function InstallationDetailsContent({ data, onRetry }: { data: Installati
       <p>{data.warnings.join(" ")}</p><button type="button" onClick={onRetry}>Tentar novamente</button>
     </div>}
     <div className={styles.indicators}>
-      <Indicator icon={consumptionIcon} title="Consumo no mês" value={reading ? formatLiters(reading.totalLiters) : undefined} caption={reading ? "Acumulado do mês atual" : "Sem leituras no mês atual"} />
-      <Indicator icon={flowIcon} title="Vazão média" caption="Vazão ainda não disponível" />
-      <Indicator icon={costIcon} title="Custo no mês" value={cost === null ? undefined : currency.format(cost)} caption={cost === null ? "Custo ainda não disponível" : "Acumulado das leituras disponíveis"} />
-      <Indicator icon={goalIcon} title="Meta geral" caption="Meta ainda não disponível" />
+      <Indicator icon={consumptionIcon} title="Consumo no mês" value={reading ? formatLiters(reading.totalLiters) : undefined} caption={reading ? `Mês fechado: ${month.format(new Date(`${referenceMonth}T00:00:00Z`))}` : "Sem leituras consolidadas"} />
+      <Indicator icon={flowIcon} title="Vazão média" value={flow === null ? undefined : `${flowFormat.format(flow)} L/min`} caption={flow === null ? "Sem leituras nas últimas 24 h" : "Média das últimas 24 h"} />
+      <Indicator icon={costIcon} title="Custo no mês" value={cost === null ? undefined : currency.format(cost)} caption={cost === null ? "Custo ainda não disponível" : "Pela tarifa vigente de cada dia"} />
+      <Indicator icon={goalIcon} title="Meta geral" value={goalPct === null ? undefined : `${Math.round(goalPct)}%`} caption={goalPct === null ? "Meta ainda não definida" : "Do consumo previsto para o mês"} />
     </div>
     <div className={styles.tabs} role="tablist" aria-label="Informações da instalação">
       {tabs.map((tab, index) => <button type="button" role="tab" key={tab} id={`detail-tab-${index}`} aria-selected={active === index} aria-controls="detail-panel" tabIndex={active === index ? 0 : -1} onClick={() => setActive(index)} onKeyDown={event => onTabKeyDown(event, index)}>{tab}</button>)}
@@ -100,10 +106,13 @@ export function InstallationDetailsContent({ data, onRetry }: { data: Installati
         </section>
         <section className={styles.card} aria-labelledby="goal-title">
           <h3 id="goal-title">Meta de consumo</h3>
-          <div className={styles.goalContent}><div className={styles.ring} aria-hidden="true">—<small>Da meta</small></div>
-            <div className={styles.goalDescription}><p>Limite diário<strong>—</strong></p><p>Restante para meta<strong>—</strong></p></div>
+          <div className={styles.goalContent}><div className={styles.ring} aria-hidden="true">{goalPct === null ? "—" : `${Math.round(goalPct)}%`}<small>Da meta</small></div>
+            <div className={styles.goalDescription}>
+              <p>Limite diário<strong>{indicator?.dailyLimitLiters == null ? "—" : formatLiters(indicator.dailyLimitLiters)}</strong></p>
+              <p>Restante para meta<strong>{indicator?.remainingLiters == null ? "—" : formatLiters(indicator.remainingLiters)}</strong></p>
+            </div>
           </div>
-          <p className={styles.note}>A meta de consumo ainda não está disponível.</p>
+          <p className={styles.note}>{indicator?.monthlyTargetLiters == null ? "A meta mensal desta instalação ainda não foi definida." : `Meta mensal de ${formatLiters(indicator.monthlyTargetLiters)}.`}</p>
         </section>
       </div>}
       {active === 4 && <section className={styles.card} aria-labelledby="daily-title">
@@ -114,8 +123,24 @@ export function InstallationDetailsContent({ data, onRetry }: { data: Installati
           </table>
         </div>}
       </section>}
-      {active > 0 && active < 4 && <section className={styles.card}>
-        <h3>{tabs[active]}</h3><p className={styles.empty}>{active === 1 ? "As medições de vazão ainda não estão disponíveis para esta instalação." : active === 2 ? "Os dados de alertas e vazamentos ainda não estão disponíveis para esta instalação." : "A previsão de consumo e os dados de clima ainda não estão disponíveis para esta instalação."}</p>
+      {active === 1 && <section className={styles.card} aria-labelledby="flow-title">
+        <h3 id="flow-title">Vazão nas últimas 24 horas</h3>
+        {data.hourly.length === 0 ? <p className={styles.empty}>Nenhuma leitura de vazão consolidada para esta instalação.</p> : <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Vazão por hora; role horizontalmente em telas pequenas">
+          <table className={styles.table}><caption className="sr-only">Consumo e vazão média por hora</caption><thead><tr><th scope="col">Hora</th><th scope="col">Consumo</th><th scope="col">Vazão média</th></tr></thead>
+            <tbody>{[...data.hourly].reverse().map(row => <tr key={row.readingHour}><th scope="row">{dateTime.format(new Date(row.readingHour))}</th><td>{formatLiters(row.totalLiters)}</td><td>{row.avgFlowLmin === null ? "Não disponível" : `${flowFormat.format(row.avgFlowLmin)} L/min`}</td></tr>)}</tbody>
+          </table>
+        </div>}
+      </section>}
+      {active === 2 && <section className={styles.card} aria-labelledby="alerts-title">
+        <h3 id="alerts-title">Alertas e vazamentos</h3>
+        {data.alerts.length === 0 ? <p className={styles.empty}>Nenhum alerta registrado para esta instalação.</p> : <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Alertas; role horizontalmente em telas pequenas">
+          <table className={styles.table}><caption className="sr-only">Alertas e vazamentos da instalação</caption><thead><tr><th scope="col">Ocorrência</th><th scope="col">Data</th><th scope="col">Severidade</th><th scope="col">Situação</th></tr></thead>
+            <tbody>{data.alerts.map(alert => <tr key={alert.id}><th scope="row">{alert.title}</th><td>{dateTime.format(new Date(alert.triggeredAt))}</td><td>{severityLabel[alert.severity]}</td><td>{alert.resolvedAt ? "Resolvido" : "Ativo"}</td></tr>)}</tbody>
+          </table>
+        </div>}
+      </section>}
+      {active === 3 && <section className={styles.card}>
+        <h3>{tabs[active]}</h3><p className={styles.empty}>A previsão de consumo e os dados de clima ainda não estão disponíveis para esta instalação.</p>
       </section>}
     </div>
   </div>;

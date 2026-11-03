@@ -1,35 +1,42 @@
 import { useEffect, useState } from "react";
-import { listDeviceSummaries, listOrganizationEsg } from "../services/indicators";
-import { pickReferenceMonth } from "../utils/indicators";
+import { listDeviceSummaries, listInvestmentImpact } from "../services/indicators";
 
-export interface InvestmentImpact {
+export interface ScenarioImpact {
   savedLitersYear: number;
   tankTrucks: number;
   familyMonths: number;
+}
+
+export interface InvestmentImpactData {
+  byScenario: ReadonlyMap<number, ScenarioImpact>;
   devicesLowBattery: number;
   propertiesWithoutDevice: number;
 }
 
-type State = { status: "loading" } | { status: "ready"; data: InvestmentImpact | null } | { status: "unavailable" };
+type State = { status: "loading" } | { status: "ready"; data: InvestmentImpactData } | { status: "unavailable" };
 
-// Impacto ambiental e cards de dispositivos vêm das views dw.vw_ft_organization_esg e dw.vw_ft_organization_device_summary.
+// Impacto ambiental por cenário (dw.vw_ft_investment_impact) e cards de dispositivos (dw.vw_ft_organization_device_summary).
 export function useInvestmentImpact(): State {
   const [state, setState] = useState<State>({ status: "loading" });
 
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all([listOrganizationEsg(controller.signal), listDeviceSummaries(controller.signal)]).then(
-      ([esg, devices]) => {
+    Promise.all([listInvestmentImpact(controller.signal), listDeviceSummaries(controller.signal)]).then(
+      ([impact, devices]) => {
         if (controller.signal.aborted) return;
-        const month = pickReferenceMonth(esg.map((item) => ({ referenceMonth: item.referenceMonth, isComplete: item.isCompleteMonth })));
-        const rows = esg.filter((item) => item.referenceMonth === month);
-        if (rows.length === 0) { setState({ status: "ready", data: null }); return; }
+        const byScenario = new Map<number, ScenarioImpact>();
+        impact.forEach((item) => {
+          const current = byScenario.get(item.scenarioId) ?? { savedLitersYear: 0, tankTrucks: 0, familyMonths: 0 };
+          byScenario.set(item.scenarioId, {
+            savedLitersYear: current.savedLitersYear + item.savedLitersYear,
+            tankTrucks: current.tankTrucks + item.tankTrucksEquivalent,
+            familyMonths: current.familyMonths + item.familyMonthsEquivalent,
+          });
+        });
         setState({
           status: "ready",
           data: {
-            savedLitersYear: rows.reduce((total, item) => total + item.savedLitersYearProjection, 0),
-            tankTrucks: rows.reduce((total, item) => total + item.tankTrucksEquivalent, 0),
-            familyMonths: rows.reduce((total, item) => total + item.familyMonthsEquivalent, 0),
+            byScenario,
             devicesLowBattery: devices.reduce((total, item) => total + item.devicesLowBattery, 0),
             propertiesWithoutDevice: devices.reduce((total, item) => total + item.propertiesWithoutDevice, 0),
           },

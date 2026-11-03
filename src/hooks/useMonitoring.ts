@@ -4,6 +4,7 @@ import { listMonitoringHourly } from "../services/indicators";
 import { listInstallations } from "../services/installations";
 import type { MonitoringHourlyPoint } from "../types/indicators";
 import type { MonitoringData } from "../types/monitoring";
+import { weightedFlow } from "../utils/indicators";
 
 // Janelas de leitura disponíveis na view dw.vw_ft_monitoring_hourly (minutos por leitura).
 export type MonitoringInterval = 10 | 60;
@@ -16,13 +17,6 @@ function reducer(_state: State, action: Action): State {
   if (action.type === "load") return { status: "loading" };
   if (action.type === "loaded") return { status: "success", data: action.data };
   return { status: "error", error: action.error };
-}
-
-function weightedFlow(points: MonitoringHourlyPoint[]): number | null {
-  const withFlow = points.filter((point) => point.avgFlowLmin !== null);
-  const readings = withFlow.reduce((total, point) => total + point.readingsCount, 0);
-  if (readings === 0) return null;
-  return withFlow.reduce((total, point) => total + (point.avgFlowLmin ?? 0) * point.readingsCount, 0) / readings;
 }
 
 export function buildMonitoringData(points: MonitoringHourlyPoint[], installations: { id: number; name: string }[]): MonitoringData {

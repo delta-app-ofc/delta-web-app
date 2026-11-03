@@ -1,9 +1,10 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties, type FormEvent } from "react";
 
 import { AppSidebar } from "../../components/AppSidebar";
 import { AsyncFeedback } from "../../components/AsyncFeedback";
 import { useGoals } from "../../hooks/useGoals";
 import type { GoalStatus } from "../../types/indicators";
+import adjustIcon from "../../assets/goals/adjust.png";
 import complyIcon from "../../assets/goals/comply.png";
 import exportIcon from "../../assets/goals/export.png";
 import informationIcon from "../../assets/goals/information.png";
@@ -25,7 +26,20 @@ const statusView: Record<GoalStatus, { label: string; type: "normal" | "warning"
 };
 
 export function GoalsPage() {
-  const { state, retry } = useGoals();
+  const { state, retry, saveGoal } = useGoals();
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draft, setDraft] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function submitGoal(event: FormEvent<HTMLFormElement>, propertyId: number) {
+    event.preventDefault();
+    setSaving(true);
+    const error = await saveGoal(propertyId, Number(draft.replace(",", ".")));
+    setSaving(false);
+    setSaveError(error);
+    if (!error) setEditingId(null);
+  }
   const data = state.status === "success" ? state.data : null;
 
   const indicators = data ? [
@@ -95,6 +109,20 @@ export function GoalsPage() {
                       <span className={`goal-unit__status goal-unit__status--${view.type}`}>{view.label}</span>
                     </header>
 
+                    {editingId === unit.propertyId ? (
+                      <form className="goal-unit__editor" onSubmit={(event) => void submitGoal(event, unit.propertyId)}>
+                        <label htmlFor={`goal-${unit.propertyId}`}>Nova meta mensal (litros)</label>
+                        <div className="goal-unit__field">
+                          <input id={`goal-${unit.propertyId}`} type="number" min="1" step="1" inputMode="numeric" value={draft} onChange={(event) => setDraft(event.target.value)} autoFocus required />
+                          <span aria-hidden="true">L</span>
+                        </div>
+                        {saveError && <p role="alert">{saveError}</p>}
+                        <div className="goal-unit__editor-actions">
+                          <button type="button" onClick={() => { setEditingId(null); setSaveError(null); }}>Cancelar</button>
+                          <button type="submit" disabled={saving}>{saving ? "Salvando…" : "Salvar meta"}</button>
+                        </div>
+                      </form>
+                    ) : (<>
                     <div className="goal-unit__content">
                       <div
                         className={`goal-unit__progress goal-unit__progress--${view.type}`}
@@ -116,6 +144,11 @@ export function GoalsPage() {
                         </div>
                       </dl>
                     </div>
+                    <button className="goal-unit__adjust" type="button" aria-label={`Ajustar meta de ${unit.propertyName}`} onClick={() => { setEditingId(unit.propertyId); setDraft(unit.monthlyTargetLiters === null ? "" : String(Math.round(unit.monthlyTargetLiters))); setSaveError(null); }}>
+                      <img src={adjustIcon} alt="" />
+                      <span>Ajustar meta</span>
+                    </button>
+                    </>)}
                   </article>
                 );
               })}

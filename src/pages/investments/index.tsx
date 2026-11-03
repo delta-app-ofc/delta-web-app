@@ -66,6 +66,7 @@ export function InvestmentsPage() {
 
   const scenarios = useMemo(() => state.status === "success" ? state.data : [], [state]);
   const selectedScenario = scenarios.find((scenario) => scenario.scenarioId === selectedScenarioId) ?? scenarios[0];
+  const scenarioImpact = impactData && selectedScenario ? impactData.byScenario.get(selectedScenario.scenarioId) ?? null : null;
   const maxAnnualSavings = useMemo(() => Math.max(0, ...scenarios.map((scenario) => scenario.annualSavingsValue ?? 0)), [scenarios]);
 
   useEffect(() => {
@@ -115,9 +116,9 @@ export function InvestmentsPage() {
             {activeTab === "consumption" && <div className="consumption-impact" role="tabpanel"><h3>Redução de consumo informada pela API</h3><div className="consumption-impact__unavailable" role="status"><strong>{formatNumber(selectedScenario.reductionPct, "%")}</strong><small>A API não informa a projeção de consumo em litros.</small></div><p>O cenário informa a redução percentual, mas não fornece uma linha de base em litros.</p></div>}
             {activeTab === "financial" && <div className="financial-impact" role="tabpanel"><h3>Economia anual por cenário</h3><div className="financial-impact__chart">{scenarios.map((scenario) => <button type="button" className={scenario.scenarioId === selectedScenario.scenarioId ? "financial-impact__scenario--selected" : ""} key={scenario.scenarioId} onClick={() => setSelectedScenarioId(scenario.scenarioId)}><strong>{formatCurrency(scenario.annualSavingsValue)}</strong><span style={{ height: `${maxAnnualSavings > 0 ? Math.max(34, (scenario.annualSavingsValue ?? 0) / maxAnnualSavings * 100) : 34}%` }} aria-hidden="true" /><small>{scenario.name}</small></button>)}</div><p>Clique numa barra para trocar o cenário selecionado.</p></div>}
             {activeTab === "environmental" && <div className="environmental-impact" role="tabpanel">
-              <article><div><img src={waterIcon} alt="" /><span>Água economizada/ano</span></div><strong>{impactData ? formatNumber(Math.round(impactData.savedLitersYear), " L") : "—"}</strong><small>{impactData ? "projeção mantendo a economia do mês" : impactNote}</small></article>
-              <article><div><img src={pipeTrucksIcon} alt="" /><span>Equiv. em caminhões-pipa</span></div><strong>{impactData ? formatNumber(Math.round(impactData.tankTrucks * 10) / 10) : "—"}</strong><small>{impactData ? "caminhões de 10.000 L" : impactNote}</small></article>
-              <article><div><img src={monthsIcon} alt="" /><span>Meses de consumo de 1 família</span></div><strong>{impactData ? formatNumber(Math.round(impactData.familyMonths * 10) / 10) : "—"}</strong><small>{impactData ? "família de 4 pessoas, 15.000 L/mês" : impactNote}</small></article>
+              <article><div><img src={waterIcon} alt="" /><span>Água economizada/ano</span></div><strong>{scenarioImpact ? formatNumber(Math.round(scenarioImpact.savedLitersYear), " L") : "—"}</strong><small>{scenarioImpact ? "consumo anual da organização × redução do cenário" : impactNote}</small></article>
+              <article><div><img src={pipeTrucksIcon} alt="" /><span>Equiv. em caminhões-pipa</span></div><strong>{scenarioImpact ? formatNumber(Math.round(scenarioImpact.tankTrucks * 10) / 10) : "—"}</strong><small>{scenarioImpact ? "caminhões de 10.000 L" : impactNote}</small></article>
+              <article><div><img src={monthsIcon} alt="" /><span>Meses de consumo de 1 família</span></div><strong>{scenarioImpact ? formatNumber(Math.round(scenarioImpact.familyMonths * 10) / 10) : "—"}</strong><small>{scenarioImpact ? "família de 4 pessoas, 15.000 L/mês" : impactNote}</small></article>
             </div>}
           </section>
         </section>}

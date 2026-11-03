@@ -4,6 +4,7 @@ import type {
   GoalStatus,
   LeakIndicator,
   MonitoringHourlyPoint,
+  InvestmentImpact,
   OrganizationEsg,
   OrganizationMonthlyKpi,
   PropertyMonthlyIndicator,
@@ -69,8 +70,9 @@ function parsePropertyMonthly(value: unknown): PropertyMonthlyIndicator {
     propertyId: readId(item.propertyId), propertyName: readText(item.propertyName, 100),
     organizationId: item.organizationId === null ? null : readId(item.organizationId),
     builtAreaM2: readOptionalNumber(item.builtAreaM2), referenceMonth: month(item.referenceMonth),
-    totalLiters: number(item.totalLiters), litersPerM2: readOptionalNumber(item.litersPerM2),
+    totalLiters: number(item.totalLiters), totalCost: readOptionalNumber(item.totalCost), litersPerM2: readOptionalNumber(item.litersPerM2),
     variationPct: readOptionalNumber(item.variationPct), monthlyTargetLiters: readOptionalNumber(item.monthlyTargetLiters),
+    dailyLimitLiters: readOptionalNumber(item.dailyLimitLiters), remainingLiters: readOptionalNumber(item.remainingLiters),
     goalPct: readOptionalNumber(item.goalPct), goalStatus: status,
     estimatedSavingsValue: number(item.estimatedSavingsValue), isCompleteMonth: flag(item.isCompleteMonth),
   };
@@ -132,6 +134,15 @@ function parseEsg(value: unknown): OrganizationEsg {
   };
 }
 
+function parseInvestmentImpact(value: unknown): InvestmentImpact {
+  const item = record(value);
+  return {
+    scenarioId: readId(item.scenarioId), organizationId: readId(item.organizationId),
+    baselineAnnualLiters: number(item.baselineAnnualLiters), savedLitersYear: number(item.savedLitersYear),
+    tankTrucksEquivalent: number(item.tankTrucksEquivalent), familyMonthsEquivalent: number(item.familyMonthsEquivalent),
+  };
+}
+
 async function load<T>(path: string, parse: (item: unknown) => T, signal: AbortSignal): Promise<T[]> {
   try {
     return readArray(await getJson(`${BASE}/${path}`, signal), parse);
@@ -150,3 +161,4 @@ export const listDeviceIndicators = (signal: AbortSignal) => load("devices", par
 export const listDeviceSummaries = (signal: AbortSignal) => load("devices/summary", parseDeviceSummary, signal);
 export const listLeakIndicators = (signal: AbortSignal) => load("leaks", parseLeak, signal);
 export const listOrganizationEsg = (signal: AbortSignal) => load("esg", parseEsg, signal);
+export const listInvestmentImpact = (signal: AbortSignal) => load("investment-impact", parseInvestmentImpact, signal);

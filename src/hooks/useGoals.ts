@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "../services/http";
 import { listPropertyMonthly } from "../services/indicators";
+import { saveMonthlyGoal } from "../services/propertyGoal";
 import type { PropertyMonthlyIndicator } from "../types/indicators";
 
 export interface GoalsData {
@@ -50,5 +51,17 @@ export function useGoals() {
   }, [requestVersion]);
 
   const retry = useCallback(() => setRequestVersion((version) => version + 1), []);
-  return { state, retry };
+
+  // Grava a meta e recarrega os indicadores: o percentual e o status são recalculados pela view, não aqui.
+  const saveGoal = useCallback(async (propertyId: number, monthlyTargetLiters: number): Promise<string | null> => {
+    try {
+      await saveMonthlyGoal(propertyId, monthlyTargetLiters, new AbortController().signal);
+      retry();
+      return null;
+    } catch (error: unknown) {
+      return error instanceof ApiError ? error.message : "Não foi possível salvar a meta.";
+    }
+  }, [retry]);
+
+  return { state, retry, saveGoal };
 }

@@ -26,9 +26,12 @@ export interface PropertyMonthlyIndicator {
   builtAreaM2: number | null;
   referenceMonth: string;
   totalLiters: number;
+  totalCost: number | null;
   litersPerM2: number | null;
   variationPct: number | null;
   monthlyTargetLiters: number | null;
+  dailyLimitLiters: number | null;
+  remainingLiters: number | null;
   goalPct: number | null;
   goalStatus: GoalStatus;
   estimatedSavingsValue: number;
@@ -81,6 +84,15 @@ export interface LeakIndicator {
   durationMinutes: number;
   estimatedLossLiters: number;
   estimatedLossCost: number;
+}
+
+export interface InvestmentImpact {
+  scenarioId: number;
+  organizationId: number;
+  baselineAnnualLiters: number;
+  savedLitersYear: number;
+  tankTrucksEquivalent: number;
+  familyMonthsEquivalent: number;
 }
 
 export interface OrganizationEsg {
