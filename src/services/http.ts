@@ -112,9 +112,22 @@ async function authenticatedRequest(path: string, signal: AbortSignal, method: "
     if (response.status === 401 && clearSessionOnUnauthorized && getSession() === current) saveSession(null);
     throw new ApiError(response.status === 401 ? "Sua sessão expirou. Entre novamente."
       : response.status === 403 ? "Sua conta não tem permissão para consultar estes dados."
+      : (response.status === 400 || response.status === 409) && method !== "GET" ? await validationMessage(response)
       : "Não foi possível consultar os dados. Tente novamente.", response.status);
   }
   return readJson(response);
+}
+
+// Em gravações recusadas por regra de negócio (400/409) a API explica o motivo em português; os demais erros não vazam detalhes.
+async function validationMessage(response: Response): Promise<string> {
+  const fallback = "Não foi possível salvar os dados. Confira as informações e tente novamente.";
+  try {
+    const body: unknown = await response.json();
+    const message = typeof body === "object" && body !== null && "message" in body ? (body as { message: unknown }).message : null;
+    if (typeof message !== "string") return fallback;
+    const clean = Array.from(message).filter((character) => character.charCodeAt(0) >= 32 && character.charCodeAt(0) !== 127).join("").trim().slice(0, 200);
+    return clean || fallback;
+  } catch { return fallback; }
 }
 
 export function getJson(path: string, signal: AbortSignal): Promise<unknown> {
