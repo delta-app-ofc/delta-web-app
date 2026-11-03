@@ -6,7 +6,7 @@
 ![React Router](https://img.shields.io/badge/React%20Router-6-CA4245?logo=reactrouter&logoColor=white)
 ![jsPDF](https://img.shields.io/badge/jsPDF-4-F40F02?logo=adobeacrobatreader&logoColor=white)
 
-A aplicação web do Delta liga a sessão do usuário às instalações associadas: consulta consumo autorizado, conduz o cadastro e a edição de imóveis e gera relatórios PDF no navegador. A interface conversa com a API configurada no ambiente; funcionalidades sem suporte no contrato da API permanecem sinalizadas como indisponíveis.
+Interface web do Delta para autenticação, cadastro e gestão de instalações residenciais. O usuário consulta o consumo recebido pela API e exporta relatórios em PDF.
 
 **Tags:** `react` · `typescript` · `vite` · `react-router` · `autenticação` · `api` · `consumo-de-água` · `pdf`
 
@@ -29,7 +29,6 @@ A aplicação web do Delta liga a sessão do usuário às instalações associad
 - [Edição da instalação](#edição-da-instalação)
 - [Exportação PDF](#exportação-pdf)
 - [Arquitetura, qualidade e acessibilidade](#arquitetura-qualidade-e-acessibilidade)
-- [Publicação](#publicação)
 - [Fonte Clayful](#fonte-clayful)
 
 ## Início rápido
@@ -65,13 +64,13 @@ O cadastro envia `POST /delta/address`, `POST /delta/property` com o usuário au
 
 O consumo é somente leitura, alimentado pelas análises do hidrômetro. A meta está desabilitada porque a API atual não oferece persistência desse dado. O ID informado cadastra um dispositivo novo, mantendo sua identidade exata; não consulta a rota interna nem lista dispositivos globais. Uma identidade já cadastrada retorna erro no campo. Após confirmar todas as etapas, o fluxo abre os detalhes da instalação e exibe a confirmação de sucesso.
 
-As gravações da API são separadas e não constituem uma transação única. O formulário preserva os IDs das etapas concluídas durante a mesma abertura: uma falha no dispositivo permite corrigir o campo e continuar sem duplicar imóvel/endereço. Falhas com resultado desconhecido não repetem o mesmo POST automaticamente. A mensagem permite conferir a instalação salva; após sair ou recarregar a página, confira a listagem antes de iniciar outro cadastro. Endereços intermediários podem permanecer se o fluxo for interrompido antes da criação/atualização do imóvel.
+O formulário grava endereço, imóvel e dispositivo em etapas e mantém na sessão os IDs já concluídos. Uma falha na etapa do dispositivo permite corrigir o campo e retomar o cadastro sem repetir as etapas anteriores. Se a resposta da API não confirmar o resultado, confira a lista de instalações antes de enviar outro cadastro.
 
 ## Detalhe da instalação
 
 O link “Ver tudo” abre `/instalacoes/:installationId`, com proteção de sessão. A página confirma a associação ao usuário antes de consultar a propriedade, seu endereço e as análises mensais e diárias. IDs inválidos e instalações sem associação não disparam consultas de consumo.
 
-Consumo mensal, evolução em m³ e histórico diário usam os dados retornados pela API. O custo do mês soma apenas as leituras diárias disponíveis do mês atual e fica indisponível se faltar custo em alguma delas. Falhas parciais mostram aviso e permitem tentar novamente; falta de leitura não é tratada como consumo zero. Vazão, metas, alertas e clima têm estados de indisponibilidade até existir integração. As abas funcionam por clique e pelas teclas de setas, Home e End.
+Consumo mensal, evolução em m³ e histórico diário usam os dados retornados pela API. O custo do mês soma as leituras diárias do mês atual que incluem custo; em caso de falha parcial, a tela mostra um aviso e permite tentar novamente. As abas funcionam por clique e pelas teclas de setas, Home e End.
 
 ## Edição da instalação
 
@@ -96,10 +95,6 @@ Consulte [DOCKER-HELP.md](DOCKER-HELP.md) para usar o ambiente Docker local.
 - Formulários validam e limitam os dados antes de acionar serviços. Mensagens de erro são anunciadas com `role="alert"`, e operações assíncronas apresentam estados de carregamento, sucesso ou erro.
 - A navegação oferece atalho para o conteúdo principal, foco visível, controles operáveis por teclado, nomes acessíveis, tabelas identificadas e gerenciamento de foco em diálogos, menus e abas conforme o escopo mínimo da WCAG 2.1 AA.
 - O cadastro de empresa salvo no navegador inclui `_versao`, valida e migra versões conhecidas e descarta dados incompatíveis.
-
-## Publicação
-
-Ainda não há uma implantação pública configurada neste repositório. Antes da entrega, publique a aplicação no Vercel ou GitHub Pages e substitua este aviso pelo link ativo validado. A URL padrão do GitHub Pages foi verificada em 28/10/2026 e ainda retornava 404.
 
 ## Fonte Clayful
 
