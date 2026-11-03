@@ -1,23 +1,47 @@
 import { useCallback, useEffect, useState } from "react";
 import { getCurrentUser } from "../services/auth";
-import { listMonthlyConsumption } from "../services/consumption";
 import { listAddresses } from "../services/addresses";
 import { ApiError } from "../services/http";
+import { listOrganizationKpis } from "../services/indicators";
 import { listInstallations } from "../services/installations";
-import { calculateWaterCost } from "../services/waterCost";
 import { getCurrentWeather } from "../services/weather";
 import type { DashboardData } from "../types/dashboard";
-import { getCurrentReferenceMonth } from "../utils/installations";
+import type { OrganizationMonthlyKpi } from "../types/indicators";
 
 type State =
   | { status: "loading" }
   | { status: "success"; data: DashboardData }
   | { status: "error"; error: string };
 
-function previousReferenceMonth(referenceMonth: string): string {
-  const date = new Date(`${referenceMonth}T00:00:00Z`);
-  date.setUTCMonth(date.getUTCMonth() - 1);
-  return date.toISOString().slice(0, 10);
+function sum(items: OrganizationMonthlyKpi[], pick: (item: OrganizationMonthlyKpi) => number | null): number | null {
+  const values = items.map(pick);
+  return values.some((value) => value === null) ? null : values.reduce<number>((total, value) => total + (value ?? 0), 0);
+}
+
+// Os indicadores já chegam calculados pela view dw.vw_ft_organization_monthly_kpi; aqui só se escolhe o mês exibido.
+export function summarizeKpis(kpis: OrganizationMonthlyKpi[]): Pick<DashboardData, "referenceMonth" | "previousMonth" | "currentLiters" | "previousLiters" | "variationPct" | "estimatedCost" | "projectedCost"> | null {
+  if (kpis.length === 0) return null;
+  // Mês parcial não é comparável com o anterior: exibe o mais recente já fechado, se houver.
+  const months = [...new Set(kpis.map((item) => item.referenceMonth))].sort();
+  const closed = months.filter((month) => kpis.filter((item) => item.referenceMonth === month).every((item) => item.isCompleteMonth));
+  const referenceMonth = (closed.length ? closed : months).slice(-1)[0];
+  const earlier = months.filter((month) => month < referenceMonth);
+  const previousMonth = earlier.length ? earlier[earlier.length - 1] : null;
+  const current = kpis.filter((item) => item.referenceMonth === referenceMonth);
+  const previous = previousMonth ? kpis.filter((item) => item.referenceMonth === previousMonth) : [];
+  const previousLiters = sum(current, (item) => item.previousMonthLiters);
+  const currentLiters = sum(current, (item) => item.totalLiters);
+  return {
+    referenceMonth,
+    previousMonth: previousMonth ?? referenceMonth,
+    currentLiters,
+    previousLiters: previousLiters ?? sum(previous, (item) => item.totalLiters),
+    variationPct: current.every((item) => item.variationPct !== null) && previousLiters
+      ? ((currentLiters ?? 0) - previousLiters) / previousLiters * 100
+      : null,
+    estimatedCost: sum(current, (item) => item.totalCost),
+    projectedCost: sum(current, (item) => item.projectedCost),
+  };
 }
 
 export function useDashboard() {
@@ -27,15 +51,14 @@ export function useDashboard() {
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
-    const referenceMonth = getCurrentReferenceMonth();
-    const previousMonth = previousReferenceMonth(referenceMonth);
     setState({ status: "loading" });
 
     async function load(): Promise<void> {
       try {
-        const [userResult, records] = await Promise.all([
+        const [userResult, records, kpis] = await Promise.all([
           getCurrentUser(signal).catch(() => null),
           listInstallations(signal),
+          listOrganizationKpis(signal),
         ]);
         signal.throwIfAborted();
 
@@ -52,83 +75,19 @@ export function useDashboard() {
           } else weatherUnavailable = true;
         } else weatherUnavailable = true;
 
-        const monthlyResults = await Promise.allSettled(records.map((record) => listMonthlyConsumption(record.id, signal)));
-        signal.throwIfAborted();
-        let currentLiters = 0;
-        let previousLiters = 0;
-        let currentCount = 0;
-        let previousCount = 0;
-        const currentByProperty = new Map<number, number>();
-        const previousByProperty = new Map<number, number>();
-        let monthlyFailures = 0;
-
-        records.forEach((record, index) => {
-          const result = monthlyResults[index];
-          if (result.status === "rejected") {
-            monthlyFailures += 1;
-            return;
-          }
-          const current = result.value.find((item) => item.propertyId === record.id && item.referenceMonth === referenceMonth);
-          const previous = result.value.find((item) => item.propertyId === record.id && item.referenceMonth === previousMonth);
-          if (current) {
-            currentLiters += current.totalLiters;
-            currentCount += 1;
-            currentByProperty.set(record.id, current.totalLiters);
-          }
-          if (previous) {
-            previousLiters += previous.totalLiters;
-            previousCount += 1;
-            previousByProperty.set(record.id, previous.totalLiters);
-          }
-        });
-
-        const costResults = await Promise.allSettled([...currentByProperty.entries()].map(([propertyId, liters]) =>
-          liters <= 0 ? Promise.resolve(null) : calculateWaterCost(propertyId, liters / 1000, referenceMonth, signal),
-        ));
-        signal.throwIfAborted();
-        let estimatedCost = 0;
-        let costFailures = 0;
-        let costSuccesses = 0;
-        costResults.forEach((result) => {
-          if (result.status === "rejected") costFailures += 1;
-          else {
-            costSuccesses += 1;
-            if (result.value) estimatedCost += result.value.estimatedCost;
-          }
-        });
-
-        const projectedEntries = [...currentByProperty.entries()]
-          .filter(([propertyId]) => previousByProperty.has(propertyId))
-          .map(([propertyId, current]) => [propertyId, current + (current - previousByProperty.get(propertyId)!)] as const)
-          .filter(([, liters]) => liters > 0);
-        const projectedResults = await Promise.allSettled(projectedEntries.map(([propertyId, liters]) =>
-          liters <= 0 ? Promise.resolve(null) : calculateWaterCost(propertyId, liters / 1000, referenceMonth, signal),
-        ));
-        signal.throwIfAborted();
-        let projectedCost = 0;
-        let projectedFailures = 0;
-        let projectedSuccesses = 0;
-        projectedResults.forEach((result) => {
-          if (result.status === "rejected") projectedFailures += 1;
-          else {
-            projectedSuccesses += 1;
-            if (result.value) projectedCost += result.value.estimatedCost;
-          }
-        });
-
+        const summary = summarizeKpis(kpis);
         const warnings: string[] = [];
-        if (monthlyFailures > 0) warnings.push("Não foi possível carregar o consumo de algumas instalações.");
-        if (costFailures > 0) warnings.push("Não foi possível calcular o custo de algumas instalações.");
-        if (projectedFailures > 0) warnings.push("Não foi possível calcular a projeção de algumas instalações.");
+        if (!summary) warnings.push("Ainda não há consumo consolidado para a sua organização.");
         if (weatherUnavailable) warnings.push("Não foi possível carregar o clima da instalação mais recente.");
         const data: DashboardData = {
           user: userResult,
-          referenceMonth,
-          previousMonth,
-          currentLiters: currentCount > 0 ? currentLiters : null,
-          previousLiters: previousCount > 0 ? previousLiters : null,
-          estimatedCost: currentByProperty.size === 0 ? null : costFailures === 0 && costSuccesses === currentByProperty.size ? estimatedCost : null,
-          projectedCost: projectedEntries.length === 0 || projectedFailures > 0 || projectedSuccesses !== projectedEntries.length ? null : projectedCost,
+          referenceMonth: summary?.referenceMonth ?? "",
+          previousMonth: summary?.previousMonth ?? "",
+          currentLiters: summary?.currentLiters ?? null,
+          previousLiters: summary?.previousLiters ?? null,
+          variationPct: summary?.variationPct ?? null,
+          estimatedCost: summary?.estimatedCost ?? null,
+          projectedCost: summary?.projectedCost ?? null,
           weather,
           warnings,
         };

@@ -7,6 +7,7 @@ export interface DashboardData {
   previousMonth: string;
   currentLiters: number | null;
   previousLiters: number | null;
+  variationPct: number | null;
   estimatedCost: number | null;
   projectedCost: number | null;
   weather: WeatherData | null;

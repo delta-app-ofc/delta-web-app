@@ -9,6 +9,8 @@ import { LoadingPage } from "./pages/loading";
 import { RequireAuth } from "./components/RequireAuth";
 import { AccessibilityMenu } from "./components/AccessibilityMenu";
 
+const GoalsPage = lazy(() => import("./pages/goals").then(({ GoalsPage }) => ({ default: GoalsPage })));
+const InvestmentsPage = lazy(() => import("./pages/investments").then(({ InvestmentsPage }) => ({ default: InvestmentsPage })));
 const CompanyBindingPage = lazy(() => import("./pages/companyBinding").then(({ CompanyBindingPage }) => ({ default: CompanyBindingPage })));
 const RegisterPage = lazy(() => import("./pages/registerUser").then(({ RegisterPage }) => ({ default: RegisterPage })));
 const RegisterCredentialsPage = lazy(() => import("./pages/registerCredentials").then(({ RegisterCredentialsPage }) => ({ default: RegisterCredentialsPage })));
@@ -138,6 +140,9 @@ function App() {
                   path="/ranking"
                   element={<RankingPage />}
                 />
+
+                <Route path="/metas" element={<GoalsPage />} />
+                <Route path="/investimentos" element={<InvestmentsPage />} />
 
                 <Route
                   path="/alertas"

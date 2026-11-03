@@ -1,5 +1,3 @@
-import type { ConsumptionSummary } from "./device";
-
 export interface MonitoringInstallation {
   id: number;
   name: string;
@@ -22,5 +20,4 @@ export interface MonitoringData {
   averageFlowLpm: number | null;
   readingCount: number;
   warnings: string[];
-  summaries: ConsumptionSummary[];
 }

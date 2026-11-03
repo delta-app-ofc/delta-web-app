@@ -6,6 +6,7 @@ import { DashboardAlertsCard } from "../../components/DashboardAlertsCard";
 import { DashboardRankingCard } from "../../components/DashboardRankingCard";
 import dashboardIcon from "../../assets/installations/dashboard.svg";
 import devicesIcon from "../../assets/installations/devices.svg";
+import goalsIcon from "../../assets/installations/goals.svg";
 import gluhIcon from "../../assets/installations/gluh.svg";
 import installationsIcon from "../../assets/installations/installations.svg";
 import investmentsIcon from "../../assets/installations/investments.svg";
@@ -25,6 +26,8 @@ const navigationItems: readonly SidebarNavigationItem[] = [
   { id: "alerts", label: "Alertas", icon: alertsIcon, path: "/alertas" },
   { id: "leaks", label: "Vazamentos", icon: leaksIcon, path: "/vazamentos" },
   { id: "ranking", label: "Ranking", icon: rankingIcon, path: "/ranking" },
+  { id: "goals", label: "Metas", icon: goalsIcon, path: "/metas" },
+  { id: "investments", label: "Investimentos", icon: investmentsIcon, path: "/investimentos" },
   { id: "devices", label: "Dispositivos", icon: devicesIcon, path: "/dispositivos" },
   { id: "gluh", label: "Gluh", icon: gluhIcon, path: "/gluh" },
   { id: "settings", label: "Configurações", icon: settingsIcon, path: "/configuracoes" },
@@ -45,9 +48,8 @@ function formatTemperature(value: number | null): string {
   return value === null ? "—" : `${numberFormatter.format(value)} °C`;
 }
 
-function formatVariation(current: number | null, previous: number | null): string {
-  if (current === null || previous === null || previous === 0) return "Variação indisponível";
-  const variation = ((current - previous) / previous) * 100;
+function formatVariation(variation: number | null): string {
+  if (variation === null) return "Variação indisponível";
   return `${variation >= 0 ? "+" : ""}${numberFormatter.format(variation)}% vs mês anterior`;
 }
 
@@ -76,7 +78,7 @@ export function DashboardPage() {
             <article className="dashboard-card metric-card">
               <div className="metric-card__label"><img src={leaksIcon} alt="" /><span>Consumo mensal</span></div>
               <strong>{formatLiters(state.data.currentLiters)}</strong>
-              <small className="metric-card__change metric-card__change--negative">{formatVariation(state.data.currentLiters, state.data.previousLiters)}</small>
+              <small className="metric-card__change metric-card__change--negative">{formatVariation(state.data.variationPct)}</small>
             </article>
             <article className="dashboard-card metric-card">
               <div className="metric-card__label"><img src={investmentsIcon} alt="" /><span>Custo estimado</span></div>

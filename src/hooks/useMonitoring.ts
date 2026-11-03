@@ -1,17 +1,55 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
-import { listDevices } from "../services/devices";
-import { listInstallations } from "../services/installations";
-import { listConsumptionSummaries } from "../services/mongoTelemetry";
 import { ApiError } from "../services/http";
+import { listMonitoringHourly } from "../services/indicators";
+import { listInstallations } from "../services/installations";
+import type { MonitoringHourlyPoint } from "../types/indicators";
 import type { MonitoringData } from "../types/monitoring";
 
-export type MonitoringInterval = 5 | 10 | 15;
+// Janelas de leitura disponíveis na view dw.vw_ft_monitoring_hourly (minutos por leitura).
+export type MonitoringInterval = 10 | 60;
+const WINDOW_HOURS = 24;
+const CHART_POINTS = 12;
+
 type State = { status: "loading" } | { status: "success"; data: MonitoringData } | { status: "error"; error: string };
 type Action = { type: "load" } | { type: "loaded"; data: MonitoringData } | { type: "failed"; error: string };
 function reducer(_state: State, action: Action): State {
   if (action.type === "load") return { status: "loading" };
   if (action.type === "loaded") return { status: "success", data: action.data };
   return { status: "error", error: action.error };
+}
+
+function weightedFlow(points: MonitoringHourlyPoint[]): number | null {
+  const withFlow = points.filter((point) => point.avgFlowLmin !== null);
+  const readings = withFlow.reduce((total, point) => total + point.readingsCount, 0);
+  if (readings === 0) return null;
+  return withFlow.reduce((total, point) => total + (point.avgFlowLmin ?? 0) * point.readingsCount, 0) / readings;
+}
+
+export function buildMonitoringData(points: MonitoringHourlyPoint[], installations: { id: number; name: string }[]): MonitoringData {
+  const byProperty = new Map<number, MonitoringHourlyPoint[]>();
+  points.forEach((point) => byProperty.set(point.propertyId, [...(byProperty.get(point.propertyId) ?? []), point]));
+  const buckets = new Map<string, number>();
+  points.forEach((point) => buckets.set(point.readingHour, (buckets.get(point.readingHour) ?? 0) + point.totalLiters));
+  const chartValues = [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-CHART_POINTS);
+  const max = Math.max(...chartValues.map(([, liters]) => liters), 0);
+  const label = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return {
+    installations: installations.map((installation) => {
+      const items = byProperty.get(installation.id) ?? [];
+      return {
+        id: installation.id,
+        name: installation.name,
+        consumptionLiters: items.length ? items.reduce((total, item) => total + item.totalLiters, 0) : null,
+        flowLpm: weightedFlow(items),
+        readingCount: items.reduce((total, item) => total + item.readingsCount, 0),
+      };
+    }),
+    chart: chartValues.map(([hour, liters]) => ({ id: hour, label: label.format(new Date(hour)), value: max > 0 ? liters / max * 100 : 0, liters })),
+    totalLiters: points.reduce((total, point) => total + point.totalLiters, 0),
+    averageFlowLpm: weightedFlow(points),
+    readingCount: points.reduce((total, point) => total + point.readingsCount, 0),
+    warnings: points.length === 0 ? ["Não há leituras consolidadas para a janela selecionada."] : [],
+  };
 }
 
 export function useMonitoring(interval: MonitoringInterval) {
@@ -22,34 +60,11 @@ export function useMonitoring(interval: MonitoringInterval) {
     dispatch({ type: "load" });
     async function load(): Promise<void> {
       try {
-        const [devices, installations] = await Promise.all([listDevices(controller.signal), listInstallations(controller.signal)]);
-        const end = new Date();
-        const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
-        const summaries: Awaited<ReturnType<typeof listConsumptionSummaries>> = [];
-        let failures = 0;
-        for (let offset = 0; offset < devices.length; offset += 6) {
-          const results = await Promise.allSettled(devices.slice(offset, offset + 6).map((device) => listConsumptionSummaries(device.deviceId, start.toISOString(), end.toISOString(), controller.signal)));
-          results.forEach((result) => result.status === "fulfilled" ? summaries.push(...result.value) : failures += 1);
-        }
-        if (controller.signal.aborted) return;
-        const selected = summaries.filter((summary) => Math.round((Date.parse(summary.windowFinishedAt) - Date.parse(summary.windowStartedAt)) / 60000) === interval);
-        const deviceProperty = new Map(devices.map((device) => [device.deviceId, device.propertyId]));
-        const dataByInstallation = new Map<number, typeof selected>();
-        selected.forEach((summary) => {
-          const propertyId = deviceProperty.get(summary.deviceId);
-          if (propertyId !== undefined) dataByInstallation.set(propertyId, [...(dataByInstallation.get(propertyId) ?? []), summary]);
-        });
-        const installationData = installations.map((installation) => {
-          const items = dataByInstallation.get(installation.id) ?? [];
-          const flows = items.flatMap((item) => item.lpmAverage === null ? [] : [item.lpmAverage]);
-          return { id: installation.id, name: installation.name, consumptionLiters: items.length ? items.reduce((total, item) => total + item.consumptionLiters, 0) : null, flowLpm: flows.length ? flows.reduce((total, flow) => total + flow, 0) / flows.length : null, readingCount: items.length };
-        });
-        const buckets = new Map<string, number>();
-        selected.forEach((summary) => { const date = new Date(summary.windowStartedAt); const key = date.toISOString(); buckets.set(key, (buckets.get(key) ?? 0) + summary.consumptionLiters); });
-        const chartValues = [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-12);
-        const max = Math.max(...chartValues.map(([, liters]) => liters), 0);
-        const flowValues = selected.flatMap((item) => item.lpmAverage === null ? [] : [item.lpmAverage]);
-        dispatch({ type: "loaded", data: { installations: installationData, chart: chartValues.map(([date, liters]) => ({ id: date, label: new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date(date)), value: max > 0 ? liters / max * 100 : 0, liters })), totalLiters: selected.reduce((total, item) => total + item.consumptionLiters, 0), averageFlowLpm: flowValues.length ? flowValues.reduce((total, flow) => total + flow, 0) / flowValues.length : null, readingCount: selected.length, summaries, warnings: [...(failures ? ["Não foi possível consultar o consumo de alguns dispositivos."] : []), ...(selected.length === 0 ? ["Não há leituras Mongo para o intervalo selecionado."] : [])] } });
+        const [points, installations] = await Promise.all([
+          listMonitoringHourly(WINDOW_HOURS, interval, controller.signal),
+          listInstallations(controller.signal),
+        ]);
+        if (!controller.signal.aborted) dispatch({ type: "loaded", data: buildMonitoringData(points, installations) });
       } catch (error: unknown) {
         if (!controller.signal.aborted) dispatch({ type: "failed", error: error instanceof ApiError ? error.message : "Não foi possível carregar o monitoramento." });
       }
