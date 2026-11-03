@@ -1,7 +1,7 @@
 import { ApiError, writeJson } from "./http";
 import { createOrganization } from "./organizations";
 import { isRecord, readId } from "../utils/apiValidation";
-import { isValidCnpjLength, onlyDigits } from "../utils/companyValidation";
+import { isValidCnpjLength, isValidPostalCodeLength, onlyDigits } from "../utils/companyValidation";
 import type {
   CompanyRegisterData,
   CompanyRegistrationProgress,
@@ -35,7 +35,7 @@ export async function registerCompany(
   if (!classification) throw new ApiError("Selecione o tipo da indústria.");
   if (!isValidCnpjLength(data.cnpj)) throw new ApiError("O CNPJ deve ter 14 números.");
   const cep = onlyDigits(data.postalCode);
-  if (cep.length !== 8) throw new ApiError("O CEP deve ter 8 números.");
+  if (!isValidPostalCodeLength(data.postalCode)) throw new ApiError("O CEP deve ter 8 números.");
   if (progress.organizationId === undefined) {
     progress.organizationId = await createOrganization({
       corporateName: data.legalName.trim(), tradeName: data.tradeName.trim(), cnpj: onlyDigits(data.cnpj),
