@@ -13,7 +13,6 @@ export interface Alert {
   deviceId: string | null;
   triggeredAt: string;
   resolvedAt: string | null;
-  dismissedAt: string | null;
 }
 
 export interface AlertPage {
@@ -25,15 +24,15 @@ export interface AlertPage {
 export interface AlertQuery {
   severity: Severity | null;
   alertType: string | null;
-  includeDismissed: boolean;
+  onlyActive: boolean;
   page: number;
   size: number;
 }
 
 export interface LeakSummary {
-  litersPerDay: number;
-  points: number;
-  windowHours: number;
+  activeCount: number;
+  lossLiters: number;
+  lossCost: number;
 }
 
 export interface EvidencePoint {

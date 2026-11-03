@@ -3,83 +3,70 @@ import assert from "node:assert/strict";
 import { harness } from "./helpers/service-harness.mjs";
 
 const saved = () => ({ accessToken: "access", refreshToken: "refresh", expiresAt: Date.now() + 60000, refreshExpiresAt: Date.now() + 86400000 });
-const env = { VITE_MONGO_API_URL: "https://mongo.example.test" };
+const env = { VITE_MONGO_API_URL: "https://mongo.example.test", VITE_POSTGRES_API_URL: "https://api.example.test" };
 const signal = () => new AbortController().signal;
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status });
 const ID = "1234567890abcdef12345678";
-const rawAlert = (extra = {}) => ({ _id: ID, severity: "medium", triggered_at: "2026-11-02T12:00:00Z", title: "Meta", device_id: null, ...extra });
+const row = (extra = {}) => ({ alertKey: 7, propertyId: 3, propertyName: "LOJA SWIFT - MOEMA", deviceId: "ESP32-SP-1003", alertType: "fluxo_atipico", severity: "medium", triggeredAt: "2026-11-02T12:00:00", resolvedAt: null, ...extra });
+const leak = (extra = {}) => ({ alertKey: 1, propertyId: 3, propertyName: "Loja", deviceId: "ESP", severity: "high", triggeredAt: "2026-11-02T21:40:00", resolvedAt: null, leakStatus: "ATIVO", durationMinutes: 100, estimatedLossLiters: 10.5, estimatedLossCost: 0.3, ...extra });
 
 async function setup(handler) {
   const calls = [];
   const app = await harness(async (url, options) => { calls.push([url, options]); return handler(new URL(url), options); }, saved(), env);
   return { calls, alerts: await app.service("alerts"), rules: await app.service("../utils/alertsValidation") };
 }
-const page = (content) => ({ content, page: { totalElements: content.length, totalPages: 1 } });
-const defaults = { severity: null, alertType: null, includeDismissed: false, page: 0, size: 20 };
+const defaults = { severity: null, alertType: null, onlyActive: false, page: 0, size: 20 };
 
-test("alertas usam JWT no Mongo, filtros de severidade e aceitam alerta geral", async () => {
-  const { calls, alerts } = await setup(() => json(page([rawAlert()])));
-  const result = await alerts.listAlerts({ ...defaults, severity: "medium", includeDismissed: true }, signal());
+test("alertas vêm da view SQL com JWT, filtros e título derivado do tipo", async () => {
+  const { calls, alerts } = await setup(() => json([row()]));
+  const result = await alerts.listAlerts({ ...defaults, severity: "medium", alertType: "fluxo_atipico", onlyActive: true }, signal());
   const url = new URL(calls[0][0]);
-  assert.equal(result.content[0].deviceId, null);
-  assert.equal(url.host, "mongo.example.test");
+  assert.equal(url.host, "api.example.test");
+  assert.equal(url.pathname, "/delta/analytics/alerts");
   assert.equal(url.searchParams.get("severity"), "medium");
-  assert.equal(url.searchParams.get("include_dismissed"), "true");
+  assert.equal(url.searchParams.get("alertType"), "fluxo_atipico");
+  assert.equal(url.searchParams.get("onlyActive"), "true");
   assert.equal(calls[0][1].headers.Authorization, "Bearer access");
+  assert.equal(result.content[0].title, "Consumo acima do esperado");
+  assert.equal(result.content[0].id, "7");
+  assert.equal(result.content[0].resolvedAt, null);
 });
 
-test("lista filtra vazamentos por alert_type e converte datas de encerramento", async () => {
-  const { alerts } = await setup(() => json(page([
-    rawAlert({ alert_type: "vazamento_continuo", resolved_at: "2026-11-02T13:00:00Z" }),
-    rawAlert({ _id: "abcdef1234567890abcdef12", alert_type: "meta" }),
-  ])));
-  const result = await alerts.listAlerts({ ...defaults, alertType: "vazamento_continuo" }, signal());
-  assert.equal(result.content.length, 1);
-  assert.equal(result.content[0].resolvedAt, "2026-11-02T13:00:00Z");
-  assert.equal(result.content[0].dismissedAt, null);
+test("lista pagina no cliente e informa total de páginas", async () => {
+  const rows = Array.from({ length: 45 }, (_, index) => row({ alertKey: index + 1 }));
+  const { alerts } = await setup(() => json(rows));
+  const last = await alerts.listAlerts({ ...defaults, page: 2 }, signal());
+  assert.equal(last.content.length, 5);
+  assert.equal(last.totalElements, 45);
+  assert.equal(last.totalPages, 3);
+  const empty = await (await setup(() => json([]))).alerts.listAlerts(defaults, signal());
+  assert.equal(empty.totalPages, 0);
 });
 
-test("lista rejeita alerta com id, data, severidade ou paginação inválidos", async () => {
-  for (const body of [
-    page([rawAlert({ _id: "x" })]),
-    page([rawAlert({ triggered_at: "ontem" })]),
-    page([rawAlert({ triggered_at: undefined })]),
-    page([rawAlert({ severity: "critical" })]),
-    { content: [rawAlert()] },
-    { content: [rawAlert()], page: { totalElements: -1, totalPages: 1 } },
-    { content: "x", page: { totalElements: 0, totalPages: 0 } },
-  ]) {
+test("lista rejeita alerta sem chave, data ou com severidade inválida", async () => {
+  for (const body of [[row({ alertKey: undefined })], [row({ triggeredAt: "ontem" })], [row({ triggeredAt: undefined })], [row({ severity: "critical" })], { content: [] }, ["x"]]) {
     const { alerts } = await setup(() => json(body));
     await assert.rejects(alerts.listAlerts(defaults, signal()));
   }
 });
 
-test("alerta usa valores padrão quando título e mensagem faltam", async () => {
-  const { alerts } = await setup(() => json(page([{ _id: ID, triggered_at: "2026-11-02T12:00:00Z" }])));
+test("alerta sem severidade vira informativo e tipo desconhecido usa título padrão", async () => {
+  const { alerts } = await setup(() => json([row({ severity: null, alertType: "novo_tipo", propertyId: null })]));
   const [alert] = (await alerts.listAlerts(defaults, signal())).content;
   assert.equal(alert.severity, "low");
   assert.equal(alert.title, "Alerta de consumo");
-  assert.equal(alert.message, "Consulte as evidências do alerta.");
+  assert.equal(alert.propertyId, null);
 });
 
-test("resumo de vazamentos valida números", async () => {
-  const ok = await setup(() => json({ liters_per_day: 120, points: 2, window_hours: 24 }));
-  assert.deepEqual({ ...(await ok.alerts.getLeakSummary(signal())) }, { litersPerDay: 120, points: 2, windowHours: 24 });
-  assert.equal(new URL(ok.calls[0][0]).pathname, "/api/alerts/leak-summary");
-  for (const body of [{ liters_per_day: -1, points: 1, window_hours: 24 }, { liters_per_day: 1, points: "a", window_hours: 24 }, []]) {
-    const bad = await setup(() => json(body));
-    await assert.rejects(bad.alerts.getLeakSummary(signal()));
-  }
-});
-
-test("dispensar usa PATCH autenticado e recusa id inválido sem chamar a API", async () => {
-  const { calls, alerts } = await setup(() => json({}));
-  await alerts.dismissAlert(ID, signal());
-  assert.equal(calls[0][1].method, "PATCH");
-  assert.equal(new URL(calls[0][0]).pathname, `/api/alerts/${ID}/dismiss`);
-  assert.equal(calls[0][1].headers.Authorization, "Bearer access");
-  await assert.rejects(alerts.dismissAlert("../etc", signal()));
-  assert.equal(calls.length, 1);
+test("resumo de vazamentos soma perda dos ativos e custo do histórico", async () => {
+  const ok = await setup(() => json([leak(), leak({ alertKey: 2, estimatedLossLiters: 4, estimatedLossCost: 0.2 }), leak({ alertKey: 3, leakStatus: "RESOLVIDO", resolvedAt: "2026-11-02T23:00:00", estimatedLossLiters: 99, estimatedLossCost: 1 })]));
+  const summary = await ok.alerts.getLeakSummary(signal());
+  assert.equal(new URL(ok.calls[0][0]).pathname, "/delta/analytics/leaks");
+  assert.equal(summary.activeCount, 2);
+  assert.equal(summary.lossLiters, 14.5);
+  assert.ok(Math.abs(summary.lossCost - 1.5) < 1e-9);
+  const bad = await setup(() => json([leak({ leakStatus: "X" })]));
+  await assert.rejects(bad.alerts.getLeakSummary(signal()));
 });
 
 test("visita usa PUT autenticado e permite cancelar com null", async () => {

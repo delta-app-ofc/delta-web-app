@@ -34,7 +34,7 @@ export function AlertsPage() {
   const [severity, setSeverity] = useState<Severity | null>(null);
   const [page, setPage] = useState(0);
   const goToPreviousPage = useCallback(() => setPage((current) => Math.max(0, current - 1)), []);
-  const alerts = useAlerts({ severity, alertType: null, includeDismissed: false, page, size: PAGE_SIZE }, goToPreviousPage);
+  const alerts = useAlerts({ severity, alertType: null, onlyActive: true, page, size: PAGE_SIZE });
   const leaks = useLeakSummary();
   const loading = alerts.status === "loading";
 
@@ -52,8 +52,8 @@ export function AlertsPage() {
         {leaks.status === "success" && leaks.summary && (
           <section className="alerts-page__summary" aria-label="Resumo de vazamentos">
             <h2>Vazamentos identificados</h2>
-            <p>{leaks.summary.litersPerDay.toLocaleString("pt-BR")} L/dia estimados · {leaks.summary.points} medidor(es)</p>
-            <small>Alertas abertos e registros das últimas {leaks.summary.windowHours} horas. A projeção não é volume já desperdiçado.</small>
+            <p>{leaks.summary.activeCount} ativo(s) · {leaks.summary.lossLiters.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} L perdidos até agora</p>
+            <small>Soma do consumo medido desde o início de cada vazamento ativo.</small>
           </section>
         )}
         {leaks.status === "error" && (
@@ -77,7 +77,6 @@ export function AlertsPage() {
           <span>{alerts.data.totalElements} alerta(s)</span>
         </div>
 
-        {alerts.actionError && <p role="alert">{alerts.actionError}</p>}
         {alerts.status === "error" && (
           <AsyncFeedback status="error" message="Não foi possível carregar os alertas. Tente novamente." onRetry={alerts.retry} />
         )}
@@ -110,15 +109,6 @@ export function AlertsPage() {
                         )}
                       </div>
                       <span className={`alerts-page__badge alerts-page__badge--${type.css}`}>{type.label}</span>
-                      <button
-                        className="alerts-page__dismiss"
-                        type="button"
-                        disabled={alerts.dismissing !== null}
-                        aria-label={`Dispensar alerta: ${alert.title}`}
-                        onClick={() => void alerts.dismiss(alert.id, alerts.data.content.length === 1 && page > 0)}
-                      >
-                        ×
-                      </button>
                     </li>
                   );
                 })}

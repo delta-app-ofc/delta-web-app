@@ -14,12 +14,11 @@ import "./style.css";
 
 const PAGE_SIZE = 20;
 
-type OccurrenceStatus = "active" | "resolved" | "dismissed";
+type OccurrenceStatus = "active" | "resolved";
 
-const statusLabel: Record<OccurrenceStatus, string> = { active: "Ativo", resolved: "Resolvido", dismissed: "Dispensado" };
+const statusLabel: Record<OccurrenceStatus, string> = { active: "Ativo", resolved: "Resolvido" };
 
 function occurrenceStatus(alert: Alert): OccurrenceStatus {
-  if (alert.dismissedAt) return "dismissed";
   return alert.resolvedAt ? "resolved" : "active";
 }
 
@@ -28,7 +27,7 @@ function formatDateTime(value: string): string {
 }
 
 function formatDuration(alert: Alert): string {
-  const end = alert.resolvedAt ?? alert.dismissedAt;
+  const end = alert.resolvedAt;
   if (!end) return "Em andamento";
   const minutes = Math.max(0, Math.round((Date.parse(end) - Date.parse(alert.triggeredAt)) / 60000));
   return minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}min` : `${minutes}min`;
@@ -37,10 +36,9 @@ function formatDuration(alert: Alert): string {
 export function LeaksPage() {
   const [historyPage, setHistoryPage] = useState(0);
   const goToPreviousPage = useCallback(() => setHistoryPage((current) => Math.max(0, current - 1)), []);
-  const keepPage = useCallback(() => undefined, []);
   const summary = useLeakSummary();
-  const open = useAlerts({ severity: null, alertType: LEAK_ALERT_TYPE, includeDismissed: false, page: 0, size: PAGE_SIZE }, keepPage);
-  const history = useAlerts({ severity: null, alertType: LEAK_ALERT_TYPE, includeDismissed: true, page: historyPage, size: PAGE_SIZE }, goToPreviousPage);
+  const open = useAlerts({ severity: null, alertType: LEAK_ALERT_TYPE, onlyActive: true, page: 0, size: PAGE_SIZE });
+  const history = useAlerts({ severity: null, alertType: LEAK_ALERT_TYPE, onlyActive: false, page: historyPage, size: PAGE_SIZE });
   const activeLeaks = useMemo(() => open.data.content.filter((alert) => occurrenceStatus(alert) === "active"), [open.data.content]);
 
   return (
@@ -66,14 +64,16 @@ export function LeaksPage() {
             </div>
           </article>
           <article className="leaks-card leaks-indicator">
-            <div className="leaks-indicator__label"><img src={investigateIcon} alt="" /><span>Perda estimada (24 h)</span></div>
+            <div className="leaks-indicator__label"><img src={investigateIcon} alt="" /><span>Perda estimada (ativos)</span></div>
             <div className="leaks-indicator__value">
-              {summary.summary ? <><strong>{summary.summary.litersPerDay.toLocaleString("pt-BR")}</strong><small>L/dia · {summary.summary.points} medidor(es)</small></> : <UnavailableValue />}
+              {summary.summary ? <><strong>{summary.summary.lossLiters.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</strong><small>L perdidos · {summary.summary.activeCount} ativo(s)</small></> : <UnavailableValue />}
             </div>
           </article>
           <article className="leaks-card leaks-indicator">
-            <div className="leaks-indicator__label"><img src={impactIcon} alt="" /><span>Impacto estimado (mês)</span></div>
-            <div className="leaks-indicator__value"><UnavailableValue /></div>
+            <div className="leaks-indicator__label"><img src={impactIcon} alt="" /><span>Impacto estimado (histórico)</span></div>
+            <div className="leaks-indicator__value">
+              {summary.summary ? <><strong>{summary.summary.lossCost.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong><small>custo da água perdida</small></> : <UnavailableValue />}
+            </div>
           </article>
         </section>
         {summary.status === "error" && <AsyncFeedback status="error" message="Não foi possível carregar o resumo de vazamentos." onRetry={summary.retry} />}

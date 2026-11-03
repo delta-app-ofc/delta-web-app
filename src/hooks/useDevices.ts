@@ -2,8 +2,22 @@ import { useCallback, useEffect, useReducer, useState } from "react";
 import { listInstallations } from "../services/installations";
 import { listDevices } from "../services/devices";
 import { ApiError } from "../services/http";
-import { getDeviceTelemetry } from "../services/mongoTelemetry";
-import type { DevicesResult } from "../types/device";
+import { listDeviceIndicators } from "../services/indicators";
+import type { DeviceTelemetry, DevicesResult } from "../types/device";
+import type { DeviceIndicator } from "../types/indicators";
+
+// Status e bateria vêm da view dw.vw_ft_device_status (carregada do Mongo pelo ETL), não da telemetria pública.
+function toTelemetry(indicator: DeviceIndicator): DeviceTelemetry {
+  return {
+    deviceId: indicator.deviceId,
+    lastPingAt: indicator.lastPingAt ?? "",
+    wifiSignalRssi: indicator.wifiSignalRssi ?? "",
+    firmwareVersion: indicator.firmwareVersion ?? "",
+    connectivityStatus: indicator.connectivityStatus,
+    batteryLevel: indicator.batteryLevel ?? 0,
+    unavailabilityReason: null,
+  };
+}
 
 type State =
   | { status: "loading" }
@@ -33,25 +47,23 @@ export function useDevices() {
 
     async function load(): Promise<void> {
       try {
-        const [records, installations] = await Promise.all([
+        const [records, installations, indicators] = await Promise.all([
           listDevices(controller.signal),
           listInstallations(controller.signal),
+          listDeviceIndicators(controller.signal).catch(() => null),
         ]);
         if (controller.signal.aborted) return;
         const installationMap = new Map(installations.map((installation) => [installation.id, installation]));
         const activePropertyIds = new Set(records.filter((record) => record.isActive).map((record) => record.propertyId));
         const warnings: string[] = [];
-        const telemetryResults = await Promise.allSettled(records.map((record) => getDeviceTelemetry(record.deviceId, controller.signal)));
-        if (controller.signal.aborted) return;
-        let telemetryFailures = 0;
-        const devices = records.map((record, index) => {
+        const byDevice = new Map((indicators ?? []).map((indicator) => [indicator.deviceId, indicator]));
+        if (indicators === null) warnings.push("Não foi possível consultar o status dos dispositivos.");
+        const devices = records.map((record) => {
           const installation = installationMap.get(record.propertyId);
           if (!installation) warnings.push(`A instalação do dispositivo ${record.deviceId} não foi encontrada.`);
-          const result = telemetryResults[index];
-          if (result.status === "rejected") telemetryFailures += 1;
-          return { record, installationName: installation?.name ?? `Instalação #${record.propertyId}`, region: null, telemetry: result.status === "fulfilled" ? result.value : null };
+          const indicator = byDevice.get(record.deviceId);
+          return { record, installationName: installation?.name ?? `Instalação #${record.propertyId}`, region: indicator?.regionName ?? null, telemetry: indicator ? toTelemetry(indicator) : null };
         });
-        if (telemetryFailures > 0) warnings.push("Não foi possível consultar a telemetria de alguns dispositivos.");
         const unlinkedInstallations = installations
           .filter((installation) => !activePropertyIds.has(installation.id))
           .map((installation) => ({ id: installation.id, name: installation.name, region: null }));
