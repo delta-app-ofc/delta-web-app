@@ -1,4 +1,0 @@
-.visit { margin-top: 0.5rem; }
-.visit label { display: block; margin-top: 0.5rem; }
-.visit button, .visit summary { cursor: pointer; }
-.visit button:focus-visible, .visit summary:focus-visible, .visit input:focus-visible { outline: 3px solid #0b3d91; outline-offset: 2px; }

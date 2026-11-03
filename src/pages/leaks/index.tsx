@@ -1,9 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { AppSidebar } from "../../components/AppSidebar";
 import { AsyncFeedback } from "../../components/AsyncFeedback";
-import { EvidenceChart } from "../../components/EvidenceChart";
 import { UnavailableValue } from "../../components/UnavailableValue";
-import { VisitForm } from "../../components/VisitForm";
 import exportIcon from "../../assets/leaks/export.png";
 import impactIcon from "../../assets/leaks/impact.png";
 import investigateIcon from "../../assets/leaks/investigate.png";
@@ -95,12 +93,6 @@ export function LeaksPage() {
                 <div><dt>Identificado em</dt><dd>{formatDateTime(leak.triggeredAt)}</dd></div>
                 <div><dt>Unidade</dt><dd>{leak.propertyId ? `Unidade ${leak.propertyId}` : "Geral"}</dd></div>
               </dl>
-              {leak.deviceId && (
-                <>
-                  <EvidenceChart deviceId={leak.deviceId} />
-                  <VisitForm deviceId={leak.deviceId} />
-                </>
-              )}
             </article>
           ))}
         </section>

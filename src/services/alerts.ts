@@ -1,19 +1,7 @@
-import type { Alert, AlertPage, AlertQuery, EvidencePoint, LeakSummary, Severity } from "../types/alerts";
+import type { Alert, AlertPage, AlertQuery, LeakSummary, Severity } from "../types/alerts";
 import { isRecord, readArray, readOptionalNumber, readText } from "../utils/apiValidation";
-import { isValidDeviceId } from "../utils/alertsValidation";
-import { ApiError, getJson, getJsonFrom, writeJsonFrom } from "./http";
+import { ApiError, getJson } from "./http";
 import { listLeakIndicators } from "./indicators";
-
-// Visita e evidências (ações de detecção) seguem na API Mongo com o JWT do login.
-const mongoBaseUrl = () => import.meta.env.VITE_MONGO_API_URL?.trim();
-const EVIDENCE_WINDOW_MS = 86_400_000;
-const EVIDENCE_MAX_PAGES = 10;
-
-function nonNegative(value: unknown, message: string): number {
-  const number = readOptionalNumber(value);
-  if (number === null || number < 0) throw new ApiError(message);
-  return number;
-}
 
 function optionalDate(value: unknown): string | null {
   if (value === null || value === undefined) return null;
@@ -35,7 +23,7 @@ function parseSeverity(value: unknown): Severity {
   return severity;
 }
 
-/** Converte uma linha da view dw.vw_ft_alert (camelCase) no tipo do front, rejeitando dados fora do contrato. */
+// Converte uma linha da view dw.vw_ft_alert (camelCase) no tipo do front, rejeitando dados fora do contrato.
 export function parseAlert(value: unknown): Alert {
   if (!isRecord(value)) throw new ApiError("Alerta inválido.");
   const triggeredAt = optionalDate(value.triggeredAt);
@@ -76,33 +64,4 @@ export async function getLeakSummary(signal: AbortSignal): Promise<LeakSummary> 
     lossLiters: active.reduce((total, leak) => total + leak.estimatedLossLiters, 0),
     lossCost: leaks.reduce((total, leak) => total + leak.estimatedLossCost, 0),
   };
-}
-/** `until` já validado em ISO (src/utils/alertsValidation.ts); `null` cancela a visita. */
-export async function declareVisit(deviceId: string, until: string | null, signal: AbortSignal): Promise<void> {
-  if (!isValidDeviceId(deviceId)) throw new ApiError("Dispositivo inválido.");
-  await writeJsonFrom(mongoBaseUrl(), "PUT", `/api/detection/devices/${encodeURIComponent(deviceId)}/visit`, { visit_until: until }, signal);
-}
-
-function parseEvidence(value: unknown): EvidencePoint {
-  if (!isRecord(value)) throw new ApiError("Janela de evidência inválida.");
-  const time = optionalDate(value.window_started_at);
-  if (!time) throw new ApiError("Janela de evidência sem data.");
-  const evidence = isRecord(value.anomaly_evidence) ? value.anomaly_evidence : {};
-  const baseline = readOptionalNumber(evidence.baseline_median);
-  return { time, liters: nonNegative(value.consumption_liters, "Consumo da janela inválido."), baseline: baseline === null || baseline < 0 ? null : baseline };
-}
-
-export async function listEvidence(deviceId: string, signal: AbortSignal, now = Date.now()): Promise<EvidencePoint[]> {
-  if (!isValidDeviceId(deviceId)) throw new ApiError("Dispositivo inválido.");
-  const points: EvidencePoint[] = [];
-  for (let page = 0; page < EVIDENCE_MAX_PAGES; page += 1) {
-    const params = new URLSearchParams({ start: new Date(now - EVIDENCE_WINDOW_MS).toISOString(), end: new Date(now).toISOString(), page: String(page), size: "100" });
-    const data = await getJsonFrom(mongoBaseUrl(), `/api/detection/devices/${encodeURIComponent(deviceId)}/evidence?${params}`, signal);
-    if (!isRecord(data) || !isRecord(data.page)) throw new ApiError("Evidências inválidas.");
-    points.push(...readArray(data.content, parseEvidence));
-    if (page + 1 >= nonNegative(data.page.totalPages, "Total de páginas inválido.")) {
-      return points.sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
-    }
-  }
-  throw new ApiError("A série de evidências excede o limite de consulta.");
 }

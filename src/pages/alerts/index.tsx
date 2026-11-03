@@ -1,8 +1,6 @@
 import { useCallback, useState } from "react";
 import { AppSidebar } from "../../components/AppSidebar";
 import { AsyncFeedback } from "../../components/AsyncFeedback";
-import { EvidenceChart } from "../../components/EvidenceChart";
-import { VisitForm } from "../../components/VisitForm";
 import attentionIcon from "../../assets/alerts/attention.png";
 import criticalIcon from "../../assets/alerts/critical.png";
 import informationIcon from "../../assets/alerts/information.png";
@@ -101,12 +99,6 @@ export function AlertsPage() {
                         <small>
                           {alert.propertyId ? `Unidade ${alert.propertyId}` : "Geral"} · {new Date(alert.triggeredAt).toLocaleString("pt-BR")}
                         </small>
-                        {alert.deviceId && (
-                          <>
-                            <EvidenceChart deviceId={alert.deviceId} />
-                            <VisitForm deviceId={alert.deviceId} />
-                          </>
-                        )}
                       </div>
                       <span className={`alerts-page__badge alerts-page__badge--${type.css}`}>{type.label}</span>
                     </li>

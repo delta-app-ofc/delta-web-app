@@ -34,17 +34,3 @@ export interface LeakSummary {
   lossLiters: number;
   lossCost: number;
 }
-
-export interface EvidencePoint {
-  time: string;
-  liters: number;
-  baseline: number | null;
-}
-
-export interface VisitFormValues {
-  until: string;
-}
-
-export interface VisitFormErrors {
-  until?: string;
-}

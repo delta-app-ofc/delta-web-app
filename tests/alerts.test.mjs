@@ -3,17 +3,16 @@ import assert from "node:assert/strict";
 import { harness } from "./helpers/service-harness.mjs";
 
 const saved = () => ({ accessToken: "access", refreshToken: "refresh", expiresAt: Date.now() + 60000, refreshExpiresAt: Date.now() + 86400000 });
-const env = { VITE_MONGO_API_URL: "https://mongo.example.test", VITE_POSTGRES_API_URL: "https://api.example.test" };
+const env = { VITE_POSTGRES_API_URL: "https://api.example.test" };
 const signal = () => new AbortController().signal;
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status });
-const ID = "1234567890abcdef12345678";
 const row = (extra = {}) => ({ alertKey: 7, propertyId: 3, propertyName: "LOJA SWIFT - MOEMA", deviceId: "ESP32-SP-1003", alertType: "fluxo_atipico", severity: "medium", triggeredAt: "2026-11-02T12:00:00", resolvedAt: null, ...extra });
 const leak = (extra = {}) => ({ alertKey: 1, propertyId: 3, propertyName: "Loja", deviceId: "ESP", severity: "high", triggeredAt: "2026-11-02T21:40:00", resolvedAt: null, leakStatus: "ATIVO", durationMinutes: 100, estimatedLossLiters: 10.5, estimatedLossCost: 0.3, ...extra });
 
 async function setup(handler) {
   const calls = [];
   const app = await harness(async (url, options) => { calls.push([url, options]); return handler(new URL(url), options); }, saved(), env);
-  return { calls, alerts: await app.service("alerts"), rules: await app.service("../utils/alertsValidation") };
+  return { calls, alerts: await app.service("alerts") };
 }
 const defaults = { severity: null, alertType: null, onlyActive: false, page: 0, size: 20 };
 
@@ -69,53 +68,7 @@ test("resumo de vazamentos soma perda dos ativos e custo do histórico", async (
   await assert.rejects(bad.alerts.getLeakSummary(signal()));
 });
 
-test("visita usa PUT autenticado e permite cancelar com null", async () => {
-  const { calls, alerts } = await setup(() => json({ visit_until: null }));
-  await alerts.declareVisit("device/shared", null, signal());
-  assert.equal(new URL(calls[0][0]).pathname, "/api/detection/devices/device%2Fshared/visit");
-  assert.equal(calls[0][1].method, "PUT");
-  assert.equal(JSON.parse(calls[0][1].body).visit_until, null);
-  await assert.rejects(alerts.declareVisit("  ", null, signal()));
-});
-
-test("evidências percorrem páginas, ordenam e tratam baseline ausente", async () => {
-  const window = (time, liters, baseline) => ({ window_started_at: time, consumption_liters: liters, anomaly_evidence: baseline === undefined ? null : { baseline_median: baseline } });
-  const { calls, alerts } = await setup((url) => url.searchParams.get("page") === "0"
-    ? json({ content: [window("2026-11-02T12:10:00Z", 5, 2)], page: { totalPages: 2 } })
-    : json({ content: [window("2026-11-02T12:00:00Z", 3)], page: { totalPages: 2 } }));
-  const points = await alerts.listEvidence("dev-1", signal(), Date.parse("2026-11-02T13:00:00Z"));
-  assert.equal(calls.length, 2);
-  assert.equal(points.map((point) => point.time).join(","), "2026-11-02T12:00:00Z,2026-11-02T12:10:00Z");
-  assert.equal(points[0].baseline, null);
-  assert.equal(points[1].baseline, 2);
-  assert.equal(new URL(calls[0][0]).searchParams.get("end"), "2026-11-02T13:00:00.000Z");
-});
-
-test("evidências rejeitam resposta inválida e séries acima do limite", async () => {
-  for (const body of [[], { content: [{ consumption_liters: 1 }], page: { totalPages: 1 } }, { content: [{ window_started_at: "2026-11-02T12:00:00Z", consumption_liters: -1 }], page: { totalPages: 1 } }]) {
-    const { alerts } = await setup(() => json(body));
-    await assert.rejects(alerts.listEvidence("dev-1", signal()));
-  }
-  const endless = await setup(() => json({ content: [], page: { totalPages: 99 } }));
-  await assert.rejects(endless.alerts.listEvidence("dev-1", signal()));
-  assert.equal(endless.calls.length, 10);
-  await assert.rejects(endless.alerts.listEvidence("", signal()));
-});
-
 test("erro HTTP da API vira ApiError sem vazar detalhes", async () => {
   const { alerts } = await setup(() => json({ detail: "segredo" }, 500));
   await assert.rejects(alerts.listAlerts(defaults, signal()), (error) => error.status === 500 && !error.message.includes("segredo"));
-});
-
-test("validação da visita devolve mensagem específica do campo", async () => {
-  const { rules } = await setup(() => json({}));
-  const now = Date.parse("2026-11-02T12:00:00Z");
-  assert.match(rules.validateVisitUntil("", now).errors.until, /Informe quando/);
-  assert.match(rules.validateVisitUntil("abc", now).errors.until, /válidas/);
-  assert.match(rules.validateVisitUntil("2026-11-02T11:00:00Z", now).errors.until, /futura/);
-  assert.match(rules.validateVisitUntil("2027-06-01T00:00:00Z", now).errors.until, /90 dias/);
-  assert.equal(rules.validateVisitUntil("2026-11-03T12:00:00Z", now).iso, "2026-11-03T12:00:00.000Z");
-  assert.equal(rules.isValidAlertId(ID), true);
-  assert.equal(rules.isValidAlertId("123"), false);
-  assert.equal(rules.isValidDeviceId("x".repeat(101)), false);
 });
