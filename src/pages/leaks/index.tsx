@@ -1,110 +1,52 @@
+import { useCallback, useMemo, useState } from "react";
 import { AppSidebar } from "../../components/AppSidebar";
-import attentionIcon from "../../assets/leaks/attention.png";
+import { AsyncFeedback } from "../../components/AsyncFeedback";
+import { EvidenceChart } from "../../components/EvidenceChart";
+import { UnavailableValue } from "../../components/UnavailableValue";
+import { VisitForm } from "../../components/VisitForm";
 import exportIcon from "../../assets/leaks/export.png";
 import impactIcon from "../../assets/leaks/impact.png";
 import investigateIcon from "../../assets/leaks/investigate.png";
 import leaksIcon from "../../assets/leaks/leaks.png";
-import recommendsIcon from "../../assets/leaks/recommends.png";
-import urgentIcon from "../../assets/leaks/urgent.png";
-
+import { useAlerts, useLeakSummary } from "../../hooks/useAlerts";
+import { LEAK_ALERT_TYPE, type Alert } from "../../types/alerts";
 import "./style.css";
 
-const indicators = [
-  {
-    id: "active",
-    label: "Vazamentos ativos",
-    value: "2",
-    detail: "vazamentos",
-    icon: leaksIcon,
-  },
-  {
-    id: "investigating",
-    label: "Investigando",
-    value: "1",
-    detail: "vazamento",
-    icon: investigateIcon,
-  },
-  {
-    id: "impact",
-    label: "Impacto estimado (mês)",
-    value: "R$ 600,00",
-    icon: impactIcon,
-  },
-] as const;
+const PAGE_SIZE = 20;
 
-const recommendations = [
-  {
-    id: "main-register",
-    label: "Verificar registro geral",
-    priority: "Urgente",
-    type: "urgent",
-    icon: urgentIcon,
-  },
-  {
-    id: "pipes",
-    label: "Inspecionar tubulações",
-    priority: "Atenção",
-    type: "warning",
-    icon: attentionIcon,
-  },
-  {
-    id: "disable-alerts",
-    label: "Desativar alertas",
-    priority: "Recomendado",
-    type: "recommended",
-    icon: recommendsIcon,
-  },
-] as const;
+type OccurrenceStatus = "active" | "resolved" | "dismissed";
 
-const flowData = [
-  { id: "00h", value: 18 },
-  { id: "01h", value: 27 },
-  { id: "02h", value: 68 },
-  { id: "03h", value: 100 },
-  { id: "04h", value: 88 },
-  { id: "05h", value: 26 },
-] as const;
+const statusLabel: Record<OccurrenceStatus, string> = { active: "Ativo", resolved: "Resolvido", dismissed: "Dispensado" };
 
-const occurrences = [
-  {
-    id: "leopoldina",
-    installation: "Vila Leopoldina",
-    location: "São Paulo - SP",
-    date: "28/08",
-    duration: "2h 10min",
-    impact: "R$ 38,00",
-    status: "Resolvido",
-    statusType: "resolved",
-  },
-  {
-    id: "romana",
-    installation: "Vila Romana",
-    location: "São Paulo - SP",
-    date: "15/08",
-    duration: "40min",
-    impact: "R$ 9,00",
-    status: "Resolvido",
-    statusType: "resolved",
-  },
-  {
-    id: "perdizes",
-    installation: "Perdizes",
-    location: "São Paulo - SP",
-    date: "23/09",
-    duration: "Em andamento",
-    impact: "R$ 41,00/dia",
-    status: "Ativo",
-    statusType: "active",
-  },
-] as const;
+function occurrenceStatus(alert: Alert): OccurrenceStatus {
+  if (alert.dismissedAt) return "dismissed";
+  return alert.resolvedAt ? "resolved" : "active";
+}
+
+function formatDateTime(value: string): string {
+  return new Date(value).toLocaleString("pt-BR");
+}
+
+function formatDuration(alert: Alert): string {
+  const end = alert.resolvedAt ?? alert.dismissedAt;
+  if (!end) return "Em andamento";
+  const minutes = Math.max(0, Math.round((Date.parse(end) - Date.parse(alert.triggeredAt)) / 60000));
+  return minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}min` : `${minutes}min`;
+}
 
 export function LeaksPage() {
+  const [historyPage, setHistoryPage] = useState(0);
+  const goToPreviousPage = useCallback(() => setHistoryPage((current) => Math.max(0, current - 1)), []);
+  const keepPage = useCallback(() => undefined, []);
+  const summary = useLeakSummary();
+  const open = useAlerts({ severity: null, alertType: LEAK_ALERT_TYPE, includeDismissed: false, page: 0, size: PAGE_SIZE }, keepPage);
+  const history = useAlerts({ severity: null, alertType: LEAK_ALERT_TYPE, includeDismissed: true, page: historyPage, size: PAGE_SIZE }, goToPreviousPage);
+  const activeLeaks = useMemo(() => open.data.content.filter((alert) => occurrenceStatus(alert) === "active"), [open.data.content]);
+
   return (
     <main className="leaks-page">
       <div className="leaks-page__sidebar">
-        <AppSidebar
-          label="Navegação principal"
-        />
+        <AppSidebar label="Navegação principal" />
       </div>
 
       <section id="page-content" tabIndex={-1} className="leaks-page__content" aria-labelledby="leaks-title">
@@ -117,128 +59,91 @@ export function LeaksPage() {
         </header>
 
         <section className="leaks-indicators" aria-label="Resumo dos vazamentos">
-          {indicators.map((indicator) => (
-            <article className="leaks-card leaks-indicator" key={indicator.id}>
-              <div className="leaks-indicator__label">
-                <img src={indicator.icon} alt="" />
-                <span>{indicator.label}</span>
-              </div>
-              <div className="leaks-indicator__value">
-                <strong>{indicator.value}</strong>
-                {"detail" in indicator && <small>{indicator.detail}</small>}
-              </div>
+          <article className="leaks-card leaks-indicator">
+            <div className="leaks-indicator__label"><img src={leaksIcon} alt="" /><span>Vazamentos ativos</span></div>
+            <div className="leaks-indicator__value">
+              {open.status === "success" ? <><strong>{activeLeaks.length}</strong><small>{activeLeaks.length === 1 ? "vazamento" : "vazamentos"}</small></> : <UnavailableValue />}
+            </div>
+          </article>
+          <article className="leaks-card leaks-indicator">
+            <div className="leaks-indicator__label"><img src={investigateIcon} alt="" /><span>Perda estimada (24 h)</span></div>
+            <div className="leaks-indicator__value">
+              {summary.summary ? <><strong>{summary.summary.litersPerDay.toLocaleString("pt-BR")}</strong><small>L/dia · {summary.summary.points} medidor(es)</small></> : <UnavailableValue />}
+            </div>
+          </article>
+          <article className="leaks-card leaks-indicator">
+            <div className="leaks-indicator__label"><img src={impactIcon} alt="" /><span>Impacto estimado (mês)</span></div>
+            <div className="leaks-indicator__value"><UnavailableValue /></div>
+          </article>
+        </section>
+        {summary.status === "error" && <AsyncFeedback status="error" message="Não foi possível carregar o resumo de vazamentos." onRetry={summary.retry} />}
+
+        <section className="leaks-overview" aria-label="Vazamentos ativos">
+          {open.status === "loading" && <AsyncFeedback status="loading" message="Carregando vazamentos…" />}
+          {open.status === "error" && <AsyncFeedback status="error" message="Não foi possível carregar os vazamentos ativos." onRetry={open.retry} />}
+          {open.status === "success" && activeLeaks.length === 0 && <p role="status">Nenhum vazamento ativo no momento.</p>}
+          {activeLeaks.map((leak) => (
+            <article className="leaks-card leak-detail" key={leak.id}>
+              <header className="leak-detail__header">
+                <div>
+                  <h2>{leak.title}</h2>
+                  <p>{leak.message}</p>
+                </div>
+                <span className="leak-detail__status">Vazamento detectado</span>
+              </header>
+              <dl className="leak-detail__metrics">
+                <div><dt>Identificado em</dt><dd>{formatDateTime(leak.triggeredAt)}</dd></div>
+                <div><dt>Unidade</dt><dd>{leak.propertyId ? `Unidade ${leak.propertyId}` : "Geral"}</dd></div>
+              </dl>
+              {leak.deviceId && (
+                <>
+                  <EvidenceChart deviceId={leak.deviceId} />
+                  <VisitForm deviceId={leak.deviceId} />
+                </>
+              )}
             </article>
           ))}
         </section>
 
-        <section className="leaks-overview" aria-label="Detalhes do vazamento ativo">
-          <article className="leaks-card leak-detail">
-            <header className="leak-detail__header">
-              <div>
-                <h2>Loja Swift - Pinheiros</h2>
-                <p>Identificado há 12 min · Fluxo contínuo no banheiro (Bloco A)</p>
-              </div>
-              <span className="leak-detail__status">Vazamento detectado</span>
-            </header>
-
-            <dl className="leak-detail__metrics">
-              <div>
-                <dt>Intensidade</dt>
-                <dd>2,0 L/min</dd>
-              </div>
-              <div>
-                <dt>Duração</dt>
-                <dd>47 min</dd>
-              </div>
-              <div>
-                <dt>Impacto estimado</dt>
-                <dd className="leak-detail__impact">R$ 41,00/dia</dd>
-              </div>
-              <div>
-                <dt>Confiança da detecção</dt>
-                <dd>94%</dd>
-              </div>
-            </dl>
-
-            <section className="leak-actions" aria-labelledby="leak-actions-title">
-              <h3 id="leak-actions-title">Ações recomendadas</h3>
-              <ul>
-                {recommendations.map((recommendation) => (
-                  <li key={recommendation.id}>
-                    <span className="leak-actions__icon" aria-hidden="true">
-                      <img src={recommendation.icon} alt="" />
-                    </span>
-                    <span className="leak-actions__label">{recommendation.label}</span>
-                    <span className={`leak-actions__badge leak-actions__badge--${recommendation.type}`}>
-                      {recommendation.priority}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </article>
-
-          <article className="leaks-card leak-chart-card">
-            <header>
-              <div>
-                <h2>Loja Swift - Vila Romana</h2>
-                <p>Em investigação · vazão acima do padrão na madrugada</p>
-              </div>
-              <span>Possível vazamento</span>
-            </header>
-            <h3>Fluxo durante a madrugada</h3>
-
-            <div
-              className="leak-chart"
-              role="img"
-              aria-label="Fluxo durante a madrugada, entre meia-noite e cinco horas"
-            >
-              {flowData.map((period) => (
-                <div className="leak-chart__column" key={period.id}>
-                  <div className="leak-chart__track">
-                    <span style={{ height: `${period.value}%` }} />
-                  </div>
-                  <small>{period.id}</small>
-                </div>
-              ))}
-            </div>
-          </article>
-        </section>
-
         <section className="leaks-history" aria-labelledby="leaks-history-title">
           <h2 id="leaks-history-title">Histórico de ocorrências</h2>
-          <div className="leaks-card leaks-table-wrapper">
-            <table className="leaks-table">
-              <caption className="sr-only">Histórico de ocorrências de vazamento</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Instalação</th>
-                  <th scope="col">Data</th>
-                  <th scope="col">Duração</th>
-                  <th scope="col">Impacto</th>
-                  <th scope="col">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {occurrences.map((occurrence) => (
-                  <tr key={occurrence.id}>
-                    <td>
-                      <strong>{occurrence.installation}</strong>
-                      <small>{occurrence.location}</small>
-                    </td>
-                    <td>{occurrence.date}</td>
-                    <td>{occurrence.duration}</td>
-                    <td>{occurrence.impact}</td>
-                    <td>
-                      <span className={`leaks-status leaks-status--${occurrence.statusType}`}>
-                        {occurrence.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {history.status === "loading" && <AsyncFeedback status="loading" message="Carregando histórico…" />}
+          {history.status === "error" && <AsyncFeedback status="error" message="Não foi possível carregar o histórico." onRetry={history.retry} />}
+          {history.status === "success" && (
+            history.data.content.length === 0 ? <p role="status">Nenhuma ocorrência registrada.</p> : (
+              <div className="leaks-card leaks-table-wrapper">
+                <table className="leaks-table">
+                  <caption className="sr-only">Histórico de ocorrências de vazamento</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Ocorrência</th>
+                      <th scope="col">Data</th>
+                      <th scope="col">Duração</th>
+                      <th scope="col">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.data.content.map((alert) => {
+                      const status = occurrenceStatus(alert);
+                      return (
+                        <tr key={alert.id}>
+                          <td><strong>{alert.title}</strong><small>{alert.propertyId ? `Unidade ${alert.propertyId}` : "Geral"}</small></td>
+                          <td>{formatDateTime(alert.triggeredAt)}</td>
+                          <td>{formatDuration(alert)}</td>
+                          <td><span className={`leaks-status leaks-status--${status}`}>{statusLabel[status]}</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
+          <nav className="leaks-pagination" aria-label="Paginação do histórico">
+            <button type="button" disabled={history.status === "loading" || historyPage === 0} onClick={goToPreviousPage}>Anterior</button>
+            <span>Página {historyPage + 1}</span>
+            <button type="button" disabled={history.status === "loading" || historyPage + 1 >= history.data.totalPages} onClick={() => setHistoryPage((current) => current + 1)}>Próxima</button>
+          </nav>
         </section>
       </section>
     </main>

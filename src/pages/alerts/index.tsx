@@ -1,107 +1,47 @@
-import { useMemo, useState } from "react";
-
+import { useCallback, useState } from "react";
 import { AppSidebar } from "../../components/AppSidebar";
+import { AsyncFeedback } from "../../components/AsyncFeedback";
+import { EvidenceChart } from "../../components/EvidenceChart";
+import { VisitForm } from "../../components/VisitForm";
 import attentionIcon from "../../assets/alerts/attention.png";
 import criticalIcon from "../../assets/alerts/critical.png";
 import informationIcon from "../../assets/alerts/information.png";
-
+import { useAlerts, useLeakSummary } from "../../hooks/useAlerts";
+import type { Severity } from "../../types/alerts";
 import "./style.css";
 
-type AlertType = "critical" | "warning" | "information";
-type AlertFilter = "all" | AlertType;
-
-interface AlertItem {
-  id: string;
-  title: string;
-  description: string;
-  context: string;
-  type: AlertType;
+interface SeverityFilter {
+  id: Severity | null;
+  label: string;
 }
 
-const alertTypeContent: Record<AlertType, { icon: string; label: string }> = {
-  critical: { icon: criticalIcon, label: "Crítico" },
-  warning: { icon: attentionIcon, label: "Atenção" },
-  information: { icon: informationIcon, label: "Informativo" },
+const PAGE_SIZE = 20;
+
+const filters: readonly SeverityFilter[] = [
+  { id: null, label: "Todos" },
+  { id: "high", label: "Crítico" },
+  { id: "medium", label: "Atenção" },
+  { id: "low", label: "Informativo" },
+];
+
+const severityContent: Record<Severity, { icon: string; label: string; css: string }> = {
+  high: { icon: criticalIcon, label: "Crítico", css: "critical" },
+  medium: { icon: attentionIcon, label: "Atenção", css: "warning" },
+  low: { icon: informationIcon, label: "Informativo", css: "information" },
 };
 
-const filterOptions: readonly { id: AlertFilter; label: string }[] = [
-  { id: "all", label: "Todos" },
-  { id: "critical", label: "Crítico" },
-  { id: "warning", label: "Atenção" },
-  { id: "information", label: "Informativo" },
-];
-
-const initialAlerts: readonly AlertItem[] = [
-  {
-    id: "possible-leak",
-    title: "Possível vazamento",
-    description: "Fluxo contínuo há 47 min sem uso previsto",
-    context: "Pinheiros · há 12 min",
-    type: "critical",
-  },
-  {
-    id: "limit-exceeded",
-    title: "Limite ultrapassado",
-    description: "Consumo mensal excedeu a meta em 12%",
-    context: "Pinheiros · há 40 min",
-    type: "critical",
-  },
-  {
-    id: "high-consumption",
-    title: "Consumo acima do esperado",
-    description: "+22% vs. média histórica das últimas 4 semanas",
-    context: "Vila Romana · há 40 min",
-    type: "warning",
-  },
-  {
-    id: "unusual-pattern",
-    title: "Mudança anormal de padrão",
-    description: "Pico de consumo fora do horário comercial",
-    context: "Perdizes · há 3h",
-    type: "warning",
-  },
-  {
-    id: "goal-forecast",
-    title: "Previsão de ultrapassagem de meta",
-    description: "Ritmo atual projeta 108% da meta até o fim do mês",
-    context: "Vila Romana · há 5h",
-    type: "warning",
-  },
-  {
-    id: "updated-rate",
-    title: "Tarifa atualizada",
-    description: "Concessionária reajustou tarifa comercial em 4,8%",
-    context: "Geral · ontem",
-    type: "information",
-  },
-  {
-    id: "bill-available",
-    title: "Previsão da conta disponível",
-    description: "Estimativa de Setembro já pode ser consultada",
-    context: "Geral · ontem",
-    type: "information",
-  },
-];
-
 export function AlertsPage() {
-  const [activeFilter, setActiveFilter] = useState<AlertFilter>("all");
-  const [alerts, setAlerts] = useState<readonly AlertItem[]>(initialAlerts);
-
-  const visibleAlerts = useMemo(
-    () => activeFilter === "all" ? alerts : alerts.filter((alert) => alert.type === activeFilter),
-    [activeFilter, alerts],
-  );
-
-  function dismissAlert(alertId: string) {
-    setAlerts((currentAlerts) => currentAlerts.filter((alert) => alert.id !== alertId));
-  }
+  const [severity, setSeverity] = useState<Severity | null>(null);
+  const [page, setPage] = useState(0);
+  const goToPreviousPage = useCallback(() => setPage((current) => Math.max(0, current - 1)), []);
+  const alerts = useAlerts({ severity, alertType: null, includeDismissed: false, page, size: PAGE_SIZE }, goToPreviousPage);
+  const leaks = useLeakSummary();
+  const loading = alerts.status === "loading";
 
   return (
     <main className="alerts-page">
       <div className="alerts-page__sidebar">
-        <AppSidebar
-          label="Navegação principal"
-        />
+        <AppSidebar label="Navegação principal" />
       </div>
 
       <section id="page-content" tabIndex={-1} className="alerts-page__content" aria-labelledby="alerts-title">
@@ -109,64 +49,89 @@ export function AlertsPage() {
           <h1 id="alerts-title">Alertas</h1>
         </header>
 
+        {leaks.status === "success" && leaks.summary && (
+          <section className="alerts-page__summary" aria-label="Resumo de vazamentos">
+            <h2>Vazamentos identificados</h2>
+            <p>{leaks.summary.litersPerDay.toLocaleString("pt-BR")} L/dia estimados · {leaks.summary.points} medidor(es)</p>
+            <small>Alertas abertos e registros das últimas {leaks.summary.windowHours} horas. A projeção não é volume já desperdiçado.</small>
+          </section>
+        )}
+        {leaks.status === "error" && (
+          <AsyncFeedback status="error" message="Não foi possível carregar o resumo de vazamentos." onRetry={leaks.retry} />
+        )}
+
         <div className="alerts-page__toolbar">
           <div className="alerts-filters" role="group" aria-label="Filtrar alertas">
-            {filterOptions.map((filter) => (
+            {filters.map((filter) => (
               <button
-                className={`alerts-filter ${activeFilter === filter.id ? "alerts-filter--active" : ""}`}
                 type="button"
-                key={filter.id}
-                aria-pressed={activeFilter === filter.id}
-                onClick={() => setActiveFilter(filter.id)}
+                key={filter.label}
+                className={`alerts-filter ${severity === filter.id ? "alerts-filter--active" : ""}`}
+                aria-pressed={severity === filter.id}
+                onClick={() => { setSeverity(filter.id); setPage(0); }}
               >
                 {filter.label}
               </button>
             ))}
           </div>
-
-          <span className="alerts-page__count">
-            {alerts.length} {alerts.length === 1 ? "alerta ativo" : "alertas ativos"}
-          </span>
+          <span>{alerts.data.totalElements} alerta(s)</span>
         </div>
 
-        <section className="alerts-page__panel" aria-live="polite">
-          {visibleAlerts.length > 0 ? (
-            <ul className="alerts-page__list">
-              {visibleAlerts.map((alert) => {
-                const typeContent = alertTypeContent[alert.type];
+        {alerts.actionError && <p role="alert">{alerts.actionError}</p>}
+        {alerts.status === "error" && (
+          <AsyncFeedback status="error" message="Não foi possível carregar os alertas. Tente novamente." onRetry={alerts.retry} />
+        )}
+        {loading && <AsyncFeedback status="loading" message="Carregando alertas…" />}
 
-                return (
-                  <li key={alert.id}>
-                    <span className={`alerts-page__icon alerts-page__icon--${alert.type}`} aria-hidden="true">
-                      <img src={typeContent.icon} alt="" />
-                    </span>
+        {alerts.status === "success" && (
+          <section className="alerts-page__panel" aria-label="Lista de alertas">
+            {alerts.data.content.length === 0 ? (
+              <p className="alerts-page__empty">Nenhum alerta nesta categoria.</p>
+            ) : (
+              <ul className="alerts-page__list">
+                {alerts.data.content.map((alert) => {
+                  const type = severityContent[alert.severity];
+                  return (
+                    <li key={alert.id}>
+                      <span className={`alerts-page__icon alerts-page__icon--${type.css}`} aria-hidden="true">
+                        <img src={type.icon} alt="" />
+                      </span>
+                      <div className="alerts-page__details">
+                        <strong>{alert.title}</strong>
+                        <span>{alert.message}</span>
+                        <small>
+                          {alert.propertyId ? `Unidade ${alert.propertyId}` : "Geral"} · {new Date(alert.triggeredAt).toLocaleString("pt-BR")}
+                        </small>
+                        {alert.deviceId && (
+                          <>
+                            <EvidenceChart deviceId={alert.deviceId} />
+                            <VisitForm deviceId={alert.deviceId} />
+                          </>
+                        )}
+                      </div>
+                      <span className={`alerts-page__badge alerts-page__badge--${type.css}`}>{type.label}</span>
+                      <button
+                        className="alerts-page__dismiss"
+                        type="button"
+                        disabled={alerts.dismissing !== null}
+                        aria-label={`Dispensar alerta: ${alert.title}`}
+                        onClick={() => void alerts.dismiss(alert.id, alerts.data.content.length === 1 && page > 0)}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        )}
 
-                    <div className="alerts-page__details">
-                      <strong>{alert.title}</strong>
-                      <span>{alert.description}</span>
-                      <small>{alert.context}</small>
-                    </div>
-
-                    <span className={`alerts-page__badge alerts-page__badge--${alert.type}`}>
-                      {typeContent.label}
-                    </span>
-
-                    <button
-                      className="alerts-page__dismiss"
-                      type="button"
-                      aria-label={`Fechar alerta: ${alert.title}`}
-                      onClick={() => dismissAlert(alert.id)}
-                    >
-                      ×
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="alerts-page__empty">Nenhum alerta nesta categoria.</p>
-          )}
-        </section>
+        <nav aria-label="Paginação de alertas">
+          <button type="button" disabled={loading || page === 0} onClick={goToPreviousPage}>Anterior</button>
+          <span>Página {page + 1}</span>
+          <button type="button" disabled={loading || page + 1 >= alerts.data.totalPages} onClick={() => setPage((current) => current + 1)}>Próxima</button>
+        </nav>
       </section>
     </main>
   );

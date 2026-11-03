@@ -10,7 +10,6 @@ import newConversationIcon from "../../assets/chatbot/new-conversation.png";
 import sendIcon from "../../assets/chatbot/send.png";
 import gluhMascot from "../../assets/mascotes/gluh-animarion.png";
 import {
-  defaultConversations,
   type ArchivedConversation,
   type ChatMessage,
 } from "./conversations";
@@ -33,9 +32,6 @@ export function ChatbotPage() {
   const [suggestions, setSuggestions] = useState<readonly string[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [conversationHistory, setConversationHistory] = useState<readonly ArchivedConversation[]>(
-    defaultConversations,
-  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -108,20 +104,6 @@ export function ChatbotPage() {
   }
 
   function startNewConversation() {
-    if (messages.length > 0) {
-      const firstUserMessage = messages.find((message) => message.author === "user");
-
-      setConversationHistory((currentHistory) => [
-        {
-          id: `conversation-${currentHistory.length}`,
-          title: firstUserMessage?.content ?? "Conversa com o Gluh",
-          date: new Date().toLocaleDateString("pt-BR"),
-          messages,
-        },
-        ...currentHistory,
-      ]);
-    }
-
     setMessages([]);
     setSessionId(null);
     setQuestion("");
@@ -148,7 +130,7 @@ export function ChatbotPage() {
             <button
               className="chatbot-history-button"
               type="button"
-              onClick={() => navigate("/gluh/historico", { state: { conversations: conversationHistory } })}
+              onClick={() => navigate("/gluh/historico")}
             >
               <img src={historicalIcon} alt="" />
               <span>Histórico de conversas</span>

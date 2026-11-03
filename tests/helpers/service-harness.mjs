@@ -4,7 +4,7 @@ import ts from "typescript";
 
 export async function harness(fetch, saved = null, env = {}) {
   const storage = new Map(saved ? [["delta.session", JSON.stringify(saved)]] : []);
-  const context = vm.createContext({ fetch, Date, AbortController, sessionStorage: {
+  const context = vm.createContext({ fetch, Date, AbortController, URL, URLSearchParams, sessionStorage: {
     getItem: key => storage.get(key) ?? null,
     setItem: (key, value) => storage.set(key, value),
     removeItem: key => storage.delete(key),

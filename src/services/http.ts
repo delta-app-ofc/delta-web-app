@@ -32,20 +32,20 @@ async function readJson(response: Response): Promise<unknown> {
   catch { throw new ApiError("O serviço retornou uma resposta inválida."); }
 }
 
-export async function postPublicJson(path: string, body: unknown, signal?: AbortSignal): Promise<unknown> {
+export async function postPublicJson(path: string, body: unknown, signal?: AbortSignal, errorMessages: Readonly<Record<number, string>> = {}, fallbackMessage = "Não foi possível entrar. Tente novamente."): Promise<unknown> {
   const response = await request(path, {
     method: "POST", signal,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    const message = response.status === 401
+    const message = errorMessages[response.status] ?? (response.status === 401
       ? "E-mail ou senha inválidos, ou conta inativa."
       : response.status === 400
         ? "Confira o e-mail e a senha informados."
         : response.status === 429
           ? "Muitas tentativas. Aguarde um pouco e tente novamente."
-          : "Não foi possível entrar. Tente novamente.";
+          : fallbackMessage);
     throw new ApiError(message, response.status);
   }
   return readJson(response);
@@ -88,7 +88,7 @@ async function refreshSession(current: Session): Promise<void> {
   finally { if (pendingRefresh?.promise === promise) pendingRefresh = null; }
 }
 
-async function authenticatedRequest(path: string, signal: AbortSignal, method: "GET" | "POST" | "PUT", body?: unknown, configuredBaseUrl?: string, clearSessionOnUnauthorized = true, retryOnUnauthorized = true): Promise<unknown> {
+async function authenticatedRequest(path: string, signal: AbortSignal, method: "GET" | "POST" | "PUT" | "PATCH", body?: unknown, configuredBaseUrl?: string, clearSessionOnUnauthorized = true, retryOnUnauthorized = true): Promise<unknown> {
   const initial = getSession();
   if (!initial) throw new ApiError("Entre na sua conta para continuar.", 401);
   if (initial.expiresAt <= Date.now() + 5000) await refreshSession(initial);
@@ -130,6 +130,6 @@ export function writeJson(method: "POST" | "PUT", path: string, body: unknown, s
   return authenticatedRequest(path, signal, method, body);
 }
 
-export function writeJsonFrom(baseUrl: string | undefined, method: "POST" | "PUT", path: string, body: unknown, signal: AbortSignal): Promise<unknown> {
+export function writeJsonFrom(baseUrl: string | undefined, method: "POST" | "PUT" | "PATCH", path: string, body: unknown, signal: AbortSignal): Promise<unknown> {
   return authenticatedRequest(path, signal, method, body, baseUrl, false, false);
 }

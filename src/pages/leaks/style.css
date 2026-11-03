@@ -589,3 +589,7 @@
     background: #fff;
   }
 }
+
+.leaks-status--dismissed { background: #e5e9ee; color: #2f3b48; }
+.leaks-pagination { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
+.leaks-pagination button:focus-visible { outline: 3px solid #0b3d91; outline-offset: 2px; }

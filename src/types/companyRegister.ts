@@ -101,3 +101,25 @@ export type CompanyTextField =
   | "operationEnd"
   | "averageMonthlyConsumption"
   | "deviceId";
+
+export type OrganizationSegment = "VAREJO" | "INDUSTRIA" | "CONDOMINIO" | "FACILITIES";
+
+export type PropertyClassificationCode =
+  | "COMERCIAL_NORMAL_INDUSTRIAL"
+  | "COMERCIAL_ENTIDADE_ASSISTENCIA_SOCIAL"
+  | "PUBLICA_COM_CONTRATO"
+  | "COMERCIAL_ESPECIAL";
+
+export interface OrganizationPayload {
+  corporateName: string;
+  tradeName: string;
+  cnpj: string;
+  businessSegment: OrganizationSegment;
+  declaredUnitCount: number;
+}
+
+export interface CompanyRegistrationProgress {
+  organizationId?: number;
+  propertyId?: number;
+  deviceLinked?: boolean;
+}

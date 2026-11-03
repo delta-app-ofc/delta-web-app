@@ -1,0 +1,8 @@
+.evidence { margin-top: 0.5rem; }
+.evidence button { cursor: pointer; }
+.evidence button:focus-visible, .evidence summary:focus-visible { outline: 3px solid #0b3d91; outline-offset: 2px; }
+.chart { width: 100%; max-width: 600px; }
+.measured { fill: #1459a6; }
+.baseline { fill: #8a4500; }
+.table { border-collapse: collapse; margin-top: 0.5rem; }
+.table th, .table td { padding: 0.25rem 0.75rem; text-align: left; border-bottom: 1px solid #c9d3de; }
