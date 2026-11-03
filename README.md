@@ -1,4 +1,48 @@
-# React + TypeScript + Vite
+# Delta · Aplicação Web
+
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-4-646CFF?logo=vite&logoColor=white)
+![React Router](https://img.shields.io/badge/React%20Router-6-CA4245?logo=reactrouter&logoColor=white)
+![jsPDF](https://img.shields.io/badge/jsPDF-4-F40F02?logo=adobeacrobatreader&logoColor=white)
+
+Interface web do Delta para autenticação, cadastro e gestão de instalações residenciais. O usuário consulta o consumo recebido pela API e exporta relatórios em PDF.
+
+**Tags:** `react` · `typescript` · `vite` · `react-router` · `autenticação` · `api` · `consumo-de-água` · `pdf`
+
+## Visão geral
+
+| Área | Descrição |
+|---|---|
+| Responsabilidade | Interface web de autenticação, instalações residenciais e leitura do consumo retornado pela API |
+| Tecnologias | React 18, TypeScript 5, Vite 4, React Router 6 e jsPDF |
+| Integração | API Delta configurada por `VITE_POSTGRES_API_URL`; regiões tarifárias podem ser substituídas por `VITE_TARIFF_REGIONS` |
+| Sessão | Tokens restritos à aba pelo `sessionStorage`; as consultas autenticadas usam Bearer |
+| Relatórios | PDFs gerados localmente com jsPDF e AutoTable, sem envio a serviço externo |
+
+## Sumário
+
+- [Início rápido](#início-rápido)
+- [API e autenticação](#api-e-autenticação)
+- [Cadastro de instalação](#cadastro-de-instalação)
+- [Detalhe da instalação](#detalhe-da-instalação)
+- [Edição da instalação](#edição-da-instalação)
+- [Exportação PDF](#exportação-pdf)
+- [Arquitetura, qualidade e acessibilidade](#arquitetura-qualidade-e-acessibilidade)
+- [Fonte Clayful](#fonte-clayful)
+
+## Início rápido
+
+Requer Node.js e npm. Na raiz do repositório:
+
+```bash
+npm ci
+cp .env.example .env.local
+npm run dev
+```
+
+Preencha `VITE_POSTGRES_API_URL` em `.env.local` com a origem da API, sem o sufixo `/delta`. No PowerShell, use `Copy-Item .env.example .env.local` para copiar a configuração de exemplo. O servidor informa o endereço local após iniciar.
+
 
 ## API e autenticação
 
@@ -32,13 +76,13 @@ O cadastro envia `POST /delta/address`, `POST /delta/property` com o usuário au
 
 O consumo é somente leitura, alimentado pelas análises do hidrômetro. A meta está desabilitada porque a API atual não oferece persistência desse dado. O ID informado cadastra um dispositivo novo, mantendo sua identidade exata; não consulta a rota interna nem lista dispositivos globais. Uma identidade já cadastrada retorna erro no campo. Após confirmar todas as etapas, o fluxo abre os detalhes da instalação e exibe a confirmação de sucesso.
 
-As gravações da API são separadas e não constituem uma transação única. O formulário preserva os IDs das etapas concluídas durante a mesma abertura: uma falha no dispositivo permite corrigir o campo e continuar sem duplicar imóvel/endereço. Falhas com resultado desconhecido não repetem o mesmo POST automaticamente. A mensagem permite conferir a instalação salva; após sair ou recarregar a página, confira a listagem antes de iniciar outro cadastro. Endereços intermediários podem permanecer se o fluxo for interrompido antes da criação/atualização do imóvel.
+O formulário grava endereço, imóvel e dispositivo em etapas e mantém na sessão os IDs já concluídos. Uma falha na etapa do dispositivo permite corrigir o campo e retomar o cadastro sem repetir as etapas anteriores. Se a resposta da API não confirmar o resultado, confira a lista de instalações antes de enviar outro cadastro.
 
 ## Detalhe da instalação
 
 O link “Ver tudo” abre `/instalacoes/:installationId`, com proteção de sessão. A página confirma a associação ao usuário antes de consultar a propriedade, seu endereço e as análises mensais e diárias. IDs inválidos e instalações sem associação não disparam consultas de consumo.
 
-Consumo mensal, evolução em m³ e histórico diário usam os dados retornados pela API. O custo do mês soma apenas as leituras diárias disponíveis do mês atual e fica indisponível se faltar custo em alguma delas. Falhas parciais mostram aviso e permitem tentar novamente; falta de leitura não é tratada como consumo zero. Vazão, metas, alertas e clima têm estados de indisponibilidade até existir integração. As abas funcionam por clique e pelas teclas de setas, Home e End.
+Consumo mensal, evolução em m³ e histórico diário usam os dados retornados pela API. O custo do mês soma as leituras diárias do mês atual que incluem custo; em caso de falha parcial, a tela mostra um aviso e permite tentar novamente. As abas funcionam por clique e pelas teclas de setas, Home e End.
 
 ## Edição da instalação
 
@@ -64,38 +108,12 @@ Consulte [DOCKER-HELP.md](DOCKER-HELP.md) para usar o ambiente Docker local.
 - A navegação oferece atalho para o conteúdo principal, foco visível, controles operáveis por teclado, nomes acessíveis, tabelas identificadas e gerenciamento de foco em diálogos, menus e abas conforme o escopo mínimo da WCAG 2.1 AA.
 - O cadastro de empresa salvo no navegador inclui `_versao`, valida e migra versões conhecidas e descarta dados incompatíveis.
 
-## Publicação
-
-Ainda não há uma implantação pública configurada neste repositório. Antes da entrega, publique a aplicação no Vercel ou GitHub Pages e substitua este aviso pelo link ativo validado. A URL padrão do GitHub Pages foi verificada em 28/10/2026 e ainda retornava 404.
-
 ## Fonte Clayful
 
 A fonte **Clayful**, criada por **Namara Creative**, foi incluída localmente no formato `.otf` para compor o texto de destaque “gota por gota”. Ela foi obtida na [página da Clayful no DaFont](https://www.dafont.com/pt/clayful.font).
 
 A licença que acompanha o arquivo permite **somente uso pessoal** e proíbe uso comercial. Para utilizar a fonte em qualquer atividade comercial, é necessário adquirir previamente a licença adequada na [página oficial de licenciamento da Clayful](https://onedsgn.com/product/clayful-typeface/).
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-   },
-```
-
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+## Publicação
+[https://delta-web-app.onrender.com](https://delta-web-app.onrender.com)
