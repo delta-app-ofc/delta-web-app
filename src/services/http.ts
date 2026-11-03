@@ -88,7 +88,7 @@ async function refreshSession(current: Session): Promise<void> {
   finally { if (pendingRefresh?.promise === promise) pendingRefresh = null; }
 }
 
-async function authenticatedRequest(path: string, signal: AbortSignal, method: "GET" | "POST" | "PUT", body?: unknown, configuredBaseUrl?: string, clearSessionOnUnauthorized = true, retryOnUnauthorized = true): Promise<unknown> {
+async function authenticatedRequest(path: string, signal: AbortSignal, method: "GET" | "POST" | "PUT" | "PATCH", body?: unknown, configuredBaseUrl?: string, clearSessionOnUnauthorized = true, retryOnUnauthorized = true): Promise<unknown> {
   const initial = getSession();
   if (!initial) throw new ApiError("Entre na sua conta para continuar.", 401);
   if (initial.expiresAt <= Date.now() + 5000) await refreshSession(initial);
@@ -130,6 +130,6 @@ export function writeJson(method: "POST" | "PUT", path: string, body: unknown, s
   return authenticatedRequest(path, signal, method, body);
 }
 
-export function writeJsonFrom(baseUrl: string | undefined, method: "POST" | "PUT", path: string, body: unknown, signal: AbortSignal): Promise<unknown> {
+export function writeJsonFrom(baseUrl: string | undefined, method: "POST" | "PUT" | "PATCH", path: string, body: unknown, signal: AbortSignal): Promise<unknown> {
   return authenticatedRequest(path, signal, method, body, baseUrl, false, false);
 }

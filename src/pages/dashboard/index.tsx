@@ -1,9 +1,9 @@
-import { Link } from "react-router-dom";
-
 import { AppSidebar } from "../../components/AppSidebar";
 import type { SidebarNavigationItem } from "../../components/AppSidebar";
 import alertsIcon from "../../assets/installations/alerts.svg";
 import { AsyncFeedback } from "../../components/AsyncFeedback";
+import { DashboardAlertsCard } from "../../components/DashboardAlertsCard";
+import { DashboardRankingCard } from "../../components/DashboardRankingCard";
 import dashboardIcon from "../../assets/installations/dashboard.svg";
 import devicesIcon from "../../assets/installations/devices.svg";
 import gluhIcon from "../../assets/installations/gluh.svg";
@@ -97,17 +97,11 @@ export function DashboardPage() {
               <p className="dashboard-card__note">O contrato atual fornece o mês corrente e o anterior para esta composição.</p>
             </article>
 
-            <article className="dashboard-card ranking-card dashboard-card--unavailable">
-              <header className="dashboard-card__header"><h2>Ranking rápido</h2><Link className="dashboard-card__link" to="/ranking">Ver tudo</Link></header>
-              <p className="dashboard-unavailable">Aguardando dados da Ranking API.</p>
-            </article>
+            <DashboardRankingCard />
           </div>
 
           <div className="dashboard-grid dashboard-grid--secondary">
-            <article className="dashboard-card alerts-card dashboard-card--unavailable">
-              <header className="dashboard-card__header"><h2>Alertas ativos</h2><Link className="dashboard-card__link" to="/alertas">Ver tudo</Link></header>
-              <p className="dashboard-unavailable">Alertas ainda não estão disponíveis no contrato REST.</p>
-            </article>
+            <DashboardAlertsCard />
             <div className="dashboard-summary-stack">
               <article className="dashboard-card forecast-card"><h2>Projeção simples para o próximo mês</h2><strong>{formatCurrency(state.data.projectedCost)}</strong><small>Baseada na variação entre os dois últimos meses</small></article>
               <article className={`dashboard-card weather-card${state.data.weather ? "" : " dashboard-card--unavailable"}`}>

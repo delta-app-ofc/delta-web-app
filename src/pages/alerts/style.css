@@ -328,3 +328,6 @@
     grid-row: 1;
   }
 }
+
+.alerts-page__summary { padding: 1rem; margin-bottom: 1rem; background: #fff; border-radius: 1rem; }
+.alerts-page__content nav { display:flex; align-items:center; gap:1rem; margin-top:1rem; }

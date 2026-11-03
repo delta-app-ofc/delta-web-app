@@ -20,6 +20,11 @@ export function getCurrentReferenceMonth(): string {
   return `${year}-${month}-01`;
 }
 
+/** Período YYYY-MM no fuso de São Paulo, formato esperado pela API de ranking. */
+export function getCurrentPeriod(): string {
+  return getCurrentReferenceMonth().slice(0, 7);
+}
+
 export function getMonthLabel(referenceMonth: string): string {
   return new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" })
     .format(new Date(`${referenceMonth}T00:00:00Z`));
