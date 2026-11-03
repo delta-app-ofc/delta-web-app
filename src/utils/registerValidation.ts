@@ -4,6 +4,17 @@ export type RegisterErrors = Partial<Record<keyof RegisterData, string>>;
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Converte dd/mm/aaaa em aaaa-mm-dd; devolve null para datas inexistentes ou futuras.
+export function toIsoBirthDate(value: string): string | null {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim());
+  if (!match) return null;
+  const [, day, month, year] = match;
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  if (date.getUTCFullYear() !== Number(year) || date.getUTCMonth() !== Number(month) - 1 ||
+      date.getUTCDate() !== Number(day) || date.getTime() >= Date.now()) return null;
+  return `${year}-${month}-${day}`;
+}
+
 export function validateRegisterProfile(data: RegisterData): RegisterErrors {
   const errors: RegisterErrors = {};
   const name = data.name.trim();

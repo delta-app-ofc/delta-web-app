@@ -1,9 +1,12 @@
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useRegister } from "../../contexts/RegisterContext/useRegister";
 import { TextInput } from "../TextInput";
 import { RegisterButton } from "../RegisterButton";
+
+import { createAccount } from "../../services/registration";
+import { ApiError } from "../../services/http";
 
 import "./style.css";
 import { validateRegisterCredentials, type RegisterErrors } from "../../utils/registerValidation";
@@ -14,6 +17,11 @@ export function RegisterCredentialsForm() {
   const { registerData, setField } = useRegister();
   const [errors, setErrors] = useState<RegisterErrors>({});
   const formRef = useRef<HTMLFormElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const requestRef = useRef<AbortController | null>(null);
+
+  useEffect(() => () => requestRef.current?.abort(), []);
 
   function clearError(field: keyof RegisterErrors) {
     setErrors((current) => ({ ...current, [field]: undefined }));
@@ -38,15 +46,28 @@ export function RegisterCredentialsForm() {
     navigate("/login");
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (requestRef.current) return;
     const validation = validateRegisterCredentials(registerData);
     setErrors(validation);
     if (Object.keys(validation).length > 0) {
       requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
       return;
     }
-    navigate("/cadastro/loading");
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setSubmitError("");
+    setIsLoading(true);
+    try {
+      await createAccount(registerData, controller.signal);
+      if (!controller.signal.aborted) navigate("/cadastro/loading");
+    } catch (failure: unknown) {
+      if (!controller.signal.aborted) setSubmitError(failure instanceof ApiError ? failure.message : "Não foi possível criar a conta. Tente novamente.");
+    } finally {
+      if (!controller.signal.aborted) setIsLoading(false);
+      if (requestRef.current === controller) requestRef.current = null;
+    }
   }
 
   return (
@@ -123,7 +144,9 @@ export function RegisterCredentialsForm() {
           />
         </div>
 
-        <RegisterButton>Cadastrar</RegisterButton>
+        {submitError && <p className="register-credentials-error" role="alert">{submitError}</p>}
+
+        <RegisterButton disabled={isLoading}>{isLoading ? "Cadastrando..." : "Cadastrar"}</RegisterButton>
       </form>
     </section>
   );

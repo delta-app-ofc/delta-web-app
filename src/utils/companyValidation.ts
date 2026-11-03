@@ -106,3 +106,11 @@ export function validateCompanyStep(
 
   return errors;
 }
+
+export function onlyDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+export function isValidCnpjLength(value: string) {
+  return onlyDigits(value).length === 14;
+}

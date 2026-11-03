@@ -84,3 +84,9 @@
   gap: 12px;
 }
 
+
+.register-credentials-error {
+  margin: 0;
+  color: #b3261e;
+  font-size: 0.9rem;
+}

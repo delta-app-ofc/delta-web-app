@@ -9,6 +9,7 @@ import { LoadingPage } from "./pages/loading";
 import { RequireAuth } from "./components/RequireAuth";
 import { AccessibilityMenu } from "./components/AccessibilityMenu";
 
+const CompanyBindingPage = lazy(() => import("./pages/companyBinding").then(({ CompanyBindingPage }) => ({ default: CompanyBindingPage })));
 const RegisterPage = lazy(() => import("./pages/registerUser").then(({ RegisterPage }) => ({ default: RegisterPage })));
 const RegisterCredentialsPage = lazy(() => import("./pages/registerCredentials").then(({ RegisterCredentialsPage }) => ({ default: RegisterCredentialsPage })));
 const LoginPage = lazy(() => import("./pages/login").then(({ LoginPage }) => ({ default: LoginPage })));
@@ -104,12 +105,7 @@ function App() {
 
               <Route
                 path="/cadastro/empresa/vinculando"
-                element={
-                  <LoadingPage
-                    title="Vinculando dispositivo..."
-                    redirectTo="/cadastro/empresa/concluido"
-                  />
-                }
+                element={<CompanyBindingPage />}
               />
 
               <Route

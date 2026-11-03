@@ -19,6 +19,10 @@ function parseCurrentUser(data: unknown): CurrentUser {
 export async function login(email: string, password: string, signal: AbortSignal): Promise<void> {
   const data = await postPublicJson("/delta/auth/login", { email: email.trim(), password }, signal);
   signal.throwIfAborted();
+  saveSessionFromResponse(data);
+}
+
+export function saveSessionFromResponse(data: unknown): void {
   if (!isRecord(data) || typeof data.accessToken !== "string" || !data.accessToken.trim() ||
       typeof data.refreshToken !== "string" || !data.refreshToken.trim() ||
       typeof data.expiresIn !== "number" || !Number.isFinite(data.expiresIn) || data.expiresIn <= 0 ||
