@@ -1,3 +1,5 @@
+import type { GoalStatus } from "./indicators";
+
 export interface InstallationRecord {
   id: number;
   name: string;
@@ -17,6 +19,8 @@ export interface Installation {
   longitude: number | null;
   monthlyLiters: number | null;
   litersPerM2: number | null;
+  goalPct: number | null;
+  goalStatus: GoalStatus | null;
 }
 
 export type InstallationSort = "consumption" | "litersPerM2";

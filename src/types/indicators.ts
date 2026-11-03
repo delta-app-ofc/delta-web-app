@@ -94,4 +94,5 @@ export interface OrganizationEsg {
   unitsOnTarget: number;
   avgGoalPct: number | null;
   estimatedSavingsValue: number;
+  isCompleteMonth: boolean;
 }

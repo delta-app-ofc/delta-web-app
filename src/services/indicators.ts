@@ -128,6 +128,7 @@ function parseEsg(value: unknown): OrganizationEsg {
     tankTrucksEquivalent: number(item.tankTrucksEquivalent), familyMonthsEquivalent: number(item.familyMonthsEquivalent),
     unitsTotal: number(item.unitsTotal), unitsOnTarget: number(item.unitsOnTarget),
     avgGoalPct: readOptionalNumber(item.avgGoalPct), estimatedSavingsValue: number(item.estimatedSavingsValue),
+    isCompleteMonth: flag(item.isCompleteMonth),
   };
 }
 

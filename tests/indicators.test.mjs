@@ -71,10 +71,25 @@ test("dispositivos e resumo exigem booleanos e números válidos", async () => {
   await assert.rejects(bad.service.listDeviceIndicators(signal()), (error) => error.name === "ApiError");
 });
 
+test("mês de referência prefere o último mês fechado", async () => {
+  const app = await harness(async () => json([]), session, env);
+  const { pickReferenceMonth } = await app.service("../utils/indicators");
+  const months = [
+    { referenceMonth: "2026-09-01", isComplete: true },
+    { referenceMonth: "2026-10-01", isComplete: true },
+    { referenceMonth: "2026-11-01", isComplete: false },
+  ];
+  assert.equal(pickReferenceMonth(months), "2026-10-01");
+  assert.equal(pickReferenceMonth([{ referenceMonth: "2026-11-01", isComplete: false }]), "2026-11-01");
+  assert.equal(pickReferenceMonth([]), null);
+});
+
 test("esg e erro HTTP da API", async () => {
-  const esg = { organizationId: 1, referenceMonth: "2026-10-01", savedLitersMonth: 3421.5, savedLitersYearProjection: 41058, tankTrucksEquivalent: 4.1, familyMonthsEquivalent: 2.7, unitsTotal: 10, unitsOnTarget: 5, avgGoalPct: 86.1, estimatedSavingsValue: 97.5 };
+  const esg = { organizationId: 1, referenceMonth: "2026-10-01", savedLitersMonth: 3421.5, savedLitersYearProjection: 41058, tankTrucksEquivalent: 4.1, familyMonthsEquivalent: 2.7, unitsTotal: 10, unitsOnTarget: 5, avgGoalPct: 86.1, estimatedSavingsValue: 97.5, isCompleteMonth: true };
   const ok = await indicators(() => json([esg]));
-  assert.equal((await ok.service.listOrganizationEsg(signal()))[0].tankTrucksEquivalent, 4.1);
+  const [parsed] = await ok.service.listOrganizationEsg(signal());
+  assert.equal(parsed.tankTrucksEquivalent, 4.1);
+  assert.equal(parsed.isCompleteMonth, true);
   const down = await indicators(() => json({}, 500));
   await assert.rejects(down.service.listOrganizationEsg(signal()), (error) => error.name === "ApiError");
 });
