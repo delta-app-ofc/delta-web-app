@@ -26,7 +26,7 @@ interface ChatbotLocationState {
 const starterQuestions = [
   "Quais unidades estão em estado crítico agora?",
   "Tem algum vazamento crítico no momento?",
-  "Qual foi o maior consumo entre as unidades?",
+  "Qual foi o maior consumo entre as minhas unidades?",
   "Iremos ultrapassar a meta?",
 ];
 

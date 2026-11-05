@@ -92,6 +92,7 @@
 }
 
 .goals-indicator {
+  min-width: 0;
   min-height: 104px;
   display: flex;
   flex-direction: column;
@@ -100,6 +101,7 @@
 }
 
 .goals-indicator__label {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -107,7 +109,11 @@
   color: var(--goals-muted);
   font-size: 14px;
   font-weight: 550;
-  white-space: nowrap;
+  white-space: normal;
+}
+
+.goals-indicator__label span {
+  min-width: 0;
 }
 
 .goals-indicator__label img {
@@ -117,10 +123,18 @@
 }
 
 .goals-indicator > strong {
+  max-width: 100%;
   font-size: clamp(25px, 2.5vw, 34px);
   font-weight: 500;
   line-height: 1;
   white-space: nowrap;
+}
+
+.goals-indicator--potential > strong {
+  font-size: clamp(16px, 1.7vw, 24px);
+  line-height: 1.1;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .goals-indicator > small {

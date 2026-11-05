@@ -75,7 +75,7 @@ export function GoalsPage() {
         {data && <>
           <section className="goals-indicators" aria-label="Resumo das metas">
             {indicators.map((indicator) => (
-              <article className="goals-card goals-indicator" key={indicator.id}>
+              <article className={`goals-card goals-indicator${indicator.id === "potential" ? " goals-indicator--potential" : ""}`} key={indicator.id}>
                 <div className="goals-indicator__label">
                   <img src={indicator.icon} alt="" />
                   <span>{indicator.label}</span>
