@@ -1,8 +1,9 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, Suspense, lazy, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { AppSidebar } from "../../components/AppSidebar";
-import { getAiSessionMessages, sendAiMessage, getAiSuggestions } from "../../services/ai";
+import { ChatMarkdown } from "../../components/ChatMarkdown";
+import { getAiSessionMessages, sendAiMessage } from "../../services/ai";
 import { ApiError } from "../../services/http";
 import arrowIcon from "../../assets/chatbot/arrow.png";
 import historicalIcon from "../../assets/chatbot/historical.png";
@@ -16,9 +17,18 @@ import {
 
 import "./style.css";
 
+const ChatPlotly = lazy(() => import("../../components/ChatPlotly"));
+
 interface ChatbotLocationState {
   conversation?: ArchivedConversation;
 }
+
+const starterQuestions = [
+  "Quais unidades estão em estado crítico agora?",
+  "Tem algum vazamento crítico no momento?",
+  "Qual foi o maior consumo entre as unidades?",
+  "Iremos ultrapassar a meta?",
+];
 
 export function ChatbotPage() {
   const navigate = useNavigate();
@@ -29,18 +39,10 @@ export function ChatbotPage() {
     () => locationState?.conversation?.messages ?? [],
   );
   const [sessionId, setSessionId] = useState<string | null>(() => locationState?.conversation?.id ?? null);
-  const [suggestions, setSuggestions] = useState<readonly string[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [progressLabel, setProgressLabel] = useState("Enviando sua mensagem…");
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void getAiSuggestions(controller.signal).then(setSuggestions).catch((failure: unknown) => {
-      if (!controller.signal.aborted) setError(failure instanceof ApiError ? failure.message : "Não foi possível carregar as sugestões.");
-    });
-    return () => controller.abort();
-  }, []);
 
   useEffect(() => {
     if (!sessionId || messages.length > 0) return;
@@ -51,6 +53,7 @@ export function ChatbotPage() {
           id: `${message.role}-${index}`,
           author: message.role === "user" ? "user" : "assistant",
           content: message.content,
+          chartData: null,
         })));
       }
     }).catch((failure: unknown) => {
@@ -72,7 +75,7 @@ export function ChatbotPage() {
     });
 
     return () => window.cancelAnimationFrame(animationFrame);
-  }, [messages.length]);
+  }, [isSending, messages.length, progressLabel]);
 
   async function sendMessage(content: string) {
     const normalizedContent = content.trim();
@@ -83,14 +86,19 @@ export function ChatbotPage() {
     setQuestion("");
     setError(null);
     setIsSending(true);
+    setProgressLabel("Enviando sua mensagem…");
     const controller = new AbortController();
     const messageIndex = messages.length;
     setMessages((currentMessages) => [...currentMessages, { id: `user-${messageIndex}`, author: "user", content: normalizedContent }]);
     try {
-      const result = await sendAiMessage(normalizedContent, sessionId, controller.signal);
+      const result = await sendAiMessage(normalizedContent, sessionId, controller.signal, setProgressLabel);
       setSessionId(result.sessionId);
-      setMessages((currentMessages) => [...currentMessages, { id: `assistant-${messageIndex + 1}`, author: "assistant", content: result.response }]);
-      if (result.suggestions.length > 0) setSuggestions(result.suggestions);
+      setMessages((currentMessages) => [...currentMessages, {
+        id: `assistant-${messageIndex + 1}`,
+        author: "assistant",
+        content: result.response,
+        chartData: result.chartData,
+      }]);
     } catch (failure: unknown) {
       setError(failure instanceof ApiError ? failure.message : "Não foi possível enviar a pergunta.");
     } finally {
@@ -107,6 +115,7 @@ export function ChatbotPage() {
     setMessages([]);
     setSessionId(null);
     setQuestion("");
+    setError(null);
   }
 
   const hasConversation = messages.length > 0;
@@ -130,7 +139,10 @@ export function ChatbotPage() {
             <button
               className="chatbot-history-button"
               type="button"
-              onClick={() => navigate("/gluh/historico")}
+              onClick={() => {
+                setError(null);
+                navigate("/gluh/historico");
+              }}
             >
               <img src={historicalIcon} alt="" />
               <span>Histórico de conversas</span>
@@ -153,7 +165,7 @@ export function ChatbotPage() {
             <section className="chatbot-suggestions" aria-labelledby="chatbot-suggestions-title">
               <h2 id="chatbot-suggestions-title">Comece com uma pergunta!</h2>
               <div className="chatbot-suggestions__grid">
-                {suggestions.map((suggestion) => (
+                {starterQuestions.map((suggestion) => (
                   <button type="button" key={suggestion} onClick={() => sendMessage(suggestion)}>
                     <span>{suggestion}</span>
                     <img src={arrowIcon} alt="" />
@@ -171,9 +183,18 @@ export function ChatbotPage() {
             {messages.map((message) => (
               <article className={`chatbot-message chatbot-message--${message.author}`} key={message.id}>
                 <span>{message.author === "user" ? "Você" : "Gluh"}</span>
-                <p>{message.content}</p>
+                {message.author === "assistant" ? <ChatMarkdown content={message.content} /> : <p>{message.content}</p>}
+                {message.author === "assistant" && message.chartData && (
+                  <Suspense fallback={<div className="chatbot-chart-loading" role="status">Carregando gráfico…</div>}>
+                    <ChatPlotly figure={message.chartData} />
+                  </Suspense>
+                )}
               </article>
             ))}
+            {isSending && <article className="chatbot-message chatbot-message--assistant chatbot-progress" role="status" aria-live="polite" aria-label="O Gluh está processando sua mensagem">
+              <div className="chatbot-progress__bubbles" aria-hidden="true"><i /><i /><i /></div>
+              <p className="chatbot-progress__label">{progressLabel}</p>
+            </article>}
             <div ref={messagesEndRef} className="chatbot-messages__end" aria-hidden="true" />
           </section>
         )}

@@ -21,6 +21,19 @@ async function loadUtility(name) {
 const auth = await loadUtility("authValidation");
 const register = await loadUtility("registerValidation");
 const settings = await loadUtility("settingsValidation");
+const company = await loadUtility("companyValidation");
+
+const baseCompany = { legalName: "Acme Ltda", tradeName: "Acme", cnpj: "12.345.678/0001-90", industrySegment: "Indústria", companySize: "Média", unitName: "Matriz", postalCode: "01001-000", state: "SP", city: "São Paulo", streetDistrict: "Centro", number: "10" };
+
+test("cadastro da empresa avisa CNPJ e CEP inválidos no próprio passo", () => {
+  assert.deepEqual({ ...company.validateCompanyStep("company", baseCompany) }, {});
+  assert.equal(company.validateCompanyStep("company", { ...baseCompany, cnpj: "" }).cnpj, "Informe o CNPJ.");
+  assert.equal(company.validateCompanyStep("company", { ...baseCompany, cnpj: "12.345.678/0001" }).cnpj, "O CNPJ deve ter 14 números.");
+  assert.equal(company.validateCompanyStep("company", { ...baseCompany, cnpj: "12345678000190" }).cnpj, undefined);
+  assert.deepEqual({ ...company.validateCompanyStep("unit", baseCompany) }, {});
+  assert.equal(company.validateCompanyStep("unit", { ...baseCompany, postalCode: "0100" }).postalCode, "O CEP deve ter 8 números.");
+  assert.equal(company.validateCompanyStep("unit", { ...baseCompany, postalCode: "" }).postalCode, "Informe o CEP.");
+});
 
 test("login valida e-mail e limites antes de chamar o serviço", () => {
   assert.equal(auth.validateLogin({ email: "gestor@delta.com.br", password: "segura" }), null);
@@ -45,7 +58,10 @@ test("cadastro valida perfil e credenciais com mensagens específicas", () => {
 
 test("configurações validam perfil, senha, organização e destinatários", () => {
   assert.equal(settings.validateProfile({ name: "Talita", email: "talita@delta.com.br", phone: "(11) 95064-6508" }), null);
-  assert.equal(settings.validateOrganization({ legalName: "Delta Ltda", tradeName: "Delta", cnpj: "12.345.678/0001-90", segment: "Varejo" }), null);
+  assert.equal(settings.validateOrganization({ legalName: "Delta Ltda", tradeName: "Delta", cnpj: "12.345.678/0001-90", segment: "VAREJO" }), null);
+  assert.equal(settings.validateOrganization({ legalName: "Delta Ltda", tradeName: "Delta", cnpj: "12345678000190", segment: "VAREJO" }), null);
+  assert.equal(settings.validateOrganization({ legalName: "Delta Ltda", tradeName: "Delta", cnpj: "12.345.678/0001", segment: "VAREJO" }), "Informe um CNPJ com 14 números.");
+  assert.equal(settings.validateOrganization({ legalName: "Delta Ltda", tradeName: "Delta", cnpj: "12345678000190", segment: "Varejo" }), "Selecione o segmento da organização.");
   assert.equal(settings.validatePasswordChange({ current: "atual", next: "nova-segura", confirmation: "nova-segura" }), null);
   assert.equal(settings.validateRecipients("gestor@delta.com.br; regional@delta.com.br"), null);
   assert.match(settings.validateRecipients("destinatario-invalido"), /e-mails válidos/);

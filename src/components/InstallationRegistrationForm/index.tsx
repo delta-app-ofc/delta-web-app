@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import backArrow from "../../assets/installation-registration/back-arrow.svg";
-import unitChevron from "../../assets/installation-registration/unit-chevron.svg";
 import { brazilianStates, initialRegistrationData, tariffClassifications } from "../../types/installationRegistration";
 import { configuredTariffRegions } from "../../services/tariffRegions";
 import { lookupPostalCode } from "../../services/postalCode";
@@ -31,7 +30,10 @@ function Field({ name, label, error, children }: {
 
 export function InstallationRegistrationForm({ onSave, mode = "create", initialData = initialRegistrationData, installationName, returnTo = "/instalacoes", apiConnected = false }: InstallationRegistrationFormProps) {
   const editing = mode === "edit";
-  const [data, setData] = useState<InstallationRegistrationData>(initialData);
+  const [data, setData] = useState<InstallationRegistrationData>(() => ({
+    ...initialData,
+    type: initialData.type || "PRÉDIO",
+  }));
   const [errors, setErrors] = useState<RegistrationErrors>({});
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
@@ -109,30 +111,30 @@ export function InstallationRegistrationForm({ onSave, mode = "create", initialD
         <h2 id="general-title">Dados gerais</h2>
         <div className={styles.fields}>
           <Field name="name" label="Nome da unidade" error={errors.name}><input {...attributes("name")} placeholder="Nome da unidade" maxLength={100} autoComplete="organization" required /></Field>
-          <Field name="type" label="Tipo de imóvel" error={errors.type}><select {...attributes("type")} required><option value="" disabled>Tipo de imóvel</option><option value="CASA">Casa</option><option value="PRÉDIO">Prédio</option></select></Field>
           <Field name="cep" label="CEP" error={errors.cep}><input {...attributes("cep")} placeholder="Insira o CEP" inputMode="numeric" autoComplete="postal-code" maxLength={9} required /></Field>
           <div className={styles.cityState}>
             <Field name="city" label="Cidade" error={errors.city}><input {...attributes("city")} placeholder="Cidade" autoComplete="address-level2" maxLength={60} required /></Field>
             <Field name="state" label="Estado" error={errors.state}><select {...attributes("state")} autoComplete="address-level1" required><option value="" disabled>Estado</option>{brazilianStates.map((state) => <option key={state} value={state}>{state}</option>)}</select></Field>
           </div>
           {apiConnected && <>
-            <Field name="classification" label="Classificação tarifária" error={errors.classification}><select {...attributes("classification")} required><option value="" disabled>Classificação tarifária</option>{tariffClassifications.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
-            <Field name="regionId" label="Região tarifária" error={errors.regionId}><select {...attributes("regionId")} required><option value="" disabled>Região tarifária</option>{initialData.regionId && !regions.some(item => String(item.id) === initialData.regionId) && <option value={initialData.regionId}>Região atual</option>}{regions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+            <Field name="classification" label="Classificação tarifária" error={errors.classification}><select {...attributes("classification")} className={styles.dropdown} required><option value="" disabled>Classificação tarifária</option>{tariffClassifications.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
+            <Field name="regionId" label="Região tarifária" error={errors.regionId}><select {...attributes("regionId")} className={styles.dropdown} required><option value="" disabled>Região tarifária</option>{initialData.regionId && !regions.some(item => String(item.id) === initialData.regionId) && <option value={initialData.regionId}>Região atual</option>}{regions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
           </>}
         </div>
       </fieldset>
       <fieldset className={`${styles.card} ${styles.consumption}`} disabled={saving} aria-labelledby="consumption-title">
-        <h2 id="consumption-title">Consumo</h2>
+        <h2 id="consumption-title">{editing ? "Meta de consumo" : "Consumo"}</h2>
         <div className={styles.fields}>
-          <Field name="monthlyConsumption" label="Consumo mensal em metros cúbicos (opcional)" error={errors.monthlyConsumption}>
-            <input {...attributes("monthlyConsumption")} placeholder={apiConnected ? "Sem leituras disponíveis" : "Consumo mensal (m³)"} readOnly={apiConnected} inputMode="decimal" maxLength={16} />
-            <p className={editing && !apiConnected ? "sr-only" : styles.hint} id="installation-monthlyConsumption-help">{apiConnected ? "O consumo é calculado a partir das leituras do hidrômetro e não pode ser editado aqui." : "Deixe em branco se a unidade ainda não tem histórico de leituras."}</p>
-          </Field>
-          {editing ? <div className={styles.unit}>
-            <label className="sr-only" htmlFor="installation-consumption-unit">Unidade do consumo</label>
-            <select id="installation-consumption-unit" defaultValue="m3" disabled={saving}><option value="m3">Metros cúbicos</option></select>
-            <img src={unitChevron} alt="" />
-          </div> : <Field name="monthlyGoal" label="Meta mensal em metros cúbicos" error={errors.monthlyGoal}><input {...attributes("monthlyGoal")} placeholder={apiConnected ? "Meta ainda indisponível" : "Meta mensal"} disabled={saving || apiConnected} inputMode="decimal" maxLength={16} required={!apiConnected} />{apiConnected && <p className={styles.hint}>O cadastro de metas ainda não está disponível.</p>}</Field>}
+          {editing ? <Field name="monthlyGoal" label="Meta mensal em litros" error={errors.monthlyGoal}>
+            <input {...attributes("monthlyGoal")} type="number" min="1" max="999999999" step="any" placeholder="Meta mensal em litros" inputMode="decimal" maxLength={16} required />
+            <p className={styles.hint}>Ajuste o limite mensal da unidade. O consumo medido continua vindo das leituras do hidrômetro.</p>
+          </Field> : <>
+            <Field name="monthlyConsumption" label="Consumo mensal em metros cúbicos (opcional)" error={errors.monthlyConsumption}>
+              <input {...attributes("monthlyConsumption")} placeholder={apiConnected ? "Sem leituras disponíveis" : "Consumo mensal (m³)"} readOnly={apiConnected} inputMode="decimal" maxLength={16} />
+              <p className={styles.hint} id="installation-monthlyConsumption-help">{apiConnected ? "O consumo é calculado a partir das leituras do hidrômetro e não pode ser editado aqui." : "Deixe em branco se a unidade ainda não tem histórico de leituras."}</p>
+            </Field>
+            <Field name="monthlyGoal" label="Meta mensal em metros cúbicos" error={errors.monthlyGoal}><input {...attributes("monthlyGoal")} placeholder={apiConnected ? "Meta ainda indisponível" : "Meta mensal"} disabled={saving || apiConnected} inputMode="decimal" maxLength={16} required={!apiConnected} />{apiConnected && <p className={styles.hint}>O cadastro de metas ainda não está disponível.</p>}</Field>
+          </>}
         </div>
       </fieldset>
       <fieldset className={`${styles.card} ${styles.device} ${errors.deviceId ? styles.invalidCard : ""}`} disabled={saving} aria-labelledby="device-title">

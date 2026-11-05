@@ -9,5 +9,7 @@ await import("./installation-registration.test.mjs");
 await import("./installation-saving.test.mjs");
 await import("./alerts.test.mjs");
 await import("./ranking.test.mjs");
+await import("./indicators.test.mjs");
 await import("./registration.test.mjs");
 await import("./company-registration.test.mjs");
+await import("./ci-report.test.mjs");

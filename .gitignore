@@ -164,3 +164,4 @@ reports/
 
 # Regras obrigatórias de artefatos locais do CI
 .scannerwork/
+.claude/

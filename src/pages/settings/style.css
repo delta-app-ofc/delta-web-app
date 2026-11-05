@@ -15,6 +15,12 @@
 
 .settings-page__sidebar { height: calc(100vh - 68px); min-height: 620px; position: sticky; top: 34px; }
 .settings-page__content { min-width: 0; max-width: 1180px; padding: 18px 6px 60px 0; }
+.settings-page__content--pending { min-height: calc(100vh - 70px); display: flex; flex-direction: column; }
+.settings-page__loading { flex: 1; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; text-align: center; }
+.settings-page__loading .loading-logo { width: 150px; height: 150px; }
+.settings-page__loading p { color: var(--settings-muted); font-size: 16px; }
+.settings-page__load-error { flex: 1; display: flex; min-height: 480px; align-items: center; }
+.settings-page__load-error > section { flex: 1; min-height: 300px; justify-content: center; margin-top: 0; }
 .settings-header { min-height: 100px; display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
 .settings-header h1 { font-size: clamp(30px, 3vw, 40px); font-weight: 650; line-height: 1.1; }
 .settings-header p { margin-top: 9px; color: var(--settings-muted); font-size: 14px; }
@@ -81,6 +87,7 @@
 .settings-card-title--action > div { display: flex; align-items: flex-start; gap: 10px; }
 .settings-preference-row { width: 100%; min-height: 66px; display: flex; align-items: center; gap: 14px; border: 0; border-bottom: 1px solid rgba(98, 120, 156, .2); background: transparent; color: white; text-align: left; }
 .settings-preferences > .settings-preference-row:last-child { border-bottom: 0; }
+.settings-theme-row > div { flex: 1; min-width: 0; }
 .settings-preference-row > img { width: 36px; height: 36px; padding: 8px; border-radius: 10px; background: #20283a; object-fit: contain; }
 .settings-preference-row div { display: flex; flex-direction: column; gap: 4px; }
 .settings-preference-row strong { font-size: 15px; }
@@ -187,6 +194,30 @@
 .settings-form-error { margin-top: -7px; color: #ff6f83; font-size: 12px; line-height: 1.4; }
 
 .settings-page :is(button, input, select):focus-visible { outline: 3px solid #9dbdff; outline-offset: 3px; }
+
+html[data-theme="light"] .settings-page { --settings-border: rgba(91, 115, 148, .28); --settings-card: #fff; --settings-surface: #eef3f8; --settings-muted: #53647a; background: #f2f5f9; color: #172334; }
+html[data-theme="light"] .settings-page .settings-card { border-color: var(--settings-border); background: #fff; box-shadow: 0 10px 28px rgba(31, 51, 76, .06); }
+html[data-theme="light"] .settings-page .settings-card h2,
+html[data-theme="light"] .settings-page .settings-card h3,
+html[data-theme="light"] .settings-page .settings-profile h2 { color: #172334; }
+html[data-theme="light"] .settings-page .settings-card p,
+html[data-theme="light"] .settings-page .settings-card span,
+html[data-theme="light"] .settings-page .settings-header p { color: #53647a; }
+html[data-theme="light"] .settings-page .settings-profile label,
+html[data-theme="light"] .settings-page .settings-modal label,
+html[data-theme="light"] .settings-page .settings-organization-editor label { color: #45566b; }
+html[data-theme="light"] .settings-page input,
+html[data-theme="light"] .settings-page select,
+html[data-theme="light"] .settings-page .settings-custom-select__field { border-color: #c7d2e1; background-color: #f7f9fc; color: #172334; }
+html[data-theme="light"] .settings-page .settings-custom-select__field > span { color: #172334; }
+html[data-theme="light"] .settings-page .settings-custom-select__options { border-color: #c7d2e1; background: #fff; box-shadow: 0 14px 30px rgba(31, 51, 76, .14); }
+html[data-theme="light"] .settings-page .settings-custom-select__options button { color: #263850; }
+html[data-theme="light"] .settings-page .settings-custom-select__options button.selected { background: #356ce0; color: #fff; }
+html[data-theme="light"] .settings-page .settings-preference-row,
+html[data-theme="light"] .settings-page .data-row { color: #172334; }
+html[data-theme="light"] .settings-page .settings-preference-row > img { background: #e8eef6; }
+html[data-theme="light"] .settings-page .settings-modal { border-color: #c7d2e1; background: #fff; color: #172334; box-shadow: 0 24px 60px rgba(31, 51, 76, .2); }
+html[data-theme="light"] .settings-page .settings-icon-button { border-color: #c7d2e1; background: #eef3f8; color: #45566b; }
 
 @media (max-width: 1100px) {
   .settings-page { grid-template-columns: 220px minmax(0, 1fr); gap: 22px; padding: 28px 22px; }

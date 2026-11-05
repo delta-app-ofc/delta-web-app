@@ -6,6 +6,7 @@ import { InstallationRegistrationForm } from "../../components/InstallationRegis
 import { useInstallationEditing } from "../../hooks/useInstallationEditing";
 import { createInstallationEditor } from "../../services/installationSaving";
 import type { InstallationEditingData } from "../../services/installationEditing";
+import { formatInstallationLabel } from "../../utils/installations";
 import styles from "./styles.module.css";
 
 function EditingForm({ data }: { data: InstallationEditingData }) {
@@ -13,7 +14,7 @@ function EditingForm({ data }: { data: InstallationEditingData }) {
   const [save] = useState(() => createInstallationEditor(data.id, data.formData));
   const controller = useRef<AbortController>();
   useEffect(() => () => controller.current?.abort(), []);
-  return <InstallationRegistrationForm mode="edit" apiConnected initialData={data.formData} installationName={data.name} returnTo={`/instalacoes/${data.id}`} onSave={async form => {
+  return <InstallationRegistrationForm mode="edit" apiConnected initialData={data.formData} installationName={formatInstallationLabel(data.name) ?? data.name} returnTo={`/instalacoes/${data.id}`} onSave={async form => {
     controller.current = new AbortController();
     const id = await save(form, controller.current.signal);
     navigate(`/instalacoes/${id}`, { replace: true, state: { saved: "updated" } });

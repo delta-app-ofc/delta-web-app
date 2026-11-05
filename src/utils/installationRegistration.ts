@@ -43,6 +43,7 @@ export function validateRegistration(data: InstallationRegistrationData, mode: "
   if (!apiConnected && data.monthlyConsumption.trim() && parseCubicMeters(data.monthlyConsumption, mode === "edit" ? 9 : 3) === null) errors.monthlyConsumption = "Informe um consumo válido em m³.";
   const goal = parseCubicMeters(data.monthlyGoal);
   if (!apiConnected && mode === "create" && (goal === null || goal <= 0)) errors.monthlyGoal = "Informe uma meta maior que zero em m³.";
+  if (apiConnected && mode === "edit" && (goal === null || goal <= 0 || goal > 999_999_999)) errors.monthlyGoal = "Informe uma meta mensal entre 1 e 999.999.999 litros.";
   if (mode === "create" && !data.deviceId.trim()) errors.deviceId = "Informe o ID do hidrômetro.";
   else if (data.deviceId.length > 100) errors.deviceId = "Use até 100 caracteres.";
   if (apiConnected) {

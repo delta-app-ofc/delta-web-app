@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { LoginButton } from "../LoginButton";
 import { TextInput } from "../TextInput";
@@ -16,7 +16,11 @@ interface LoginFormData {
 
 export function LoginForm() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn } = useAuth();
+  const notice = typeof location.state === "object" && location.state !== null && "notice" in location.state && typeof location.state.notice === "string"
+    ? location.state.notice
+    : "";
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const requestRef = useRef<AbortController | null>(null);
@@ -79,6 +83,8 @@ export function LoginForm() {
         <p>Acesse com suas informações</p>
       </div>
 
+      {notice && <p className="login-form-notice" role="status">{notice}</p>}
+
       <form
         className="login-form"
         onSubmit={handleSubmit}
@@ -114,6 +120,7 @@ export function LoginForm() {
 
         {error && <p className="login-form-error" role="alert">{error}</p>}
         <LoginButton isLoading={isLoading} />
+        <Link className="login-create-account" to="/cadastro">Criar conta</Link>
       </form>
     </section>
   );

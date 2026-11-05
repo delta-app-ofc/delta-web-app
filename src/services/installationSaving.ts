@@ -1,13 +1,14 @@
 import type { InstallationRegistrationData, RegistrationField } from "../types/installationRegistration";
 import type { InstallationRecord } from "../types/installation";
 import { isRecord, readId } from "../utils/apiValidation";
-import { formatCep, normalizeState, RegistrationSubmitError, validateRegistration } from "../utils/installationRegistration";
+import { formatCep, normalizeState, parseCubicMeters, RegistrationSubmitError, validateRegistration } from "../utils/installationRegistration";
 import { listAddresses } from "./addresses";
 import { getCurrentUser } from "./auth";
 import { ApiError, writeJson } from "./http";
 import { getInstallation } from "./installations";
 import { listOrganizations } from "./organizations";
 import { verifyTariffRegion } from "./tariffRegions";
+import { saveMonthlyGoal } from "./propertyGoal";
 
 function validate(data: InstallationRegistrationData, mode: "create" | "edit") {
   const errors = validateRegistration(data, mode, true);
@@ -147,6 +148,7 @@ export function createInstallationWorkflow() {
 
 export function createInstallationEditor(id: number, initial: InstallationRegistrationData) {
   let expected = generalSignature(initial);
+  let expectedGoal = parseCubicMeters(initial.monthlyGoal);
   let address: { id: number; signature: string } | undefined;
   let uncertainDevice: string | undefined;
   let uncertainAddress = false;
@@ -156,7 +158,7 @@ export function createInstallationEditor(id: number, initial: InstallationRegist
     const addresses = current.addressId === null ? [] : await listAddresses([current.addressId], signal);
     const currentAddress = addresses[0];
     const currentData: InstallationRegistrationData = {
-      ...initial, name: current.name, type: current.type ?? "", classification: current.classification ?? "",
+      ...initial, name: current.name, type: current.type ?? initial.type, classification: current.classification ?? "",
       cep: formatCep(currentAddress?.cep ?? ""), city: currentAddress?.city ?? "", state: normalizeState(currentAddress?.state ?? ""),
       regionId: currentAddress?.regionId == null ? "" : String(currentAddress.regionId),
     };
@@ -165,6 +167,8 @@ export function createInstallationEditor(id: number, initial: InstallationRegist
     if (actual !== expected && actual !== desired) throw new RegistrationSubmitError("Os dados desta instalação foram alterados. Reabra a edição para carregar a versão atual.");
     if (uncertainAddress) throw new RegistrationSubmitError("Não foi possível confirmar o novo endereço. Reabra a edição e confira os dados antes de tentar novamente.", undefined, id);
     let propertySaved = actual === desired;
+    let goalSaved = expectedGoal === parseCubicMeters(data.monthlyGoal);
+    let goalAttempted = false;
     try {
       if (!propertySaved) {
         const signature = JSON.stringify(addressBody(data));
@@ -186,6 +190,12 @@ export function createInstallationEditor(id: number, initial: InstallationRegist
         expected = desired;
         propertySaved = true;
       }
+      if (!goalSaved) {
+        goalAttempted = true;
+        await saveMonthlyGoal(id, parseCubicMeters(data.monthlyGoal)!, signal);
+        expectedGoal = parseCubicMeters(data.monthlyGoal);
+        goalSaved = true;
+      }
       if (data.deviceId) {
         if (uncertainDevice === data.deviceId) throw deviceError(null, id);
         try { await registerDevice(id, data.deviceId, signal); }
@@ -197,6 +207,7 @@ export function createInstallationEditor(id: number, initial: InstallationRegist
       return id;
     } catch (error) {
       if (error instanceof RegistrationSubmitError) throw error;
+      if (goalAttempted && !goalSaved) throw new RegistrationSubmitError(error instanceof ApiError ? error.message : "Não foi possível salvar a meta mensal.", "monthlyGoal", id);
       throw new RegistrationSubmitError(propertySaved ? "Os dados gerais foram salvos, mas o dispositivo não pôde ser confirmado." : "Não foi possível confirmar todas as alterações. Seus campos foram mantidos. Confira os detalhes antes de tentar novamente.", undefined, id);
     }
   };

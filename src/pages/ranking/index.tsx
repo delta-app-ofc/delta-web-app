@@ -3,6 +3,7 @@ import exportIcon from "../../assets/monitoring/export.png";
 import trophyMascot from "../../assets/mascotes/gluh-trophy.png";
 import { useRanking } from "../../hooks/useRanking";
 import type { RankingItem } from "../../types/ranking";
+import { AsyncFeedback } from "../../components/AsyncFeedback";
 
 import "./style.css";
 
@@ -21,10 +22,25 @@ function formatVariation(value: number | null): string {
   return `${value < 0 ? "↓" : "↑"} ${Math.abs(value).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% no mês`;
 }
 
-function itemStatus(item: RankingItem): "positive" | "warning" | "critical" {
-  if (item.variationPercent === null || item.variationPercent <= 0) return "positive";
+type RankingStatus = "positive" | "warning" | "critical";
+
+function itemStatus(item: RankingItem, totalItems: number): RankingStatus {
+  if (item.variationPercent === null) {
+    const relativePosition = item.position / Math.max(totalItems, 1);
+    if (relativePosition <= 1 / 3) return "positive";
+    if (relativePosition <= 2 / 3) return "warning";
+    return "critical";
+  }
+  if (item.variationPercent <= 0) return "positive";
   if (item.variationPercent < 10) return "warning";
   return "critical";
+}
+
+function formatStatus(item: RankingItem, status: RankingStatus): string {
+  if (item.variationPercent !== null) return formatVariation(item.variationPercent);
+  if (status === "positive") return "Entre as mais eficientes";
+  if (status === "warning") return "Eficiência intermediária";
+  return "Entre as menos eficientes";
 }
 
 function displayValue(item: RankingItem): string {
@@ -50,13 +66,13 @@ export function RankingPage() {
 
         <div className="ranking-toolbar">
           <p>{formatPeriod(period)}</p>
-          <button className="ranking-export" type="button" onClick={() => window.print()}>
+          <button className="ranking-export export-pdf-button" type="button" onClick={() => window.print()}>
             <img src={exportIcon} alt="" />
             <span>Exportar para PDF</span>
           </button>
         </div>
 
-        {state.status === "loading" && <p className="ranking-state">Carregando dados do ranking...</p>}
+        {state.status === "loading" && <AsyncFeedback status="loading" message="Carregando dados do ranking…" />}
         {state.status === "error" && <div className="ranking-state"><p>{state.error}</p><button type="button" onClick={retry}>Tentar novamente</button></div>}
         {state.status === "unavailable" && <p className="ranking-state">{state.message}</p>}
 
@@ -105,7 +121,7 @@ export function RankingPage() {
 
               <ol className="ranking-page-card ranking-list">
                 {items.map((item) => {
-                  const status = itemStatus(item);
+                  const status = itemStatus(item, items.length);
                   return (
                     <li key={item.id}>
                       <span className="ranking-position">{item.position}º</span>
@@ -120,7 +136,7 @@ export function RankingPage() {
                       <div className="ranking-list__result">
                         <strong>{displayValue(item)}</strong>
                         <small className={`ranking-list__variation ranking-list__variation--${status}`}>
-                          {formatVariation(item.variationPercent)}
+                          {formatStatus(item, status)}
                         </small>
                       </div>
                     </li>

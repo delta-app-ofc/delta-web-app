@@ -1,4 +1,5 @@
 import styles from "./styles.module.css";
+import { LoadingLogo } from "../LoadingLogo";
 
 interface AsyncFeedbackProps {
   status: "loading" | "error";
@@ -9,7 +10,7 @@ interface AsyncFeedbackProps {
 export function AsyncFeedback({ status, message, onRetry }: AsyncFeedbackProps) {
   return (
     <section className={styles.feedback} role={status === "error" ? "alert" : "status"} aria-live={status === "error" ? "assertive" : "polite"}>
-      {status === "loading" && <span className={styles.spinner} aria-hidden="true" />}
+      {status === "loading" && <LoadingLogo size="compact" />}
       <p>{message}</p>
       {status === "error" && onRetry && <button type="button" onClick={onRetry}>Tentar novamente</button>}
     </section>

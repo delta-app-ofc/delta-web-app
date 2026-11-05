@@ -23,18 +23,22 @@
 .dashboard-page__content {
   min-width: 0;
   max-width: 1120px;
-  padding: 20px 6px 0 0;
+  padding: 0 6px 0 0;
 }
 
 .dashboard-header {
-  margin-bottom: 12px;
+  min-height: 89px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin-bottom: 39px;
 }
 
 .dashboard-header h1 {
   margin-bottom: 7px;
-  font-size: clamp(32px, 3vw, 43px);
+  font-size: 40px;
   font-weight: 650;
-  line-height: 1.1;
+  line-height: 1.25;
 }
 
 .dashboard-header p {
@@ -144,6 +148,7 @@
 
 .dashboard-grid--secondary {
   grid-template-columns: minmax(0, 1.08fr) minmax(330px, 1fr);
+  align-items: stretch;
 }
 
 .dashboard-card__header {
@@ -184,8 +189,13 @@
 
 .history-card,
 .ranking-card {
-  min-height: 190px;
+  min-height: 285px;
   padding: 16px 27px;
+}
+
+.history-card {
+  display: flex;
+  flex-direction: column;
 }
 
 .dashboard-page .ranking-card {
@@ -195,17 +205,24 @@
 }
 
 .history-chart {
-  height: 140px;
+  height: 205px;
+  min-height: 205px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 18px;
-  padding: 15px 42px 0;
+  gap: 7px;
+  padding: 14px 42px 0;
+  border-bottom: 1px solid var(--dashboard-border);
+}
+
+.history-card .dashboard-card__note {
+  margin-top: auto;
+  padding-top: 10px;
 }
 
 .history-chart__column {
-  width: 120px;
-  max-width: 120px;
+  width: 94px;
+  max-width: 94px;
   flex: 1 1 0;
   height: 100%;
   display: flex;
@@ -218,15 +235,20 @@
   flex: 1;
   display: flex;
   align-items: flex-end;
-  border-radius: 28px 28px 3px 3px;
-  background: #293647;
+  border-radius: 14px 14px 0 0;
   overflow: hidden;
+}
+
+.history-chart__track--empty {
+  border: 1px dashed rgba(137, 175, 255, .3);
+  border-bottom: 0;
 }
 
 .history-chart__track span {
   width: 100%;
+  min-height: 2px;
   display: block;
-  border-radius: 28px 28px 3px 3px;
+  border-radius: 14px 14px 0 0;
   background: linear-gradient(180deg, #3d82ff 0%, #79a8ff 100%);
 }
 
@@ -320,13 +342,13 @@
   min-height: 0;
   flex: 1;
   display: grid;
-  grid-template-rows: repeat(2, minmax(61px, 1fr));
+  grid-template-rows: repeat(4, minmax(61px, 1fr));
   margin-top: 10px;
 }
 
 .alerts-card__list li {
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) auto;
+  grid-template-columns: 46px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   border-bottom: 1px solid rgba(92, 111, 139, 0.22);
@@ -378,8 +400,11 @@
 
 .dashboard-summary-stack {
   display: grid;
-  grid-template-rows: minmax(128px, auto) minmax(76px, auto);
-  gap: 12px;
+  grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 14px;
+  align-content: stretch;
+  min-height: 0;
+  height: 100%;
 }
 
 .forecast-card,
@@ -388,15 +413,18 @@
 }
 
 .forecast-card {
-  min-height: 128px;
-  padding-block: 14px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: 16px;
 }
 
 .forecast-card > strong,
 .weather-card strong {
   display: block;
-  margin-top: 6px;
-  font-size: 24px;
+  margin-top: 10px;
+  font-size: clamp(32px, 3vw, 42px);
   font-weight: 550;
   line-height: 1;
 }
@@ -405,15 +433,17 @@
 .weather-card small {
   display: block;
   color: var(--dashboard-muted);
-  font-size: 9px;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .forecast-card small {
-  margin-top: 5px;
+  max-width: 540px;
+  margin-top: 14px;
 }
 
 .weather-card small {
-  margin-top: 3px;
+  margin-top: 8px;
 }
 
 .forecast-card__progress {
@@ -433,10 +463,11 @@
 }
 
 .weather-card {
-  min-height: 76px;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 18px;
   padding-block: 9px;
 }
 
@@ -444,27 +475,39 @@
   margin-top: 4px;
 }
 
-.forecast-card h2,
-.weather-card h2 {
-  font-size: 18px;
-}
-
 .weather-card__condition {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 8px;
+  text-align: right;
 }
 
 .weather-card__condition > img {
-  width: 42px;
-  height: 42px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
 }
 
 .weather-card__condition small {
   color: #25d6e8;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 650;
+}
+
+.weather-card__main,
+.weather-card__unavailable {
+  min-width: 0;
+}
+
+.weather-card__unavailable p {
+  margin-top: 6px;
+}
+
+.forecast-card h2,
+.weather-card h2 {
+  font-size: 22px;
+  line-height: 1.2;
 }
 
 @media (max-width: 1180px) {
@@ -513,6 +556,15 @@
     padding: 0;
   }
 
+  .dashboard-header {
+    min-height: 0;
+    margin-bottom: 24px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 30px;
+  }
+
   .dashboard-metrics {
     grid-template-columns: 1fr;
   }
@@ -535,7 +587,16 @@
 
   .history-chart {
     height: 190px;
+    gap: 8px;
     padding-inline: 0;
+  }
+
+  .history-chart__column {
+    min-width: 0;
+  }
+
+  .history-chart__column small {
+    font-size: 9px;
   }
 
   .alerts-card__list li {

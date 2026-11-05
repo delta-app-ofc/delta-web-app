@@ -29,11 +29,11 @@ function mapPosition(installation: Installation): { left: number; top: number } 
 
 export function InstallationMap({ installations }: InstallationMapProps) {
   const saoPaulo = installations.filter(isInSaoPaulo);
-  const cities = Array.from(new Set(saoPaulo.map((item) => item.city).filter((city): city is string => city !== null)));
   const positionedInstallations = saoPaulo.flatMap((installation) => {
     const position = mapPosition(installation);
     return position === null ? [] : [{ installation, position }];
   });
+  const installationsWithoutCoordinates = saoPaulo.length - positionedInstallations.length;
   return (
     <section className={styles.section} aria-labelledby="installation-map-title">
       <h2 id="installation-map-title">Mapa de Instalações</h2>
@@ -48,17 +48,26 @@ export function InstallationMap({ installations }: InstallationMapProps) {
                 style={{ left: `${position.left}%`, top: `${position.top}%` }}
                 to={`/instalacoes/${installation.id}`}
                 aria-label={`Abrir instalação ${installation.name}`}
-                title={`${installation.name}${installation.city ? ` · ${installation.city}` : ""}`}
-              />
+              >
+                <span className={styles.tooltip} aria-hidden="true">
+                  <strong>{installation.name}</strong>
+                  {installation.city && <span>{installation.city}</span>}
+                </span>
+              </Link>
             ))}
           </div>
         </div>
         <figcaption className={styles.caption}>
-          <span className={styles.legend}><span className={styles.dot} aria-hidden="true" />Instalações com localização</span>
-          <span>{saoPaulo.length} {saoPaulo.length === 1 ? "instalação em São Paulo" : "instalações em São Paulo"}</span>
+          <span className={styles.legend}><span className={styles.dot} aria-hidden="true" />Instalações no mapa</span>
+          <span>{positionedInstallations.length} {positionedInstallations.length === 1 ? "marcada" : "marcadas"}</span>
         </figcaption>
-        {cities.length > 0 && <p className={styles.cities}>Cidades: {cities.join(" · ")}</p>}
-        {positionedInstallations.length < saoPaulo.length && <p className={styles.cities}>Algumas instalações não possuem latitude e longitude cadastradas.</p>}
+        {installationsWithoutCoordinates > 0 && (
+          <p className={styles.cities}>
+            {installationsWithoutCoordinates === 1
+              ? "1 instalação sem coordenadas não aparece no mapa."
+              : `${installationsWithoutCoordinates} instalações sem coordenadas não aparecem no mapa.`}
+          </p>
+        )}
       </figure>
     </section>
   );

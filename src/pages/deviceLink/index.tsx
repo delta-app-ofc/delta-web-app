@@ -7,6 +7,7 @@ import { createDevice } from "../../services/devices";
 import { listInstallations } from "../../services/installations";
 import { ApiError } from "../../services/http";
 import type { InstallationRecord } from "../../types/installation";
+import { formatInstallationLabel } from "../../utils/installations";
 import backArrowIcon from "../../assets/devices/arrow2.png";
 import selectArrowIcon from "../../assets/devices/arrow.png";
 
@@ -27,7 +28,7 @@ export function DeviceLinkPage() {
   const location = useLocation();
   const locationState = location.state as DeviceLinkLocationState | null;
   const initialInstallation = locationState?.installation;
-  const [installations, setInstallations] = useState<Installation[]>(initialInstallation ? [initialInstallation] : []);
+  const [installations, setInstallations] = useState<Installation[]>(initialInstallation ? [{ ...initialInstallation, name: formatInstallationLabel(initialInstallation.name) ?? initialInstallation.name }] : []);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -46,7 +47,7 @@ export function DeviceLinkPage() {
       try {
         const records = await listInstallations(controller.signal);
         if (controller.signal.aborted) return;
-        const values = records.map((record: InstallationRecord) => ({ id: record.id, name: record.name, region: null }));
+        const values = records.map((record: InstallationRecord) => ({ id: record.id, name: formatInstallationLabel(record.name) ?? record.name, region: null }));
         setInstallations(values);
         setInstallationId((current) => current !== null && values.some((item) => item.id === current) ? current : values[0]?.id ?? null);
       } catch (error: unknown) {

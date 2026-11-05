@@ -510,6 +510,11 @@
 }
 
 @media print {
+  #root::after {
+    content: none !important;
+    display: none !important;
+  }
+
   .monitoring-page {
     display: block;
     padding: 0;
@@ -531,5 +536,84 @@
     break-inside: avoid;
     border-color: #8090a8;
     background: #fff;
+  }
+
+  .monitoring-status {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .monitoring-status > h2 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  .monitoring-page .monitoring-table-wrapper {
+    overflow: visible !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .monitoring-page .monitoring-table {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .monitoring-table thead {
+    display: table-header-group;
+  }
+
+  .monitoring-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .monitoring-table th,
+  .monitoring-table td {
+    padding: 2mm 3mm;
+    font-size: 8pt;
+  }
+
+  .monitoring-table th,
+  .monitoring-table td strong {
+    font-size: 8pt;
+  }
+
+  .monitoring-table td small,
+  .monitoring-status-badge {
+    font-size: 6.5pt;
+  }
+
+  .monitoring-history .monitoring-chart {
+    height: 42mm !important;
+    padding: 6mm 10mm 0 !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1.5mm;
+  }
+
+  .monitoring-chart__column {
+    height: 100%;
+  }
+
+  .monitoring-chart__track {
+    min-height: 1mm;
+    border: 0.5pt solid #c5d2e3 !important;
+    background: #edf2f8 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .monitoring-chart__track span {
+    min-height: 1mm;
+    border: 0.75pt solid #245bc1 !important;
+    background: #4b83e6 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .monitoring-chart__column small {
+    margin-top: 1mm;
+    color: #43536a !important;
+    font-size: 7pt;
   }
 }

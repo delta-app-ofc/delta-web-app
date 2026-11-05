@@ -1,5 +1,5 @@
 import { FormEvent, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useRegister } from "../../contexts/RegisterContext/useRegister";
 import { TextInput } from "../TextInput";
@@ -53,10 +53,6 @@ export function RegisterForm() {
     clearError("phone");
   }
 
-  function handleLoginClick() {
-    navigate("/login");
-  }
-
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const validation = validateRegisterProfile(registerData);
@@ -81,18 +77,6 @@ export function RegisterForm() {
         <p className="register-form-subtitle">
           Crie a sua conta
         </p>
-
-        <div className="register-login">
-          <span>Já possui uma conta?</span>
-
-          <button
-            type="button"
-            className="register-login__button"
-            onClick={handleLoginClick}
-          >
-            Faça login
-          </button>
-        </div>
       </div>
 
       <form
@@ -145,6 +129,10 @@ export function RegisterForm() {
         </div>
 
         <RegisterButton />
+        <div className="register-login">
+          <span>Já possui uma conta?</span>
+          <Link className="register-login__link" to="/login">Faça login</Link>
+        </div>
       </form>
     </section>
   );

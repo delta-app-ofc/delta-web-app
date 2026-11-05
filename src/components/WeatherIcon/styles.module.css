@@ -1,0 +1,18 @@
+.icon {
+  width: 72px;
+  height: 64px;
+  overflow: visible;
+  flex: 0 0 auto;
+}
+
+.sun { fill: #ffc928; }
+.sunRays { fill: none; stroke: #ffc928; stroke-width: 5; stroke-linecap: round; }
+.cloud { fill: #fff; stroke: #9bd8f2; stroke-width: 4; stroke-linejoin: round; }
+.stormCloud { fill: #8193ae; stroke: #b7c5d9; stroke-width: 4; stroke-linejoin: round; }
+.fogLine { fill: none; stroke: #a9bed2; stroke-width: 4; stroke-linecap: round; }
+.raindrops { fill: none; stroke: #45bde8; stroke-width: 5; stroke-linecap: round; }
+.snowflakes { fill: none; stroke: #b9e8ff; stroke-width: 3; stroke-linecap: round; }
+.lightning { fill: #ffd343; stroke: #ffd343; stroke-linejoin: round; stroke-width: 2; }
+
+.clear .sunRays { stroke-width: 5; }
+.partly-cloudy .cloud { filter: drop-shadow(0 1px 0 rgba(23, 31, 43, .2)); }

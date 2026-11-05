@@ -34,6 +34,11 @@ async function detailHarness(overrides = {}, associations = [{ userId: 7, proper
       { propertyId: 15, fullDate: "2026-10-02", totalLiters: 500, costValue: 4 },
       { propertyId: 15, fullDate: "2026-10-01", totalLiters: 1000, costValue: null },
     ],
+    "/delta/analytics/property-monthly": [],
+    "/delta/analytics/monitoring-hourly": [],
+    "/delta/analytics/alerts": [],
+    "/delta/analytics/leaks": [],
+    "/delta/analytics/monthly-variation/15": [{ propertyId: 15, referenceMonth: currentReferenceMonth(), totalLiters: 1500 }],
     ...overrides,
   };
   const app = await harness(async url => {
@@ -114,7 +119,33 @@ test("detalhe autoriza a instalação antes de consultar o endereço e as leitur
   assert.equal(data.daily[0].costValue, null);
   assert.equal(data.warnings.length, 0);
   assert.deepEqual(paths.slice(0, 3), ["/delta/auth/me", "/delta/user-properties/7", "/delta/property/15"]);
-  assert.equal(paths.length, 6);
+  assert.equal(paths.length, 10);
+  assert.deepEqual([data.indicators.length, data.hourly.length, data.alerts.length], [0, 0, 0]);
+});
+
+test("detalhe lê meta, vazão e alertas das views e descarta outras instalações", async () => {
+  const row = (propertyId, extra = {}) => ({ propertyId, propertyName: "Loja", organizationId: 1, builtAreaM2: 120, referenceMonth: "2026-10-01", totalLiters: 1500, totalCost: 22.5, litersPerM2: 12.5, variationPct: 3, monthlyTargetLiters: 2000, dailyLimitLiters: 65, remainingLiters: 500, goalPct: 75, goalStatus: "OK", estimatedSavingsValue: 0, isCompleteMonth: true, ...extra });
+  const { service } = await detailHarness({
+    "/delta/analytics/property-monthly": [row(15), row(99)],
+    "/delta/analytics/monitoring-hourly": [{ propertyId: 15, propertyName: "Loja", windowMinutes: 60, readingHour: "2026-11-02T12:00:00", totalLiters: 10, avgFlowLmin: 0.2, readingsCount: 6 }, { propertyId: 99, propertyName: "Outra", windowMinutes: 60, readingHour: "2026-11-02T12:00:00", totalLiters: 5, avgFlowLmin: 0.1, readingsCount: 6 }],
+    "/delta/analytics/alerts": [{ alertKey: 1, propertyId: 15, propertyName: "Loja", deviceId: "ESP", alertType: "vazamento_continuo", severity: "high", triggeredAt: "2026-11-02T21:40:00", resolvedAt: null }, { alertKey: 2, propertyId: 99, propertyName: "Outra", deviceId: "ESP2", alertType: "fluxo_atipico", severity: "low", triggeredAt: "2026-11-02T10:00:00", resolvedAt: null }],
+  });
+  const data = await service.getInstallationDetails(15, signal());
+  assert.equal(data.indicators.length, 1);
+  assert.equal(data.indicators[0].goalPct, 75);
+  assert.equal(data.indicators[0].dailyLimitLiters, 65);
+  assert.equal(data.hourly.length, 1);
+  assert.equal(data.alerts.length, 1);
+  assert.equal(data.alerts[0].title, "Possível vazamento");
+  assert.equal(data.warnings.length, 0);
+});
+
+test("falha nas views de indicadores não derruba o detalhe e avisa o usuário", async () => {
+  const { service } = await detailHarness({ "/delta/analytics/property-monthly": response({}, 503), "/delta/analytics/alerts": response({}, 503) });
+  const data = await service.getInstallationDetails(15, signal());
+  assert.equal(data.monthly.length, 1);
+  assert.equal(data.indicators.length, 0);
+  assert.equal(data.warnings.length, 2);
 });
 
 test("URL de instalação sem associação não consulta propriedade, endereço ou analytics", async () => {

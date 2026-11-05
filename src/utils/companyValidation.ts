@@ -30,6 +30,8 @@ export function validateCompanyStep(
     requireValue(errors, "legalName", data.legalName, "Informe a razão social.");
     requireValue(errors, "tradeName", data.tradeName, "Informe o nome fantasia.");
     requireValue(errors, "cnpj", data.cnpj, "Informe o CNPJ.");
+    // Mesma regra do cadastro final: o erro aparece no passo em que o CNPJ é digitado.
+    if (data.cnpj.trim() && !isValidCnpjLength(data.cnpj)) errors.cnpj = "O CNPJ deve ter 14 números.";
     requireValue(
       errors,
       "industrySegment",
@@ -42,6 +44,7 @@ export function validateCompanyStep(
   if (step === "unit") {
     requireValue(errors, "unitName", data.unitName, "Informe o nome da unidade.");
     requireValue(errors, "postalCode", data.postalCode, "Informe o CEP.");
+    if (data.postalCode.trim() && !isValidPostalCodeLength(data.postalCode)) errors.postalCode = "O CEP deve ter 8 números.";
     requireValue(errors, "state", data.state, "Informe o estado.");
     requireValue(errors, "city", data.city, "Informe a cidade.");
     requireValue(
@@ -113,4 +116,8 @@ export function onlyDigits(value: string) {
 
 export function isValidCnpjLength(value: string) {
   return onlyDigits(value).length === 14;
+}
+
+export function isValidPostalCodeLength(value: string) {
+  return onlyDigits(value).length === 8;
 }

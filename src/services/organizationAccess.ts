@@ -7,11 +7,16 @@ import { listInstallations } from "./installations";
  */
 export async function resolveAccessibleOrganization(signal: AbortSignal): Promise<OrganizationResolution> {
   const records = await listInstallations(signal);
-  const organizationIds = [...new Set(
-    records.flatMap((record) => record.organizationId == null ? [] : [record.organizationId]),
-  )].sort((first, second) => first - second);
+  const unitCounts = new Map<number, number>();
+  records.forEach((record) => {
+    if (record.organizationId != null) unitCounts.set(record.organizationId, (unitCounts.get(record.organizationId) ?? 0) + 1);
+  });
+  const organizations = [...unitCounts].sort((first, second) => second[1] - first[1] || first[0] - second[0]);
 
-  if (organizationIds.length === 1) return { status: "resolved", organizationId: organizationIds[0] };
-  if (organizationIds.length > 1) return { status: "multiple", organizationIds };
+  if (organizations.length === 1) return { status: "resolved", organizationId: organizations[0][0] };
+  if (organizations.length > 1) {
+    if (organizations[0][1] > organizations[1][1]) return { status: "resolved", organizationId: organizations[0][0] };
+    return { status: "multiple", organizationIds: organizations.map(([id]) => id).sort((first, second) => first - second) };
+  }
   return { status: "none" };
 }

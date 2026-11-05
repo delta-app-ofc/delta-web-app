@@ -2,24 +2,69 @@ import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { AppSidebar } from "../../components/AppSidebar";
 import { AsyncFeedback } from "../../components/AsyncFeedback";
+import { LoadingLogo } from "../../components/LoadingLogo";
+import { ThemeToggle } from "../../components/ThemeToggle";
 import arrowIcon from "../../assets/settings/Arrow 1.png";
 import organizationIcon from "../../assets/settings/organizations.png";
 import settingsIcon from "../../assets/settings/settings.png";
 import xIcon from "../../assets/settings/x.png";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { useSettingsData } from "../../hooks/useSettingsData";
-import { updateCurrentUser } from "../../services/auth";
+import { useAuth } from "../../contexts/AuthContext/useAuth";
+import { deleteCurrentUser, updateCurrentUser } from "../../services/auth";
+import { updateOrganization } from "../../services/organizations";
 import { ApiError } from "../../services/http";
+import type { Organization, OrganizationSegment } from "../../types/organization";
+import type { UserSettings } from "../../types/userSettings";
 import { validateOrganization, validateProfile } from "../../utils/settingsValidation";
+import { useNavigate } from "react-router-dom";
 
 import "./style.css";
+
+const organizationSegments: readonly { value: OrganizationSegment; label: string }[] = [
+  { value: "VAREJO", label: "Varejo" },
+  { value: "INDUSTRIA", label: "Indústria" },
+  { value: "CONDOMINIO", label: "Condomínio" },
+  { value: "FACILITIES", label: "Facilities" },
+];
+
+const preferenceOptions = {
+  language: [
+    { value: "pt-BR", label: "Português (Brasil)" },
+    { value: "en", label: "English" },
+    { value: "es", label: "Español" },
+  ],
+  timezone: [
+    { value: "America/Sao_Paulo", label: "América/São Paulo (GMT-3)" },
+    { value: "America/Manaus", label: "América/Manaus (GMT-4)" },
+    { value: "UTC", label: "UTC" },
+  ],
+  dateFormat: [
+    { value: "DD/MM/YYYY", label: "DD/MM/AAAA" },
+    { value: "MM/DD/YYYY", label: "MM/DD/AAAA" },
+    { value: "YYYY-MM-DD", label: "AAAA-MM-DD" },
+  ],
+  unit: [
+    { value: "m3", label: "Metros cúbicos (m³)" },
+    { value: "L", label: "Litros (L)" },
+    { value: "US_GAL", label: "Galões (US gal)" },
+  ],
+} as const;
 
 interface SettingsSelectProps {
   label: string;
   value: string;
-  options: readonly string[];
+  options: readonly { value: string; label: string }[];
   onChange: (value: string) => void;
   className?: string;
+}
+
+interface OrganizationForm {
+  legalName: string;
+  tradeName: string;
+  cnpj: string;
+  segment: string;
+  declaredUnitCount: string;
 }
 
 function SettingsSelect({ label, value, options, onChange, className = "" }: SettingsSelectProps) {
@@ -46,7 +91,7 @@ function SettingsSelect({ label, value, options, onChange, className = "" }: Set
 
   useEffect(() => {
     if (!open) return;
-    const selectedIndex = Math.max(0, options.indexOf(value));
+    const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
     requestAnimationFrame(() => optionRefs.current[selectedIndex]?.focus());
   }, [open, options, value]);
 
@@ -70,25 +115,25 @@ function SettingsSelect({ label, value, options, onChange, className = "" }: Set
   return (
     <div className={`settings-custom-select ${open ? "settings-custom-select--open" : ""} ${className}`} ref={rootRef}>
       <div className="settings-custom-select__field">
-        <span>{value}</span>
+        <span>{options.find((option) => option.value === value)?.label ?? value}</span>
         <button ref={triggerRef} type="button" aria-label={`Abrir opções de ${label}`} aria-haspopup="listbox" aria-expanded={open} aria-controls={listboxId} onClick={() => setOpen((current) => !current)} onKeyDown={(event) => { if (!open && (event.key === "ArrowDown" || event.key === "ArrowUp")) { event.preventDefault(); setOpen(true); } }}>
           <img src={arrowIcon} alt="" />
         </button>
       </div>
       {open && (
         <div className="settings-custom-select__options" id={listboxId} role="listbox" aria-label={label}>
-          {options.map((option) => (
+          {options.map((option, index) => (
             <button
-              ref={(element) => { optionRefs.current[options.indexOf(option)] = element; }}
+              ref={(element) => { optionRefs.current[index] = element; }}
               type="button"
               role="option"
-              aria-selected={option === value}
-              className={option === value ? "selected" : ""}
-              key={option}
-              onClick={() => { onChange(option); closeAndReturnFocus(); }}
-              onKeyDown={(event) => handleOptionKeyDown(event, options.indexOf(option))}
+              aria-selected={option.value === value}
+              className={option.value === value ? "selected" : ""}
+              key={option.value}
+              onClick={() => { onChange(option.value); closeAndReturnFocus(); }}
+              onKeyDown={(event) => handleOptionKeyDown(event, index)}
             >
-              {option}
+              {option.label}
             </button>
           ))}
         </div>
@@ -98,6 +143,8 @@ function SettingsSelect({ label, value, options, onChange, className = "" }: Set
 }
 
 export function SettingsPage() {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -108,29 +155,23 @@ export function SettingsPage() {
   const settingsState = useSettingsData(settingsRequestVersion);
   const [profileSaving, setProfileSaving] = useState(false);
   const profileRequestRef = useRef<AbortController | null>(null);
+  const organizationRequestRef = useRef<AbortController | null>(null);
   const [organizationOpen, setOrganizationOpen] = useState(false);
-  const [organization, setOrganization] = useState({
-    legalName: "Swift Distribuidora de Alimentos Ltda.",
-    tradeName: "Swift Distribuidora",
-    cnpj: "12.345.678/0001-90",
-    segment: "Distribuição e logística de alimentos",
-  });
-  const [organizationDraft, setOrganizationDraft] = useState(organization);
+  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [organizationDraft, setOrganizationDraft] = useState<OrganizationForm>({ legalName: "", tradeName: "", cnpj: "", segment: "", declaredUnitCount: "" });
+  const [organizationSaving, setOrganizationSaving] = useState(false);
   const [generalOpen, setGeneralOpen] = useState(false);
-  const [general, setGeneral] = useState({
-    language: "Português (Brasil)",
-    timezone: "América/São Paulo (GMT-3)",
-    dateFormat: "DD/MM/AAAA",
-    unit: "Metros cúbicos (m³)",
-  });
+  const [general, setGeneral] = useState<UserSettings>({ language: "pt-BR", timezone: "America/Sao_Paulo", dateFormat: "DD/MM/YYYY", unit: "m3" });
   const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
-  const [deleteAccountPassword, setDeleteAccountPassword] = useState("");
+  const [deleteAccountLoading, setDeleteAccountLoading] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState("");
+  const deleteAccountRequestRef = useRef<AbortController | null>(null);
   const [feedback, setFeedback] = useState("");
   const [formError, setFormError] = useState("");
   const generalDialogRef = useDialogFocus<HTMLElement>(generalOpen, () => setGeneralOpen(false));
   const deleteDialogRef = useDialogFocus<HTMLFormElement>(deleteAccountModalOpen, closeDeleteAccountModal);
 
-  useEffect(() => () => profileRequestRef.current?.abort(), []);
+  useEffect(() => () => { profileRequestRef.current?.abort(); organizationRequestRef.current?.abort(); deleteAccountRequestRef.current?.abort(); }, []);
 
   useEffect(() => {
     if (settingsState.status !== "success") return;
@@ -142,21 +183,29 @@ export function SettingsPage() {
     });
     const firstOrganization = settingsState.organizations[0];
     if (firstOrganization) {
-      setOrganization({
+      setOrganization(firstOrganization);
+      setOrganizationDraft({
         legalName: firstOrganization.corporateName,
         tradeName: firstOrganization.tradeName,
         cnpj: firstOrganization.cnpj,
-        segment: firstOrganization.businessSegment ?? "Não informado",
+        segment: firstOrganization.businessSegment ?? "",
+        declaredUnitCount: firstOrganization.declaredUnitCount === null ? "" : String(firstOrganization.declaredUnitCount),
       });
     } else {
-      setOrganization({ legalName: "", tradeName: "Não disponível", cnpj: "", segment: "Não informado" });
+      setOrganization(null);
+      setOrganizationDraft({ legalName: "", tradeName: "", cnpj: "", segment: "", declaredUnitCount: "" });
     }
   }, [settingsState]);
 
   const generalSummary = useMemo(
-    () => `${general.language} · ${general.timezone.replace("América/São Paulo ", "")}`,
+    () => `${preferenceOptions.language.find((item) => item.value === general.language)?.label ?? general.language} · ${preferenceOptions.timezone.find((item) => item.value === general.timezone)?.label ?? general.timezone}`,
     [general.language, general.timezone],
   );
+
+  function saveGeneralPreferences() {
+    setGeneralOpen(false);
+    showFeedback("Preferências aplicadas nesta sessão.");
+  }
 
   function showFeedback(message: string) {
     setFormError("");
@@ -188,37 +237,92 @@ export function SettingsPage() {
   }
 
   function openOrganization() {
-    setFormError("A API permite consultar a organização, mas ainda não permite editá-la.");
+    setFormError("");
+    if (!organization) { setFormError("Nenhuma organização está associada à sua conta."); return; }
+    setOrganizationDraft({
+      legalName: organization.corporateName,
+      tradeName: organization.tradeName,
+      cnpj: organization.cnpj,
+      segment: organization.businessSegment ?? "",
+      declaredUnitCount: organization.declaredUnitCount === null ? "" : String(organization.declaredUnitCount),
+    });
+    setOrganizationOpen(true);
   }
 
   function closeOrganization() {
-    setOrganizationDraft(organization);
+    if (organization) setOrganizationDraft({ legalName: organization.corporateName, tradeName: organization.tradeName, cnpj: organization.cnpj, segment: organization.businessSegment ?? "", declaredUnitCount: organization.declaredUnitCount === null ? "" : String(organization.declaredUnitCount) });
     setOrganizationOpen(false);
   }
 
-  function saveOrganization(event: FormEvent<HTMLFormElement>) {
+  async function saveOrganization(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!organization) { setFormError("Nenhuma organização está associada à sua conta."); return; }
     const error = validateOrganization(organizationDraft);
     if (error) { setFormError(error); return; }
-    setOrganization(organizationDraft);
-    setOrganizationOpen(false);
-    showFeedback("Dados da organização salvos.");
+    const count = organizationDraft.declaredUnitCount.trim() ? Number(organizationDraft.declaredUnitCount) : null;
+    if (count !== null && (!Number.isSafeInteger(count) || count <= 0)) { setFormError("A quantidade de unidades deve ser um número inteiro maior que zero."); return; }
+    organizationRequestRef.current?.abort();
+    const controller = new AbortController();
+    organizationRequestRef.current = controller;
+    setOrganizationSaving(true);
+    setFormError("");
+    try {
+      const updated = await updateOrganization(organization.id, {
+        corporateName: organizationDraft.legalName,
+        tradeName: organizationDraft.tradeName,
+        cnpj: organizationDraft.cnpj,
+        businessSegment: organizationDraft.segment as OrganizationSegment,
+        declaredUnitCount: count,
+      }, controller.signal);
+      if (!controller.signal.aborted) {
+        setOrganization(updated);
+        setOrganizationOpen(false);
+        showFeedback("Dados da organização salvos.");
+      }
+    } catch (requestError: unknown) {
+      if (!controller.signal.aborted) setFormError(requestError instanceof ApiError ? requestError.message : "Não foi possível salvar a organização.");
+    } finally {
+      if (organizationRequestRef.current === controller) organizationRequestRef.current = null;
+      if (!controller.signal.aborted) setOrganizationSaving(false);
+    }
   }
 
   function openDeleteAccountModal() {
-    setDeleteAccountPassword("");
+    setDeleteAccountError("");
     setDeleteAccountModalOpen(true);
   }
 
-  function closeDeleteAccountModal() {
-    setDeleteAccountModalOpen(false);
-    setDeleteAccountPassword("");
+  function handleSignOut() {
+    signOut();
+    navigate("/login", { replace: true });
   }
 
-  function confirmAccountDeletion(event: FormEvent<HTMLFormElement>) {
+  function closeDeleteAccountModal() {
+    if (deleteAccountLoading) return;
+    setDeleteAccountModalOpen(false);
+    setDeleteAccountError("");
+  }
+
+  async function confirmAccountDeletion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    closeDeleteAccountModal();
-    showFeedback("Solicitação de exclusão enviada para confirmação administrativa.");
+    if (deleteAccountRequestRef.current) return;
+    const controller = new AbortController();
+    deleteAccountRequestRef.current = controller;
+    setDeleteAccountLoading(true);
+    setDeleteAccountError("");
+    try {
+      await deleteCurrentUser(controller.signal);
+      if (controller.signal.aborted) return;
+      signOut();
+      navigate("/login", { replace: true, state: { notice: "Sua conta foi desativada. Os dados associados foram preservados." } });
+    } catch (requestError: unknown) {
+      if (!controller.signal.aborted) {
+        setDeleteAccountError(requestError instanceof ApiError ? requestError.message : "Não foi possível excluir a conta. Tente novamente.");
+      }
+    } finally {
+      if (deleteAccountRequestRef.current === controller) deleteAccountRequestRef.current = null;
+      if (!controller.signal.aborted) setDeleteAccountLoading(false);
+    }
   }
 
   return (
@@ -227,7 +331,7 @@ export function SettingsPage() {
         <AppSidebar label="Navegação principal" />
       </div>
 
-      <section id="page-content" tabIndex={-1} className="settings-page__content" aria-labelledby="settings-title">
+      <section id="page-content" tabIndex={-1} className={`settings-page__content${settingsState.status !== "success" ? " settings-page__content--pending" : ""}`} aria-labelledby="settings-title">
         <header className="settings-header">
           <div>
             <h1 id="settings-title">Configurações</h1>
@@ -237,9 +341,10 @@ export function SettingsPage() {
           {formError && <span className="settings-feedback settings-feedback--error" role="alert">{formError}</span>}
         </header>
 
-        {settingsState.status === "loading" && <AsyncFeedback status="loading" message="Carregando configurações…" />}
-        {settingsState.status === "error" && <AsyncFeedback status="error" message={settingsState.error} onRetry={() => setSettingsRequestVersion((version) => version + 1)} />}
-        {settingsState.status === "success" && settingsState.warnings.map((warning) => <p className="settings-data-warning" role="alert" key={warning}>{warning}</p>)}
+        {settingsState.status === "loading" && <div className="settings-page__loading" role="status" aria-live="polite"><LoadingLogo /><p>Carregando configurações…</p></div>}
+        {settingsState.status === "error" && <div className="settings-page__load-error"><AsyncFeedback status="error" message={settingsState.error} onRetry={() => setSettingsRequestVersion((version) => version + 1)} /></div>}
+        {settingsState.status === "success" && <>
+        {settingsState.warnings.map((warning) => <p className="settings-data-warning" role="alert" key={warning}>{warning}</p>)}
 
         <div className="settings-top-grid">
           <form className="settings-card settings-profile" onSubmit={saveProfile}>
@@ -259,21 +364,26 @@ export function SettingsPage() {
                   <button className="settings-icon-button" type="button" aria-label="Fechar edição da organização" onClick={closeOrganization}><img src={xIcon} alt="" /></button>
                 </header>
                 <div className="settings-field-label"><label htmlFor="settings-legal-name">Razão social</label><input id="settings-legal-name" value={organizationDraft.legalName} onChange={(event) => setOrganizationDraft({ ...organizationDraft, legalName: event.target.value })} maxLength={150} required /></div>
-                <div className="settings-field-label"><label htmlFor="settings-trade-name">Nome fantasia</label><input id="settings-trade-name" value={organizationDraft.tradeName} onChange={(event) => setOrganizationDraft({ ...organizationDraft, tradeName: event.target.value })} maxLength={100} required /></div>
-                <div className="settings-field-label"><label htmlFor="settings-cnpj">CNPJ</label><input id="settings-cnpj" value={organizationDraft.cnpj} onChange={(event) => setOrganizationDraft({ ...organizationDraft, cnpj: event.target.value })} inputMode="numeric" maxLength={18} required /></div>
-                <div className="settings-field-label"><label htmlFor="settings-segment">Segmento</label><input id="settings-segment" value={organizationDraft.segment} onChange={(event) => setOrganizationDraft({ ...organizationDraft, segment: event.target.value })} maxLength={120} required /></div>
-                <footer><button className="settings-secondary-button" type="button" onClick={closeOrganization}>Cancelar</button><button className="settings-primary-button" type="submit">Salvar</button></footer>
+                <div className="settings-field-label"><label htmlFor="settings-trade-name">Nome fantasia</label><input id="settings-trade-name" value={organizationDraft.tradeName} onChange={(event) => setOrganizationDraft({ ...organizationDraft, tradeName: event.target.value })} maxLength={150} required /></div>
+                <div className="settings-field-label"><label htmlFor="settings-cnpj">CNPJ</label><input id="settings-cnpj" value={organizationDraft.cnpj} onChange={(event) => setOrganizationDraft({ ...organizationDraft, cnpj: event.target.value.replace(/\D/g, "").slice(0, 14) })} inputMode="numeric" maxLength={14} required /></div>
+                <div className="settings-field-label"><label htmlFor="settings-segment">Segmento de negócio</label><select id="settings-segment" value={organizationDraft.segment} onChange={(event) => setOrganizationDraft({ ...organizationDraft, segment: event.target.value })} required><option value="">Selecione o segmento</option>{organizationSegments.map((segment) => <option key={segment.value} value={segment.value}>{segment.label}</option>)}</select></div>
+                <div className="settings-field-label"><label htmlFor="settings-unit-count">Unidades declaradas</label><input id="settings-unit-count" type="number" inputMode="numeric" min={1} step={1} value={organizationDraft.declaredUnitCount} onChange={(event) => setOrganizationDraft({ ...organizationDraft, declaredUnitCount: event.target.value })} /></div>
+                <footer><button className="settings-secondary-button" type="button" onClick={closeOrganization} disabled={organizationSaving}>Cancelar</button><button className="settings-primary-button" type="submit" disabled={organizationSaving}>{organizationSaving ? "Salvando…" : "Salvar alterações"}</button></footer>
               </form>
             ) : (
               <div className="settings-preference-row">
                 <img src={organizationIcon} alt="" />
-                <div><strong>Organização</strong><span>{organization.tradeName}</span></div>
-                <button className="settings-row-arrow" type="button" aria-label="Editar organização" onClick={openOrganization}><img className="settings-inline-arrow" src={arrowIcon} alt="" /></button>
+                <div><strong>Organização</strong><span>{organization?.tradeName ?? "Não disponível"}</span></div>
+                <button className="settings-row-arrow" type="button" aria-label="Editar organização" onClick={openOrganization} disabled={!organization}><img className="settings-inline-arrow" src={arrowIcon} alt="" /></button>
               </div>
             )}
             <div className="settings-preference-row">
-              <img src={settingsIcon} alt="" /><div><strong>Configurações gerais</strong><span>{generalSummary}</span></div>
+              <img src={settingsIcon} alt="" /><div><strong>Configurações gerais</strong><span>{generalSummary} · Aplicadas nesta sessão</span></div>
               <button className="settings-row-arrow" type="button" aria-label="Editar configurações gerais" onClick={() => setGeneralOpen(true)}><img className="settings-inline-arrow" src={arrowIcon} alt="" /></button>
+            </div>
+            <div className="settings-preference-row settings-theme-row">
+              <img src={settingsIcon} alt="" /><div><strong>Aparência</strong><span>Escolha entre os temas claro e escuro</span></div>
+              <ThemeToggle />
             </div>
           </section>
         </div>
@@ -282,27 +392,30 @@ export function SettingsPage() {
           <h2 id="data-title">Dados</h2>
           <section className="settings-card">
             <div className="settings-card-title settings-danger-title"><h3>Dados &amp; privacidade</h3></div>
-            <div className="data-row"><div><strong>Excluir conta</strong><span>Ação permanente e irreversível</span></div><button className="settings-danger-button" type="button" onClick={openDeleteAccountModal}>Excluir</button></div>
+            <div className="data-row"><div><strong>Sair da conta</strong><span>Encerra sua sessão neste dispositivo. Sua conta e seus dados permanecem.</span></div><button className="settings-secondary-button" type="button" onClick={handleSignOut}>Sair</button></div>
+            <div className="data-row"><div><strong>Excluir conta</strong><span>Desativa o acesso à conta; os dados associados são preservados.</span></div><button className="settings-danger-button" type="button" onClick={openDeleteAccountModal}>Excluir</button></div>
           </section>
         </section>
+        </>}
       </section>
 
       {generalOpen && <div className="settings-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setGeneralOpen(false); }}>
         <section ref={generalDialogRef} className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="general-settings-title">
           <header><h2 id="general-settings-title">Configurações gerais</h2><button className="settings-icon-button" type="button" aria-label="Fechar" onClick={() => setGeneralOpen(false)}><img src={xIcon} alt="" /></button></header>
-          <div className="settings-field-label"><span>Idioma</span><SettingsSelect label="Idioma" value={general.language} options={["Português (Brasil)", "English", "Español"]} onChange={(value) => setGeneral({ ...general, language: value })} /></div>
-          <div className="settings-field-label"><span>Fuso horário</span><SettingsSelect label="Fuso horário" value={general.timezone} options={["América/São Paulo (GMT-3)", "América/Manaus (GMT-4)", "UTC"]} onChange={(value) => setGeneral({ ...general, timezone: value })} /></div>
-          <div className="settings-field-label"><span>Formato de data</span><SettingsSelect label="Formato de data" value={general.dateFormat} options={["DD/MM/AAAA", "MM/DD/AAAA", "AAAA-MM-DD"]} onChange={(value) => setGeneral({ ...general, dateFormat: value })} /></div>
-          <div className="settings-field-label"><span>Unidade de medida</span><SettingsSelect label="Unidade de medida" value={general.unit} options={["Metros cúbicos (m³)", "Litros (L)", "Galões (US gal)"]} onChange={(value) => setGeneral({ ...general, unit: value })} /></div>
-          <footer><button className="settings-secondary-button" type="button" onClick={() => setGeneralOpen(false)}>Cancelar</button><button className="settings-primary-button" type="button" onClick={() => { setGeneralOpen(false); showFeedback("Configurações gerais salvas."); }}>Salvar</button></footer>
+          <p>Essas opções são aplicadas apenas durante esta sessão.</p>
+          <div className="settings-field-label"><span>Idioma</span><SettingsSelect label="Idioma" value={general.language} options={preferenceOptions.language} onChange={(value) => setGeneral((current) => ({ ...current, language: value as UserSettings["language"] }))} /></div>
+          <div className="settings-field-label"><span>Fuso horário</span><SettingsSelect label="Fuso horário" value={general.timezone} options={preferenceOptions.timezone} onChange={(value) => setGeneral((current) => ({ ...current, timezone: value as UserSettings["timezone"] }))} /></div>
+          <div className="settings-field-label"><span>Formato de data</span><SettingsSelect label="Formato de data" value={general.dateFormat} options={preferenceOptions.dateFormat} onChange={(value) => setGeneral((current) => ({ ...current, dateFormat: value as UserSettings["dateFormat"] }))} /></div>
+          <div className="settings-field-label"><span>Unidade de medida</span><SettingsSelect label="Unidade de medida" value={general.unit} options={preferenceOptions.unit} onChange={(value) => setGeneral((current) => ({ ...current, unit: value as UserSettings["unit"] }))} /></div>
+          <footer><button className="settings-secondary-button" type="button" onClick={() => setGeneralOpen(false)}>Cancelar</button><button className="settings-primary-button" type="button" onClick={saveGeneralPreferences}>Aplicar</button></footer>
         </section>
       </div>}
 
       {deleteAccountModalOpen && <div className="settings-modal-backdrop settings-modal-backdrop--centered" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDeleteAccountModal(); }}>
         <form ref={deleteDialogRef} className="settings-modal settings-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-account-title" aria-describedby="delete-account-description" onSubmit={confirmAccountDeletion}>
-          <header><div><h2 id="delete-account-title">Excluir conta</h2><p id="delete-account-description">Esta ação é permanente e não poderá ser desfeita. Digite sua senha para confirmar.</p></div><button className="settings-icon-button" type="button" aria-label="Fechar" onClick={closeDeleteAccountModal}><img src={xIcon} alt="" /></button></header>
-          <div className="settings-field-label"><label htmlFor="settings-delete-password">Senha</label><input id="settings-delete-password" type="password" autoComplete="current-password" maxLength={256} value={deleteAccountPassword} onChange={(event) => setDeleteAccountPassword(event.target.value)} required /></div>
-          <footer><button className="settings-secondary-button" type="button" onClick={closeDeleteAccountModal}>Cancelar</button><button className="settings-danger-button" type="submit">Excluir conta</button></footer>
+          <header><div><h2 id="delete-account-title">Excluir conta</h2><p id="delete-account-description">O acesso será desativado e você sairá da conta. Os dados associados serão preservados no sistema. Esta ação não pode ser revertida pelo aplicativo.</p></div><button className="settings-icon-button" type="button" aria-label="Fechar" onClick={closeDeleteAccountModal} disabled={deleteAccountLoading}><img src={xIcon} alt="" /></button></header>
+          {deleteAccountError && <p className="settings-form-error" role="alert">{deleteAccountError}</p>}
+          <footer><button className="settings-secondary-button" type="button" onClick={closeDeleteAccountModal} disabled={deleteAccountLoading}>Cancelar</button><button className="settings-danger-button" type="submit" disabled={deleteAccountLoading}>{deleteAccountLoading ? "Excluindo…" : "Excluir conta"}</button></footer>
         </form>
       </div>}
     </main>

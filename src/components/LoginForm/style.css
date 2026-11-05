@@ -35,6 +35,7 @@
 }
 
 .login-form {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -56,3 +57,11 @@
   font-size: 14px;
   line-height: 1.5;
 }
+
+.login-form-notice { margin: -24px 0 24px; color: #91bfff; font-size: 14px; line-height: 1.5; }
+
+.login-form > .login-button { width: 100%; }
+.login-create-account { align-self: center; margin-top: 2px; color: var(--text-secondary); font-size: 14px; font-weight: 600; text-decoration: none; }
+.login-create-account:hover { color: var(--white); text-decoration: underline; text-underline-offset: 3px; }
+.login-create-account:focus-visible { outline: 3px solid #9dbdff; outline-offset: 4px; border-radius: 3px; }
+

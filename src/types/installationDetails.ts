@@ -1,6 +1,9 @@
 import type { Address } from "./address";
 import type { MonthlyConsumption } from "./consumption";
+import type { Alert } from "./alerts";
+import type { LeakIndicator } from "./indicators";
 import type { InstallationRecord } from "./installation";
+import type { MonitoringHourlyPoint, PropertyMonthlyIndicator } from "./indicators";
 
 export interface DailyConsumption {
   propertyId: number;
@@ -14,5 +17,9 @@ export interface InstallationDetails {
   address: Address | null;
   monthly: MonthlyConsumption[];
   daily: DailyConsumption[];
+  indicators: PropertyMonthlyIndicator[];
+  hourly: MonitoringHourlyPoint[];
+  alerts: Alert[];
+  leaks: LeakIndicator[];
   warnings: string[];
 }

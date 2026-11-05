@@ -23,15 +23,8 @@ export interface DeviceTelemetry {
   unavailabilityReason: string | null;
 }
 
-export interface UnlinkedInstallationView {
-  id: number;
-  name: string;
-  region: string | null;
-}
-
 export interface DevicesResult {
   devices: DeviceView[];
-  unlinkedInstallations: UnlinkedInstallationView[];
   warnings: string[];
 }
 

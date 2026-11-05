@@ -14,13 +14,19 @@
   "dependencies": {
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.9",
+    "plotly.js-dist-min": "^4.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.30.6"
+    "react-markdown": "^10.1.0",
+    "react-plotly.js": "^4.1.0",
+    "react-router-dom": "^6.30.6",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@types/plotly.js": "^3.0.15",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
+    "@types/react-plotly.js": "^2.6.4",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.0.3",

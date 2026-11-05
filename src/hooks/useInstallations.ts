@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { listAddresses } from "../services/addresses";
-import { listMonthlyConsumption } from "../services/consumption";
 import { ApiError } from "../services/http";
+import { listPropertyMonthly } from "../services/indicators";
 import { listInstallations } from "../services/installations";
 import type { Installation, InstallationFilters, InstallationsResult, InstallationSort } from "../types/installation";
-import { getCurrentReferenceMonth, normalizeSearch } from "../utils/installations";
+import { pickReferenceMonth } from "../utils/indicators";
+import { formatInstallationLabel, getCurrentReferenceMonth, normalizeSearch } from "../utils/installations";
 
 type State =
   | { status: "loading" }
@@ -39,7 +40,7 @@ export function useInstallations(): UseInstallationsResult {
   const [state, dispatch] = useReducer(reducer, { status: "loading" });
   const [filters, setFilters] = useState<InstallationFilters>({ query: "", sort: "consumption" });
   const [requestVersion, setRequestVersion] = useState(0);
-  const [referenceMonth] = useState(getCurrentReferenceMonth);
+  const [referenceMonth, setReferenceMonth] = useState(getCurrentReferenceMonth);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -57,37 +58,29 @@ export function useInstallations(): UseInstallationsResult {
         );
         if (signal.aborted) return;
         const addresses = new Map(addressResult.addresses.map((address) => [address.id, address]));
-        const installations: Installation[] = [];
-        let failedConsumptionCount = 0;
-
-        // Limita consultas simultâneas para não sobrecarregar o backend.
-        for (let offset = 0; offset < records.length; offset += 6) {
-          if (signal.aborted) return;
-          const batch = records.slice(offset, offset + 6);
-          const consumption = await Promise.allSettled(batch.map((record) => listMonthlyConsumption(record.id, signal)));
-          if (signal.aborted) return;
-          batch.forEach((record, position) => {
-            const result = consumption[position];
-            if (result.status === "rejected") failedConsumptionCount += 1;
-            const reading = result.status === "fulfilled"
-              ? result.value.find((item) => item.propertyId === record.id && item.referenceMonth === referenceMonth)
-              : undefined;
-            const monthlyLiters = reading?.totalLiters ?? null;
-            const address = record.addressId === null ? undefined : addresses.get(record.addressId);
-            installations.push({
-              id: record.id, name: record.name,
-              city: address?.city || null, state: address?.state || null,
-              latitude: address?.latitude ?? null, longitude: address?.longitude ?? null,
-              monthlyLiters,
-              litersPerM2: monthlyLiters !== null && record.builtAreaM2 !== null && record.builtAreaM2 > 0
-                ? monthlyLiters / record.builtAreaM2 : null,
-            });
-          });
-        }
-
+        // Consumo e L/m² vêm da view dw.vw_ft_property_monthly: uma consulta, sem cálculo no navegador.
+        const monthly = await listPropertyMonthly(null, signal).then((rows) => ({ rows, failed: false }), () => ({ rows: [], failed: true }));
+        if (signal.aborted) return;
+        const month = pickReferenceMonth(monthly.rows.map((row) => ({ referenceMonth: row.referenceMonth, isComplete: row.isCompleteMonth })));
+        const byProperty = new Map(monthly.rows.filter((row) => row.referenceMonth === month).map((row) => [row.propertyId, row]));
+        if (month) setReferenceMonth(month);
+        const installations: Installation[] = records.map((record) => {
+          const reading = byProperty.get(record.id);
+          const address = record.addressId === null ? undefined : addresses.get(record.addressId);
+          return {
+            id: record.id, name: formatInstallationLabel(record.name) ?? record.name,
+            city: formatInstallationLabel(address?.city ?? null), state: address?.state || null,
+            latitude: address?.latitude ?? null, longitude: address?.longitude ?? null,
+            monthlyLiters: reading?.totalLiters ?? null,
+            litersPerM2: reading?.litersPerM2 ?? null,
+            goalPct: reading?.goalPct ?? null,
+            goalStatus: reading?.goalStatus ?? null,
+          };
+        });
+        const failedConsumptionCount = monthly.failed ? records.length : 0;
         const warnings: string[] = [];
         if (addressResult.unavailable) warnings.push("Não foi possível carregar os endereços. Busca por região e posições no mapa estão indisponíveis.");
-        if (failedConsumptionCount > 0) warnings.push("Não foi possível carregar o consumo de algumas instalações. Tente atualizar os dados.");
+        if (failedConsumptionCount > 0) warnings.push("Não foi possível carregar o consumo das instalações. Tente atualizar os dados.");
         if (!signal.aborted) dispatch({ type: "loaded", data: { installations, warnings } });
       } catch (error: unknown) {
         if (!signal.aborted) dispatch({
@@ -99,7 +92,7 @@ export function useInstallations(): UseInstallationsResult {
 
     void load();
     return () => controller.abort();
-  }, [referenceMonth, requestVersion]);
+  }, [requestVersion]);
 
   // Busca/ordenação só são refeitas quando os dados ou filtros mudam.
   const installations = useMemo(() => {

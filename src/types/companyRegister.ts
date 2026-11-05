@@ -110,16 +110,8 @@ export type PropertyClassificationCode =
   | "PUBLICA_COM_CONTRATO"
   | "COMERCIAL_ESPECIAL";
 
-export interface OrganizationPayload {
-  corporateName: string;
-  tradeName: string;
-  cnpj: string;
-  businessSegment: OrganizationSegment;
-  declaredUnitCount: number;
-}
-
 export interface CompanyRegistrationProgress {
-  organizationId?: number;
+  coordinates?: { latitude: number; longitude: number };
   propertyId?: number;
   deviceLinked?: boolean;
 }

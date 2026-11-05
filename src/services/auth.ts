@@ -1,4 +1,4 @@
-import { ApiError, getJson, postPublicJson, writeJson } from "./http";
+import { ApiError, deleteJson, getJson, postPublicJson, writeJson } from "./http";
 import { saveSession } from "./session";
 import { isRecord, readId, readText } from "../utils/apiValidation";
 
@@ -48,4 +48,8 @@ export async function updateCurrentUser(user: Omit<CurrentUser, "id">, signal: A
     birthDate: user.birthDate,
   }, signal);
   return parseCurrentUser(data);
+}
+
+export async function deleteCurrentUser(signal: AbortSignal): Promise<void> {
+  await deleteJson("/delta/auth/me", signal);
 }
