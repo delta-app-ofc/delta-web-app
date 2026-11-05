@@ -7,8 +7,7 @@ import informationIcon from "../../assets/alerts/information.png";
 import type { Severity } from "../../types/alerts";
 
 const PREVIEW_SIZE = 4;
-const NO_OP = () => undefined;
-const QUERY = { severity: null, alertType: null, includeDismissed: false, page: 0, size: PREVIEW_SIZE } as const;
+const QUERY = { severity: null, alertType: null, onlyActive: true, page: 0, size: PREVIEW_SIZE } as const;
 
 const severityContent: Record<Severity, { icon: string; css: string }> = {
   high: { icon: criticalIcon, css: "critical" },
@@ -17,7 +16,7 @@ const severityContent: Record<Severity, { icon: string; css: string }> = {
 };
 
 export function DashboardAlertsCard() {
-  const { data, status, retry } = useAlerts(QUERY, NO_OP);
+  const { data, status, retry } = useAlerts(QUERY);
 
   return (
     <article className="dashboard-card alerts-card">

@@ -7,7 +7,6 @@ import { useDevices } from "../../hooks/useDevices";
 import devicesIcon from "../../assets/devices/devices.png";
 import onlineIcon from "../../assets/devices/online.png";
 import lowBatteryIcon from "../../assets/devices/low-battery.png";
-import noLinkIcon from "../../assets/devices/no-link.png";
 import linkIcon from "../../assets/devices/link.png";
 
 import "./style.css";
@@ -57,8 +56,7 @@ export function DevicesPage() {
               { id: "paired", label: "Dispositivos pareados", value: String(state.data.devices.filter(({ record }) => record.isActive).length), icon: devicesIcon },
               { id: "online", label: "Online agora", value: String(state.data.devices.filter(({ telemetry }) => isOnline(telemetry?.connectivityStatus)).length), icon: onlineIcon },
               { id: "battery", label: "Bateria baixa", value: String(state.data.devices.filter(({ telemetry }) => telemetry !== null && telemetry.batteryLevel <= 20).length), icon: lowBatteryIcon },
-              { id: "unlinked", label: "Sem vínculo", value: String(state.data.unlinkedInstallations.length), icon: noLinkIcon },
-            ].map((indicator) => <article className="devices-card devices-indicator" key={indicator.id}><div className="devices-indicator__label"><img src={indicator.icon} alt="" /><span>{indicator.label}</span></div><strong>{indicator.value}</strong>{indicator.id === "online" || indicator.id === "battery" ? <small>Com base na última telemetria recebida</small> : null}</article>)}
+            ].map((indicator) => <article className={`devices-card devices-indicator ${indicator.id === "battery" ? "devices-indicator--warning" : ""}`} key={indicator.id}><div className="devices-indicator__label"><img src={indicator.icon} alt="" /><span>{indicator.label}</span></div><strong>{indicator.value}</strong>{indicator.id === "online" || indicator.id === "battery" ? <small>Com base na última telemetria recebida</small> : null}</article>)}
           </section>
 
           <div className="devices-card devices-table-wrapper">
@@ -68,10 +66,6 @@ export function DevicesPage() {
             {filteredDevices.length === 0 && <p className="devices-empty">Nenhum dispositivo encontrado.</p>}
           </div>
 
-          <section className="devices-unlinked" aria-labelledby="unlinked-installations-title"><h2 id="unlinked-installations-title">Instalações sem dispositivo vinculado</h2><div className="devices-card devices-unlinked__table-wrapper">
-            <table><caption className="sr-only">Instalações sem dispositivo vinculado</caption><thead><tr><th scope="col">Instalação</th><th scope="col">Região</th><th scope="col"><span className="sr-only">Ações</span></th></tr></thead><tbody>{state.data.unlinkedInstallations.map((installation) => <tr key={installation.id}><td>{installation.name}</td><td>{installation.region ?? "Região não informada"}</td><td><button className="devices-link-button" type="button" onClick={() => navigate("/dispositivos/vincular", { state: { installation } })}><img src={linkIcon} alt="" /><span>Vincular dispositivo</span></button></td></tr>)}</tbody></table>
-            {state.data.unlinkedInstallations.length === 0 && <p className="devices-empty">Todas as instalações possuem dispositivo vinculado.</p>}
-          </div></section>
         </>}
       </section>
     </main>

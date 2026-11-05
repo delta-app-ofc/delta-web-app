@@ -4,8 +4,10 @@ import alertsIcon from "../../assets/installations/alerts.svg";
 import { AsyncFeedback } from "../../components/AsyncFeedback";
 import { DashboardAlertsCard } from "../../components/DashboardAlertsCard";
 import { DashboardRankingCard } from "../../components/DashboardRankingCard";
+import { WeatherIcon } from "../../components/WeatherIcon";
 import dashboardIcon from "../../assets/installations/dashboard.svg";
 import devicesIcon from "../../assets/installations/devices.svg";
+import goalsIcon from "../../assets/installations/goals.svg";
 import gluhIcon from "../../assets/installations/gluh.svg";
 import installationsIcon from "../../assets/installations/installations.svg";
 import investmentsIcon from "../../assets/installations/investments.svg";
@@ -25,6 +27,8 @@ const navigationItems: readonly SidebarNavigationItem[] = [
   { id: "alerts", label: "Alertas", icon: alertsIcon, path: "/alertas" },
   { id: "leaks", label: "Vazamentos", icon: leaksIcon, path: "/vazamentos" },
   { id: "ranking", label: "Ranking", icon: rankingIcon, path: "/ranking" },
+  { id: "goals", label: "Metas", icon: goalsIcon, path: "/metas" },
+  { id: "investments", label: "Investimentos", icon: investmentsIcon, path: "/investimentos" },
   { id: "devices", label: "Dispositivos", icon: devicesIcon, path: "/dispositivos" },
   { id: "gluh", label: "Gluh", icon: gluhIcon, path: "/gluh" },
   { id: "settings", label: "Configurações", icon: settingsIcon, path: "/configuracoes" },
@@ -34,25 +38,27 @@ const numberFormatter = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 function formatLiters(value: number | null): string {
-  return value === null ? "—" : `${numberFormatter.format(value)} L`;
+  return value === null ? "Sem medições" : `${numberFormatter.format(value)} L`;
 }
 
 function formatCurrency(value: number | null): string {
-  return value === null ? "—" : currencyFormatter.format(value);
+  return value === null ? "Sem dados de consumo" : currencyFormatter.format(value);
 }
 
 function formatTemperature(value: number | null): string {
   return value === null ? "—" : `${numberFormatter.format(value)} °C`;
 }
 
-function formatVariation(current: number | null, previous: number | null): string {
-  if (current === null || previous === null || previous === 0) return "Variação indisponível";
-  const variation = ((current - previous) / previous) * 100;
+function formatVariation(variation: number | null): string {
+  if (variation === null) return "Variação indisponível";
   return `${variation >= 0 ? "+" : ""}${numberFormatter.format(variation)}% vs mês anterior`;
 }
 
 export function DashboardPage() {
   const { state, retry } = useDashboard();
+  const maxMonthlyLiters = state.status === "success"
+    ? Math.max(...state.data.monthlyHistory.map((month) => month.totalLiters ?? 0), 1)
+    : 1;
 
   return (
     <main className="dashboard-page">
@@ -76,7 +82,7 @@ export function DashboardPage() {
             <article className="dashboard-card metric-card">
               <div className="metric-card__label"><img src={leaksIcon} alt="" /><span>Consumo mensal</span></div>
               <strong>{formatLiters(state.data.currentLiters)}</strong>
-              <small className="metric-card__change metric-card__change--negative">{formatVariation(state.data.currentLiters, state.data.previousLiters)}</small>
+              <small className="metric-card__change metric-card__change--negative">{formatVariation(state.data.variationPct)}</small>
             </article>
             <article className="dashboard-card metric-card">
               <div className="metric-card__label"><img src={investmentsIcon} alt="" /><span>Custo estimado</span></div>
@@ -87,14 +93,19 @@ export function DashboardPage() {
 
           <div className="dashboard-grid dashboard-grid--primary">
             <article className="dashboard-card history-card">
-              <header className="dashboard-card__header"><h2>Evolução histórica</h2><span>Meses disponíveis · litros</span></header>
-              <div className="history-chart" role="img" aria-label="Consumo mensal atual e anterior">
-                {[{ referenceMonth: state.data.previousMonth, label: getMonthLabel(state.data.previousMonth), value: state.data.previousLiters }, { referenceMonth: state.data.referenceMonth, label: getMonthLabel(state.data.referenceMonth), value: state.data.currentLiters }].map((month) => {
-                  const max = Math.max(state.data.currentLiters ?? 0, state.data.previousLiters ?? 0, 1);
-                  return <div className="history-chart__column" key={month.referenceMonth}><div className="history-chart__track"><span style={{ height: `${month.value === null ? 0 : month.value / max * 100}%` }} /></div><small>{getShortMonthLabel(month.referenceMonth)}</small></div>;
+              <header className="dashboard-card__header"><h2>Evolução histórica</h2><span>Últimos 6 meses · litros</span></header>
+              <div className="history-chart" role="img" aria-label="Consumo mensal da organização nos últimos seis meses">
+                {state.data.monthlyHistory.map((month) => {
+                  const hasData = month.totalLiters !== null;
+                  return <div className="history-chart__column" key={month.referenceMonth}>
+                    <div className={`history-chart__track${hasData ? "" : " history-chart__track--empty"}`} title={hasData ? `${getShortMonthLabel(month.referenceMonth)}: ${numberFormatter.format(month.totalLiters ?? 0)} L` : `${getShortMonthLabel(month.referenceMonth)}: sem dados`}>
+                      {hasData && <span style={{ height: `${(month.totalLiters ?? 0) / maxMonthlyLiters * 100}%` }} />}
+                    </div>
+                    <small>{getShortMonthLabel(month.referenceMonth)}</small>
+                  </div>;
                 })}
               </div>
-              <p className="dashboard-card__note">O contrato atual fornece o mês corrente e o anterior para esta composição.</p>
+              <p className="dashboard-card__note">Cada coluna mostra o consumo consolidado; meses sem registros ficam vazios.</p>
             </article>
 
             <DashboardRankingCard />
@@ -103,9 +114,23 @@ export function DashboardPage() {
           <div className="dashboard-grid dashboard-grid--secondary">
             <DashboardAlertsCard />
             <div className="dashboard-summary-stack">
-              <article className="dashboard-card forecast-card"><h2>Projeção simples para o próximo mês</h2><strong>{formatCurrency(state.data.projectedCost)}</strong><small>Baseada na variação entre os dois últimos meses</small></article>
+              <article className="dashboard-card forecast-card" aria-labelledby="dashboard-financial-forecast">
+                <h2 id="dashboard-financial-forecast">Previsão financeira</h2>
+                <strong>{formatCurrency(state.data.projectedCost)}</strong>
+                <small>Estimativa para o próximo mês, baseada no consumo recente e no custo médio da água.</small>
+              </article>
               <article className={`dashboard-card weather-card${state.data.weather ? "" : " dashboard-card--unavailable"}`}>
-                {state.data.weather ? <div><h2>Clima agora</h2><strong>{formatTemperature(state.data.weather.temperatureC)}</strong><small>{state.data.weather.condition} · {state.data.weather.city}</small></div> : <div><h2>Clima agora</h2><p className="dashboard-unavailable">Localização sem coordenadas ou clima indisponível.</p></div>}
+                {state.data.weather ? <>
+                  <div className="weather-card__main">
+                    <h2>Clima agora</h2>
+                    <strong>{formatTemperature(state.data.weather.temperatureC)}</strong>
+                    <small>{state.data.weather.condition} · {state.data.weather.city}</small>
+                  </div>
+                  <div className="weather-card__condition">
+                    <WeatherIcon code={state.data.weather.weatherCode} />
+                    {state.data.weather.precipitationMm !== null && <small>{numberFormatter.format(state.data.weather.precipitationMm)} mm de chuva hoje</small>}
+                  </div>
+                </> : <div className="weather-card__unavailable"><h2>Clima agora</h2><p className="dashboard-unavailable">Localização sem coordenadas ou clima indisponível.</p></div>}
               </article>
             </div>
           </div>

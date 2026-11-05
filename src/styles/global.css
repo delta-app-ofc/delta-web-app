@@ -48,6 +48,17 @@
   --radius-pill: 999px;
 }
 
+html[data-theme="light"] {
+  color-scheme: light;
+  --background-dark: #f2f5f9;
+  --white: #172334;
+  --text-secondary: #35445a;
+  --text-muted: #53647a;
+  --placeholder: #68788d;
+  --installation-border: rgba(78, 98, 126, .55);
+  --installation-muted: #53647a;
+}
+
 .route-loading {
   min-height: 100vh;
   display: grid;
@@ -55,6 +66,47 @@
   background: #171c23;
   color: #dbe7ff;
   font: 500 16px/1.4 var(--font-primary);
+}
+
+/* Mantém o tamanho dos botões de exportação igual entre as páginas. */
+html body button.export-pdf-button {
+  box-sizing: border-box;
+  width: 230px;
+  height: 52px;
+  min-height: 52px;
+  flex: 0 0 230px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #2c3b51;
+  color: #eef5ff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+html body button.export-pdf-button img {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  object-fit: contain;
+}
+
+html body button.export-pdf-button:hover { background: #374a66; }
+html body button.export-pdf-button:focus-visible { outline: 3px solid var(--blue-light); outline-offset: 3px; }
+
+@media (max-width: 600px) {
+  html body button.export-pdf-button {
+    width: min(230px, 100%);
+    flex-basis: auto;
+  }
 }
 
 * {
@@ -98,6 +150,107 @@ button {
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: 3px solid var(--blue-light);
   outline-offset: 3px;
+}
+
+html[data-theme="light"] body { background: #f2f5f9; color: #172334; }
+html[data-theme="light"] :is(.dashboard-page, .alerts-page, .leaks-page, .ranking-page, .investments-page, .monitoring-page, .devices-page, .goals-page) { background: #f2f5f9; color: #172334; }
+html[data-theme="light"] :is(.dashboard-card, .alerts-page__panel, .leaks-card, .investments-card, .ranking-page-card, .monitoring-card, .devices-card, .goals-card, .dashboard-warning) { background-color: #fff; color: #172334; }
+html[data-theme="light"] :is(.dashboard-card h1, .dashboard-card h2, .dashboard-card strong, .alerts-page h1, .alerts-page h2, .leaks-page h1, .leaks-page h2, .investments-page h1, .investments-page h2, .ranking-page h1, .ranking-page h2, .monitoring-page h1, .monitoring-page h2, .devices-page h1, .devices-page h2, .goals-page h1, .goals-page h2) { color: #172334; }
+html[data-theme="light"] :is(.dashboard-card small, .dashboard-card__header > span, .dashboard-unavailable, .dashboard-card__note, .alerts-page__details span, .alerts-page__details small, .leaks-page small, .investments-page small, .ranking-page small, .monitoring-page small, .devices-page small, .goals-page small) { color: #53647a; }
+html[data-theme="light"] :is(.history-chart__track, .alerts-filter, .ranking-card__icon) { background-color: #e1e8f1; color: #263850; }
+html[data-theme="light"] :is(.dashboard-page, .alerts-page, .leaks-page, .ranking-page, .investments-page, .monitoring-page, .devices-page, .goals-page) {
+  --dashboard-muted: #53647a;
+  --alerts-muted: #53647a;
+  --leaks-muted: #53647a;
+  --investments-muted: #53647a;
+  --monitoring-muted: #53647a;
+  --devices-muted: #53647a;
+  --goals-muted: #53647a;
+  --installation-border: rgba(91, 115, 148, .32);
+}
+html[data-theme="light"] :is(.alerts-page__summary, .leak-detail, .leak-chart-card, .investment-impact, .goal-unit, .monitoring-status, .device-detail) { border-color: rgba(91, 115, 148, .32); background: #fff; color: #172334; }
+html[data-theme="light"] :is(.leak-detail h2, .leak-chart-card h2, .leak-actions h3, .leak-actions__label, .leak-detail__metrics dd, .investment-indicator > strong, .investment-impact h3, .goal-unit h3, .goal-unit__content dd, .monitoring-status h2) { color: #172334; }
+html[data-theme="light"] :is(.leak-detail__header p, .leak-detail__metrics dt, .leak-chart-card header p, .leak-chart__column small, .leak-hourly__unit, .leak-hourly__message, .investment-indicator small, .environmental-impact article small) { color: #53647a; }
+
+/* Mantém os títulos e textos de página legíveis em todas as telas no tema claro. */
+html[data-theme="light"] :is(.dashboard-page, .alerts-page, .leaks-page, .ranking-page, .investments-page, .monitoring-page, .devices-page, .goals-page, .settings-page, .chatbot-page, .chatbot-history-page, .installation-details-page, .installation-editing-page, .installations-page, .device-link-page) {
+  color: #172334;
+  --installation-border: rgba(78, 98, 126, .55);
+  --installation-muted: #53647a;
+}
+html[data-theme="light"] main :is(h1, h2, h3, h4) {
+  color: #172334;
+}
+
+@media print {
+  @page { size: A4 portrait; margin: 14mm; }
+  html, body, #root { width: auto !important; min-height: 0 !important; height: auto !important; overflow: visible !important; background: #fff !important; }
+  #root::before { content: "DELTA  |  Ambiente Industrial"; display: block; margin: 0 0 7mm; padding: 0 0 4mm; border-bottom: 1px solid #d2dcec; color: #356ce0 !important; font: 700 18pt/1.2 var(--font-primary); letter-spacing: .2pt; }
+  #root::after { content: "Delta · Transformando hábitos, gota por gota."; position: fixed; right: 0; bottom: -8mm; left: 0; color: #63738a !important; font: 8pt/1.2 var(--font-primary); text-align: center; }
+  body, body * { color: #111 !important; text-shadow: none !important; box-shadow: none !important; }
+  body * { background-color: transparent !important; }
+  :is(.dashboard-page, .alerts-page, .leaks-page, .ranking-page, .investments-page, .monitoring-page, .devices-page, .goals-page) { display: block !important; min-height: 0 !important; height: auto !important; padding: 0 !important; overflow: visible !important; background: #fff !important; }
+  :is(.dashboard-page__sidebar, .alerts-page__sidebar, .leaks-page__sidebar, .ranking-page__sidebar, .investments-page__sidebar, .monitoring-page__sidebar, .devices-page__sidebar, .goals-page__sidebar, .accessibility-menu, button, .dashboard-card__link, .dashboard-page__content nav) { display: none !important; }
+  :is(.dashboard-card, .alerts-page__panel, .leaks-card, .investments-card, .ranking-page-card, .monitoring-card, .devices-card, .goals-card, .layout .card) { border: 1px solid #c7d2e1 !important; border-radius: 5mm !important; background: #fff !important; break-inside: avoid; page-break-inside: avoid; }
+  :is(.history-chart__track, .monitoring-chart__track, .leak-chart__track, .ranking-comparison__track) { background: #e8edf5 !important; }
+  :is(.history-chart__track span, .monitoring-chart__track span, .leak-chart__track span, .ranking-comparison__track span, .financial-impact__chart button > span, .consumption-impact__bar--projected) { background: #356ce0 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .consumption-impact__bar--current { background: #dbe4f0 !important; }
+  :is(.alerts-page__icon--critical, .alerts-page__badge--critical, .alerts-card__icon--critical, .status-badge--critical, .leak-detail__status, .leak-actions__badge--urgent, .leaks-status--active) {
+    color: #a5222c !important;
+    background-color: #fde8e9 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  :is(.alerts-page__icon--warning, .alerts-page__badge--warning, .alerts-card__icon--warning, .status-badge--warning, .leak-actions__badge--warning, .goal-unit__status--warning, .monitoring-status-badge--warning, .devices-indicator--warning) {
+    color: #805900 !important;
+    background-color: #fff3c4 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  :is(.alerts-page__icon--information, .alerts-page__badge--information, .goal-unit__status--normal, .monitoring-status-badge--normal, .devices-connectivity--online, .leaks-status--resolved, .leak-actions__badge--recommended) {
+    color: #176b4b !important;
+    background-color: #dcf5e9 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  :is(.devices-connectivity--offline, .devices-battery--critical, .goal-unit__status--critical) {
+    color: #a5222c !important;
+    background-color: #fde8e9 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  :is(.devices-battery--warning, .leaks-status--dismissed) {
+    color: #805900 !important;
+    background-color: #fff3c4 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .devices-battery--good { color: #176b4b !important; }
+  :is(.metric-card__change--positive, .ranking-list__variation--positive, .ranking-progress__value--positive, .goal-unit__progress--normal) {
+    color: #176b4b !important;
+    --goal-color: #21946a;
+  }
+  :is(.ranking-list__variation--warning, .ranking-progress__value--warning, .goal-unit__progress--warning) {
+    color: #805900 !important;
+    --goal-color: #c29300;
+  }
+  :is(.ranking-list__variation--critical, .ranking-progress__value--critical, .goal-unit__progress--critical) {
+    color: #a5222c !important;
+    --goal-color: #d34b52;
+  }
+  .goal-unit__progress {
+    background: conic-gradient(var(--goal-color, #21946a) var(--goal-progress), #e3e9f0 0deg) !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .goal-unit__progress::before { background: #fff !important; }
+  :is(.history-chart__track, .monitoring-chart__track, .leak-chart__track, .ranking-comparison__track) {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  :is(.history-chart__track--empty, .leak-hourly__column--empty .leak-hourly__track) { background: #f0f3f7 !important; }
+  table, tr, img, svg, canvas { break-inside: avoid; }
+  a { text-decoration: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

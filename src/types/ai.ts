@@ -4,10 +4,23 @@ export interface AiChatMessage {
   timestamp: string | null;
 }
 
+export interface AiPlotlyFigure {
+  data: readonly Record<string, unknown>[];
+  layout: Record<string, unknown>;
+}
+
+export interface ChatMarkdownProps {
+  content: string;
+}
+
+export interface ChatPlotlyProps {
+  figure: AiPlotlyFigure;
+}
+
 export interface AiChatResponse {
   response: string;
   sessionId: string;
-  chartData: Record<string, unknown> | null;
+  chartData: AiPlotlyFigure | null;
   suggestions: string[];
 }
 

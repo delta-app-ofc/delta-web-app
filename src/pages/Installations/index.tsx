@@ -32,7 +32,7 @@ export default function InstallationsPage() {
       <div className={styles.toolbar}>
         <InstallationSearch value={filters.query} onChange={setQuery} />
         <div className={styles.actions}>
-          <button className={styles.export} type="button" disabled={state.status !== "success" || exporting} onClick={downloadReport} aria-busy={exporting}><img src={exportIcon} alt="" />{exporting ? "Gerando PDF…" : "Exportar para PDF"}</button>
+          <button className={`export-pdf-button ${styles.export}`} type="button" disabled={state.status !== "success" || exporting} onClick={downloadReport} aria-busy={exporting}><img src={exportIcon} alt="" />{exporting ? "Gerando PDF…" : "Exportar para PDF"}</button>
           <button className={styles.create} type="button" onClick={() => navigate("/instalacoes/cadastrar")}><img src={plusIcon} alt="" />Cadastrar instalação</button>
         </div>
       </div>
@@ -47,7 +47,7 @@ export default function InstallationsPage() {
         </div>
         {state.data.warnings.length > 0 && <div className={styles.warning} role="alert">{state.data.warnings.map((warning) => <p key={warning}>{warning}</p>)}</div>}
         <InstallationMap installations={installations} />
-        <InstallationsTable installations={installations} monthLabel={monthLabel} isFiltered={filters.query.trim().length > 0} />
+        <InstallationsTable installations={installations} monthLabel={monthLabel} isFiltered={filters.query.trim().length > 0} sort={filters.sort} />
       </>}
     </AppLayout>
   );

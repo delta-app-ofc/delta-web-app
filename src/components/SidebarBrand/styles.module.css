@@ -1,12 +1,17 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 5.23%;
-  width: 153px;
+  gap: 10.2%;
+  width: 210px;
   max-width: 100%;
 }
 .brand img { display: block; height: auto; }
-.symbol { flex: none; width: 32.68%; }
+.symbol { flex: none; width: 31%; }
 .text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.wordmark { width: 81.05%; }
+.wordmark { width: 80.4%; }
 .description { width: 100%; }
+@media (min-width: 701px) and (max-width: 1000px) {
+  .brand { width: 48px; justify-content: center; }
+  .symbol { width: 100%; }
+  .text { display: none; }
+}

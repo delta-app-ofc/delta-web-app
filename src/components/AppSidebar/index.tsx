@@ -32,6 +32,7 @@ export function AppSidebar({ label, navigationItems, profile }: AppSidebarProps)
   }, [profile]);
 
   const name = loadedProfile?.name || "Minha conta";
+  const displayName = name.trim().split(/\s+/).slice(0, 2).join(" ");
   const email = loadedProfile?.email || "E-mail não informado";
 
   return (
@@ -49,7 +50,7 @@ export function AppSidebar({ label, navigationItems, profile }: AppSidebarProps)
           )}
         </div>
         <div className={styles.profileDetails}>
-          <span className={styles.profileName} title={name}>{name}</span>
+          <span className={styles.profileName} title={name}>{displayName}</span>
           <span className={styles.profileEmail} title={email}>{email}</span>
         </div>
       </div>

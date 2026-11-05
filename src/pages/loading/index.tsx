@@ -12,7 +12,7 @@ interface LoadingPageProps {
 }
 
 export function LoadingPage({
-  title = "Estamos preparando tudo para você...",
+  title = "Estamos preparando tudo para você…",
   redirectTo,
   redirectDelay = 2500,
 }: LoadingPageProps) {
@@ -40,7 +40,7 @@ export function LoadingPage({
         <LoadingLogo />
 
         <p className="loading-page__message">
-          Aguarde alguns minutos
+          Aguarde um instante
         </p>
       </div>
     </main>

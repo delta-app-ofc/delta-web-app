@@ -112,6 +112,11 @@
   font-size: 10px;
 }
 
+.investment-scenarios-print,
+.investment-impact-print {
+  display: none;
+}
+
 .investment-scenarios {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -299,6 +304,42 @@
   font-weight: 500;
 }
 
+.consumption-impact__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.consumption-impact__metrics article {
+  min-height: 118px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--investments-border);
+  border-radius: 22px;
+  background: rgba(24, 28, 32, 0.42);
+}
+
+.consumption-impact__metrics article > span {
+  color: var(--investments-muted);
+  font-size: 11px;
+}
+
+.consumption-impact__metrics article strong {
+  color: #f4f7fb;
+  font-size: clamp(18px, 2vw, 27px);
+  font-weight: 550;
+  line-height: 1.15;
+}
+
+.consumption-impact__metrics article small {
+  color: #4be19a;
+  font-size: 10px;
+}
+
 .consumption-impact__chart {
   height: 185px;
   display: flex;
@@ -458,6 +499,16 @@
   margin-top: 8px;
 }
 
+.environmental-impact article.environmental-impact__empty strong {
+  color: var(--investments-muted);
+  font-size: 22px;
+}
+
+.environmental-impact article.environmental-impact__empty {
+  border-style: dashed;
+  background: rgba(24, 28, 32, 0.38);
+}
+
 @media (max-width: 1180px) {
   .investments-page {
     grid-template-columns: 220px minmax(0, 1fr);
@@ -499,6 +550,10 @@
   .environmental-impact {
     grid-template-columns: 1fr;
     padding-top: 28px;
+  }
+
+  .consumption-impact__metrics {
+    grid-template-columns: 1fr;
   }
 
   .environmental-impact article {
@@ -572,6 +627,8 @@
 @media print {
   .investments-page {
     display: block;
+    width: auto;
+    min-height: 0;
     padding: 0;
     color: #111;
     background: #fff;
@@ -584,6 +641,297 @@
 
   .investments-page__content {
     max-width: none;
+    padding: 0;
+  }
+
+  .investments-header {
+    min-height: 0;
+    margin-bottom: 7mm;
+  }
+
+  .investments-header h1 {
+    font-size: 22pt;
+  }
+
+  .investments-step__heading {
+    gap: 2mm;
+  }
+
+  .investments-step__heading > span {
+    width: 7mm;
+    height: 7mm;
+    font-size: 9pt;
+  }
+
+  .investments-step__heading h2 {
+    font-size: 13pt;
+  }
+
+  .investments-step__heading p {
+    margin-top: 1mm;
+    font-size: 8pt;
+  }
+
+  .investment-scenarios {
+    display: none !important;
+  }
+
+  .investments-page .investment-scenarios-print {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3mm;
+    margin-top: 4mm;
+  }
+
+  .investment-scenario-print {
+    padding: 4mm;
+    border: 1px solid #c7d2e1 !important;
+    border-radius: 4mm;
+    background: #fff !important;
+    color: #111 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .investment-scenario-print > strong {
+    display: block;
+    font-size: 10pt;
+  }
+
+  .investment-scenario-print dl {
+    display: flex;
+    gap: 6mm;
+    margin: 3mm 0 0;
+  }
+
+  .investment-scenario-print dt {
+    color: #53647a !important;
+    font-size: 7pt;
+  }
+
+  .investment-scenario-print dd {
+    margin: 1mm 0 0;
+    font-size: 9pt;
+    font-weight: 700;
+  }
+
+  .investment-impact-print {
+    display: block !important;
+    margin-top: 5mm;
+  }
+
+  .investment-impact-print > h2 {
+    margin: 0 0 3mm;
+    font-size: 13pt;
+  }
+
+  .investment-impact-print__section {
+    margin-top: 3mm;
+    padding: 3mm;
+    border: 1px solid #c7d2e1 !important;
+    border-radius: 3mm;
+    background: #fff !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .investment-impact-print__section h3 {
+    margin: 0 0 2mm;
+    font-size: 9pt;
+  }
+
+  .investment-impact-print__section p {
+    margin: 0;
+    color: #53647a !important;
+    font-size: 8pt;
+  }
+
+  .investment-impact-print__metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3mm;
+    margin: 0;
+  }
+
+  .investment-impact-print__metrics dt,
+  .investment-impact-print__scenarios span {
+    color: #53647a !important;
+    font-size: 7pt;
+  }
+
+  .investment-impact-print__metrics dd {
+    margin: 1mm 0 0;
+    font-size: 9pt;
+    font-weight: 700;
+  }
+
+  .investment-impact-print__scenarios {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2mm;
+  }
+
+  .investment-impact-print__scenarios > div {
+    display: flex;
+    flex-direction: column;
+    gap: 1mm;
+    padding: 2mm;
+    border-radius: 2mm;
+    background: #f0f4fa !important;
+    break-inside: avoid;
+  }
+
+  .investment-impact-print__scenarios strong {
+    font-size: 9pt;
+  }
+
+  .investments-results {
+    margin-top: 7mm;
+  }
+
+  .investment-indicators {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3mm;
+    margin-top: 4mm;
+  }
+
+  .investment-indicator {
+    min-height: 0;
+    padding: 4mm;
+    border-radius: 4mm;
+  }
+
+  .investment-indicator > div {
+    margin-bottom: 2mm;
+    font-size: 8pt;
+  }
+
+  .investment-indicator > strong,
+  .investment-indicator:first-child > strong {
+    font-size: 13pt;
+  }
+
+  .investment-impact {
+    min-height: 0;
+    margin-top: 4mm;
+    padding: 4mm;
+    border-radius: 4mm;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .investment-impact__tabs {
+    display: none !important;
+  }
+
+  .investments-page .investment-impact {
+    display: none !important;
+  }
+
+  .investments-page [role="tabpanel"][hidden] {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .consumption-impact,
+  .financial-impact {
+    padding: 3mm 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .consumption-impact h3,
+  .financial-impact h3 {
+    font-size: 10pt;
+  }
+
+  .consumption-impact__metrics {
+    gap: 2mm;
+    margin-top: 3mm;
+  }
+
+  .consumption-impact__metrics article {
+    min-height: 0;
+    gap: 2mm;
+    padding: 3mm;
+    border-radius: 3mm;
+  }
+
+  .consumption-impact__metrics article > span,
+  .consumption-impact__metrics article small {
+    font-size: 7pt;
+  }
+
+  .consumption-impact__metrics article strong {
+    font-size: 11pt;
+  }
+
+  .consumption-impact > p,
+  .financial-impact > p {
+    display: none;
+  }
+
+  .financial-impact__chart {
+    height: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 34mm;
+    gap: 3mm;
+    margin-top: 3mm;
+  }
+
+  .investments-page .financial-impact__chart button {
+    display: flex !important;
+    height: 100%;
+    padding: 2mm;
+    color: #111 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .financial-impact__chart button > span {
+    max-height: 20mm;
+  }
+
+  .financial-impact__chart strong,
+  .financial-impact__chart small {
+    font-size: 7pt;
+  }
+
+  .environmental-impact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3mm;
+    padding: 4mm 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .environmental-impact article {
+    min-height: 0;
+    padding: 4mm;
+    border: 1px solid #c7d2e1 !important;
+    border-radius: 4mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .environmental-impact article > div {
+    gap: 2mm;
+    font-size: 8pt;
+  }
+
+  .environmental-impact article img {
+    width: 5mm;
+    height: 5mm;
+  }
+
+  .environmental-impact article strong {
+    margin-top: 5mm;
+    font-size: 14pt;
+  }
+
+  .environmental-impact article small {
+    margin-top: 2mm;
+    font-size: 7pt;
   }
 }
 

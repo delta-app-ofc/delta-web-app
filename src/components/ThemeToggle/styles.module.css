@@ -1,0 +1,6 @@
+.toggle { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; margin: 0 10px 0 auto; padding: 8px 14px; border: 1px solid rgba(105,131,174,.45); border-radius: 999px; background: #2c3b51; color: #eef5ff; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.toggle:hover { background: #374a66; }
+.toggle > span:first-child { font-size: 15px; line-height: 1; }
+:global(html[data-theme="light"]) .toggle { border-color: #c7d2e1; background: #fff; color: #24364d; }
+:global(html[data-theme="light"]) .toggle:hover { background: #eaf0f7; }
+@media print { .toggle { display: none !important; } }

@@ -1,4 +1,4 @@
-import type { WeatherData } from "../types/weather";
+import type { WeatherData, WeatherForecastDay } from "../types/weather";
 import { isRecord, readOptionalNumber } from "../utils/apiValidation";
 import { ApiError, getPublicJsonFrom } from "./http";
 
@@ -28,17 +28,37 @@ export async function getCurrentWeather(latitude: number, longitude: number, cit
   const query = new URLSearchParams({
     latitude: String(latitude), longitude: String(longitude),
     current: "temperature_2m,weather_code",
-    daily: "temperature_2m_max,temperature_2m_min,precipitation_sum",
-    forecast_days: "1", timezone: "auto",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum",
+    forecast_days: "3", timezone: "auto",
   });
   const value = await getPublicJsonFrom(weatherApiUrl, `?${query.toString()}`, signal);
-  if (!isRecord(value) || !isRecord(value.current) || !isRecord(value.daily)) throw new ApiError("A API de clima retornou dados inválidos.");
+  if (!isRecord(value) || !isRecord(value.current) || !isRecord(value.daily) ||
+    !Array.isArray(value.daily.time) || !Array.isArray(value.daily.weather_code) ||
+    !Array.isArray(value.daily.temperature_2m_max) || !Array.isArray(value.daily.temperature_2m_min) ||
+    !Array.isArray(value.daily.precipitation_sum)) throw new ApiError("A API de clima retornou dados inválidos.");
   const code = readNumber(value.current.weather_code, "código do clima");
-  const max = Array.isArray(value.daily.temperature_2m_max) ? readOptionalNumber(value.daily.temperature_2m_max[0]) : null;
-  const min = Array.isArray(value.daily.temperature_2m_min) ? readOptionalNumber(value.daily.temperature_2m_min[0]) : null;
-  const precipitation = Array.isArray(value.daily.precipitation_sum) ? readOptionalNumber(value.daily.precipitation_sum[0]) : null;
+  const dailyTimes = value.daily.time as unknown[];
+  const dailyCodes = value.daily.weather_code as unknown[];
+  const dailyMax = value.daily.temperature_2m_max as unknown[];
+  const dailyMin = value.daily.temperature_2m_min as unknown[];
+  const dailyPrecipitation = value.daily.precipitation_sum as unknown[];
+  const forecast: WeatherForecastDay[] = dailyTimes.flatMap((day, index): WeatherForecastDay[] => {
+    if (typeof day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return [];
+    const dailyCode = readOptionalNumber(dailyCodes[index]);
+    if (dailyCode === null) return [];
+    return [{
+      date: day,
+      weatherCode: dailyCode,
+      condition: weatherCondition(dailyCode),
+      highC: readOptionalNumber(dailyMax[index]),
+      lowC: readOptionalNumber(dailyMin[index]),
+      precipitationMm: readOptionalNumber(dailyPrecipitation[index]),
+    }];
+  });
+  const today = forecast[0];
   return {
-    city, temperatureC: readNumber(value.current.temperature_2m, "temperatura"),
-    condition: weatherCondition(code), highC: max, lowC: min, precipitationMm: precipitation,
+    city, temperatureC: readNumber(value.current.temperature_2m, "temperatura"), weatherCode: code,
+    condition: weatherCondition(code), highC: today?.highC ?? null, lowC: today?.lowC ?? null,
+    precipitationMm: today?.precipitationMm ?? null, forecast,
   };
 }

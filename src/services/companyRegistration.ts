@@ -1,7 +1,7 @@
 import { ApiError, writeJson } from "./http";
-import { createOrganization } from "./organizations";
+import { geocodeCity } from "./geocoding";
 import { isRecord, readId } from "../utils/apiValidation";
-import { isValidCnpjLength, onlyDigits } from "../utils/companyValidation";
+import { isValidCnpjLength, isValidPostalCodeLength, onlyDigits } from "../utils/companyValidation";
 import type {
   CompanyRegisterData,
   CompanyRegistrationProgress,
@@ -35,17 +35,18 @@ export async function registerCompany(
   if (!classification) throw new ApiError("Selecione o tipo da indústria.");
   if (!isValidCnpjLength(data.cnpj)) throw new ApiError("O CNPJ deve ter 14 números.");
   const cep = onlyDigits(data.postalCode);
-  if (cep.length !== 8) throw new ApiError("O CEP deve ter 8 números.");
-  if (progress.organizationId === undefined) {
-    progress.organizationId = await createOrganization({
-      corporateName: data.legalName.trim(), tradeName: data.tradeName.trim(), cnpj: onlyDigits(data.cnpj),
-      businessSegment: toOrganizationSegment(data.industrySegment), declaredUnitCount: 1,
-    }, signal);
-  }
+  if (!isValidPostalCodeLength(data.postalCode)) throw new ApiError("O CEP deve ter 8 números.");
   if (progress.propertyId === undefined) {
+    progress.coordinates ??= await geocodeCity(data.city, data.state, signal);
+    // Recusas 400/409 chegam com o motivo da API (CNPJ já cadastrado, cidade fora da área atendida, cadastro já concluído...).
     const result = await writeJson("POST", "/delta/auth/complete-registration", {
-      address: { cep, city: data.city.trim(), state: data.state.trim() },
-      property: { name: data.unitName.trim(), type: "PRÉDIO", classification, organizationId: progress.organizationId },
+      address: { cep, city: data.city.trim(), state: data.state.trim(), ...progress.coordinates },
+      property: { name: data.unitName.trim(), type: "PRÉDIO", classification },
+      // A API cria a empresa junto com a primeira unidade: a organização nasce vinculada a ela.
+      organization: {
+        corporateName: data.legalName.trim(), tradeName: data.tradeName.trim(), cnpj: onlyDigits(data.cnpj),
+        businessSegment: toOrganizationSegment(data.industrySegment), declaredUnitCount: 1,
+      },
       habits: [],
     }, signal);
     if (!isRecord(result) || !isRecord(result.property)) throw new ApiError("O serviço retornou um cadastro inválido.");

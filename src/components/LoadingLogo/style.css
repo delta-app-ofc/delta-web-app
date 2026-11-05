@@ -5,6 +5,11 @@
   height: 180px;
 }
 
+.loading-logo--compact {
+  width: 72px;
+  height: 72px;
+}
+
 /* LOGO BRANCA / BASE */
 .loading-logo__base {
   position: absolute;

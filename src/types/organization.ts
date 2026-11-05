@@ -3,12 +3,14 @@ export type OrganizationResolution =
   | { status: "multiple"; organizationIds: number[] }
   | { status: "none" };
 
+export type OrganizationSegment = "VAREJO" | "INDUSTRIA" | "CONDOMINIO" | "FACILITIES";
+
 export interface Organization {
   id: number;
   corporateName: string;
   tradeName: string;
   cnpj: string;
-  businessSegment: "VAREJO" | "INDUSTRIA" | "CONDOMINIO" | "FACILITIES" | null;
+  businessSegment: OrganizationSegment | null;
   declaredUnitCount: number | null;
   registrationDate: string | null;
 }

@@ -18,6 +18,8 @@ docker compose -p delta-web-app-test -f docker-compose.test.yml down
 
 ## Conferir o resultado e encerrar
 
+### Verificações do frontend
+
 Confira a saída do ESLint, TypeScript e Vite e o código de saída do serviço `checks`. Uma falha no lint interrompe a sequência. Este fluxo não abre o aplicativo no navegador e não executa testes funcionais. Não precisa de API, banco, `.env` ou porta publicada.
 
 Para diagnosticar falhas de um serviço Compose, use `docker compose -p <projeto> -f <arquivo> ps -a` e `docker compose -p <projeto> -f <arquivo> logs <serviço>`, com o mesmo projeto e arquivo da execução.

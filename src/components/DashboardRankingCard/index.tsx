@@ -3,7 +3,7 @@ import { useRanking } from "../../hooks/useRanking";
 import { getCurrentPeriod } from "../../utils/installations";
 import { AsyncFeedback } from "../AsyncFeedback";
 
-const PREVIEW_SIZE = 3;
+const PREVIEW_SIZE = 5;
 const formatter = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
 export function DashboardRankingCard() {

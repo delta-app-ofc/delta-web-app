@@ -1,6 +1,8 @@
 import type { DailyConsumption, InstallationDetails } from "../types/installationDetails";
 import { isRecord, readArray, readId, readOptionalNumber, readText } from "../utils/apiValidation";
 import { listAddresses } from "./addresses";
+import { listAlerts } from "./alerts";
+import { listLeakIndicators, listMonitoringHourly, listPropertyMonthly } from "./indicators";
 import { listMonthlyConsumption } from "./consumption";
 import { ApiError, getJson } from "./http";
 import { getInstallation } from "./installations";
@@ -37,6 +39,11 @@ export async function getInstallationDetails(id: number, signal: AbortSignal): P
     listMonthlyConsumption(id, signal).then(rows => validateReadings(rows, id, row => row.referenceMonth)),
     getJson(`/delta/analytics/consumption-daily/${id}`, signal)
       .then(value => validateReadings(readArray(value, parseDaily), id, row => row.fullDate)),
+    // Meta, custo, vazão e alertas vêm das views dw; a API devolve as linhas do usuário e aqui se escolhe a instalação.
+    listPropertyMonthly(null, signal).then(rows => rows.filter(row => row.propertyId === id)),
+    listMonitoringHourly(24, 10, signal).then(rows => rows.filter(row => row.propertyId === id)),
+    listAlerts({ severity: null, alertType: null, onlyActive: false, page: 0, size: 100 }, signal).then(page => page.content.filter(alert => alert.propertyId === id)),
+    listLeakIndicators(signal).then(rows => rows.filter(leak => leak.propertyId === id)),
   ]);
   signal.throwIfAborted();
   // Falhas de autenticação interrompem a página, mesmo quando uma consulta já terminou.
@@ -44,16 +51,24 @@ export async function getInstallationDetails(id: number, signal: AbortSignal): P
     if (result.status === "rejected" && result.reason instanceof ApiError &&
       (result.reason.status === 401 || result.reason.status === 403)) throw result.reason;
   }
-  const [address, monthly, daily] = results;
+  const [address, monthly, daily, indicators, hourly, alerts, leaks] = results;
   return {
     installation,
     address: address.status === "fulfilled" ? address.value[0] ?? null : null,
     monthly: monthly.status === "fulfilled" ? monthly.value : [],
     daily: daily.status === "fulfilled" ? daily.value : [],
+    indicators: indicators.status === "fulfilled" ? indicators.value : [],
+    hourly: hourly.status === "fulfilled" ? hourly.value : [],
+    alerts: alerts.status === "fulfilled" ? alerts.value : [],
+    leaks: leaks.status === "fulfilled" ? leaks.value : [],
     warnings: [
       ...(address.status === "rejected" ? ["Não foi possível carregar o endereço."] : []),
       ...(monthly.status === "rejected" ? ["Não foi possível carregar o histórico mensal."] : []),
       ...(daily.status === "rejected" ? ["Não foi possível carregar as leituras diárias e os custos."] : []),
+      ...(indicators.status === "rejected" ? ["Não foi possível carregar a meta e o custo do mês."] : []),
+      ...(hourly.status === "rejected" ? ["Não foi possível carregar a vazão."] : []),
+      ...(alerts.status === "rejected" ? ["Não foi possível carregar os alertas."] : []),
+      ...(leaks.status === "rejected" ? ["Não foi possível carregar os vazamentos."] : []),
     ],
   };
 }

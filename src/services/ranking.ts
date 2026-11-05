@@ -1,5 +1,6 @@
 import type { RankingCriterion, RankingItem, RankingResult } from "../types/ranking";
 import { isRecord, readArray, readId, readOptionalNumber, readText } from "../utils/apiValidation";
+import { formatInstallationLabel } from "../utils/installations";
 import { ApiError, getPublicJsonFrom } from "./http";
 
 // Contrato da API Redis (GET /get-ranking): item { position, propertyId, name, areaM2,
@@ -7,7 +8,7 @@ import { ApiError, getPublicJsonFrom } from "./http";
 function parseItem(value: unknown): RankingItem {
   if (!isRecord(value)) throw new Error("A API de ranking retornou um item inválido.");
   const propertyId = readId(value.propertyId);
-  const name = typeof value.name === "string" ? readText(value.name, 200) : "";
+  const name = typeof value.name === "string" ? formatInstallationLabel(readText(value.name, 200)) ?? "" : "";
   return {
     id: String(propertyId),
     name: name || `Instalação ${propertyId}`,

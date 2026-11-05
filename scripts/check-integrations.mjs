@@ -6,7 +6,6 @@ const urls = {
   postgres: env.VITE_POSTGRES_API_URL,
   ranking: env.VITE_RANKING_API_URL,
   ai: env.VITE_AI_API_URL,
-  mongo: env.VITE_MONGO_API_URL,
 };
 const results = [];
 
@@ -42,12 +41,10 @@ async function login() {
   return result.status === 200 && typeof result.body?.accessToken === "string" ? result.body.accessToken : null;
 }
 
-await check("mongo /health", async () => expectStatus(await call(urls.mongo, "/health"), [200]));
 await check("redis /health", async () => expectStatus(await call(urls.ranking, "/health"), [200]));
 await check("ia /health", async () => expectStatus(await call(urls.ai, "/health"), [200]));
 await check("postgres /health", async () => expectStatus(await call(urls.postgres, "/health"), [200]));
-await check("mongo telemetria pública", async () => expectStatus(await call(urls.mongo, "/api/telemetry/device-status?device_id=check"), [200, 404]));
-await check("mongo alertas exigem JWT", async () => expectStatus(await call(urls.mongo, "/api/alerts"), [401]));
+await check("indicadores exigem autenticação", async () => expectStatus(await call(urls.postgres, "/delta/analytics/organization-kpi"), [401, 403]));
 await check("ia exige JWT", async () => expectStatus(await call(urls.ai, "/sessions"), [401, 403]));
 await check("ranking contrato", async () => {
   const result = await call(urls.ranking, "/get-ranking?organizationId=1&period=2026-11&criterion=perm2&limit=1");
@@ -55,7 +52,7 @@ await check("ranking contrato", async () => {
   if (!Array.isArray(result.body?.items)) throw new Error("resposta sem items");
   return `HTTP 200, ${result.body.items.length} item(ns)`;
 });
-for (const [name, base] of [["mongo", urls.mongo], ["redis", urls.ranking], ["ia", urls.ai]]) {
+for (const [name, base] of [["redis", urls.ranking], ["ia", urls.ai]]) {
   await check(`CORS ${name} (origem ${env.CHECK_ORIGIN ?? "http://localhost:5173"})`, async () => {
     const origin = env.CHECK_ORIGIN ?? "http://localhost:5173";
     const result = await call(base, "/health", { method: "OPTIONS", headers: { Origin: origin, "Access-Control-Request-Method": "GET" } });
@@ -68,8 +65,9 @@ for (const [name, base] of [["mongo", urls.mongo], ["redis", urls.ranking], ["ia
 const token = await login();
 if (token) {
   const auth = { Authorization: `Bearer ${token}` };
-  await check("mongo alertas com JWT", async () => expectStatus(await call(urls.mongo, "/api/alerts?size=1", { headers: auth }), [200]));
-  await check("mongo leak-summary com JWT", async () => expectStatus(await call(urls.mongo, "/api/alerts/leak-summary", { headers: auth }), [200]));
+  for (const path of ["organization-kpi", "property-monthly", "monitoring-hourly", "devices", "devices/summary", "leaks", "alerts", "esg"]) {
+    await check(`indicadores SQL ${path} com JWT`, async () => expectStatus(await call(urls.postgres, `/delta/analytics/${path}`, { headers: auth }), [200]));
+  }
   await check("ia sessões com JWT", async () => expectStatus(await call(urls.ai, "/sessions?limit=1", { headers: auth }), [200]));
 } else {
   results.push({ name: "rotas autenticadas", ok: true, detail: "ignoradas (defina DELTA_CHECK_EMAIL e DELTA_CHECK_PASSWORD)" });

@@ -16,8 +16,8 @@ export function validateProfile(input: ProfileInput): string | null {
 export function validateOrganization(input: OrganizationInput): string | null {
   if (!input.legalName.trim()) return "Informe a razão social.";
   if (!input.tradeName.trim()) return "Informe o nome fantasia.";
-  if (!/^\d{2}\.?\d{3}\.?\d{3}\/\d{4}-?\d{2}$/.test(input.cnpj.trim())) return "Informe um CNPJ válido.";
-  if (!input.segment.trim()) return "Informe o segmento da organização.";
+  if (input.cnpj.replace(/\D/g, "").length !== 14) return "Informe um CNPJ com 14 números.";
+  if (!["VAREJO", "INDUSTRIA", "CONDOMINIO", "FACILITIES"].includes(input.segment)) return "Selecione o segmento da organização.";
   return null;
 }
 

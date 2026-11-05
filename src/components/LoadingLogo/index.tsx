@@ -3,10 +3,14 @@ import logoLoadingGota from "../../assets/logos/logo-loading-gota.png";
 
 import "./style.css";
 
-export function LoadingLogo() {
+interface LoadingLogoProps {
+  size?: "default" | "compact";
+}
+
+export function LoadingLogo({ size = "default" }: LoadingLogoProps) {
   return (
     <div
-      className="loading-logo"
+      className={`loading-logo${size === "compact" ? " loading-logo--compact" : ""}`}
       role="status"
       aria-label="Carregando"
     >

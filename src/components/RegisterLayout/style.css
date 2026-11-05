@@ -2,7 +2,7 @@
   width: 100%;
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 43.5% 56.5%;
+  grid-template-columns: 44% 56%;
   background-color: var(--background-dark);
 }
 

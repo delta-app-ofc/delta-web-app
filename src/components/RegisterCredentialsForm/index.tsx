@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useRegister } from "../../contexts/RegisterContext/useRegister";
 import { TextInput } from "../TextInput";
@@ -42,10 +42,6 @@ export function RegisterCredentialsForm() {
     clearError("confirmPassword");
   }
 
-  function handleLoginClick() {
-    navigate("/login");
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (requestRef.current) return;
@@ -83,18 +79,6 @@ export function RegisterCredentialsForm() {
         <p className="register-credentials-subtitle">
           Crie a sua conta
         </p>
-
-        <div className="register-credentials-login">
-          <span>Já possui uma conta?</span>
-
-          <button
-            type="button"
-            className="register-credentials-login__button"
-            onClick={handleLoginClick}
-          >
-            Faça login
-          </button>
-        </div>
       </div>
 
       <form
@@ -147,6 +131,10 @@ export function RegisterCredentialsForm() {
         {submitError && <p className="register-credentials-error" role="alert">{submitError}</p>}
 
         <RegisterButton disabled={isLoading}>{isLoading ? "Cadastrando..." : "Cadastrar"}</RegisterButton>
+        <div className="register-credentials-login">
+          <span>Já possui uma conta?</span>
+          <Link className="register-credentials-login__link" to="/login">Faça login</Link>
+        </div>
       </form>
     </section>
   );

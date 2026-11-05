@@ -1,3 +1,5 @@
+import type { LeakIndicator } from "./indicators";
+
 export type Severity = "high" | "medium" | "low";
 
 /** Tipo de alerta que a API Mongo grava para vazamento contínuo. */
@@ -13,7 +15,6 @@ export interface Alert {
   deviceId: string | null;
   triggeredAt: string;
   resolvedAt: string | null;
-  dismissedAt: string | null;
 }
 
 export interface AlertPage {
@@ -25,27 +26,14 @@ export interface AlertPage {
 export interface AlertQuery {
   severity: Severity | null;
   alertType: string | null;
-  includeDismissed: boolean;
+  onlyActive: boolean;
   page: number;
   size: number;
 }
 
 export interface LeakSummary {
-  litersPerDay: number;
-  points: number;
-  windowHours: number;
-}
-
-export interface EvidencePoint {
-  time: string;
-  liters: number;
-  baseline: number | null;
-}
-
-export interface VisitFormValues {
-  until: string;
-}
-
-export interface VisitFormErrors {
-  until?: string;
+  activeCount: number;
+  lossLiters: number;
+  lossCost: number;
+  leaks: LeakIndicator[];
 }

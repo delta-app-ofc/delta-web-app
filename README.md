@@ -11,10 +11,9 @@ Copie `.env.example` para `.env.local` e defina `VITE_POSTGRES_API_URL` com a or
 | `VITE_POSTGRES_API_URL` | API PostgreSQL | login, instalações, dispositivos (JWT) |
 | `VITE_RANKING_API_URL` | API Redis | `GET /get-ranking` (pública) |
 | `VITE_AI_API_URL` | API de IA | chat e histórico (JWT) |
-| `VITE_MONGO_API_URL` | API Mongo | telemetria pública em `/api/telemetry/*`; alertas e detecção (`/api/alerts`, `/api/detection`) exigem o mesmo JWT |
 | `VITE_WEATHER_API_URL` | Open-Meteo | clima da instalação |
 
-Alertas, vazamentos, evidências e visita vêm da API Mongo (`src/services/alerts.ts`); o impacto em R$ não é exibido porque a API só estima litros/dia. A origem em que o app for publicado precisa constar em `delta.web.allowed-origins` (API Mongo) e em `CORS_ALLOWED_ORIGINS` (IA e ranking). Para conferir os serviços reais: `node --env-file=.env.local scripts/check-integrations.mjs` (opcional: `DELTA_CHECK_EMAIL` e `DELTA_CHECK_PASSWORD` para as rotas autenticadas).
+Indicadores (dashboard, monitoramento, metas, alertas, vazamentos, dispositivos, instalações e investimentos) vêm das views SQL expostas em `/delta/analytics/*` pela API Postgres (`src/services/indicators.ts`). O ranking continua vindo do Redis. A origem em que o app for publicado precisa constar em `CORS_ALLOWED_ORIGINS` (IA e ranking). Para conferir os serviços reais: `node --env-file=.env.local scripts/check-integrations.mjs` (opcional: `DELTA_CHECK_EMAIL` e `DELTA_CHECK_PASSWORD` para as rotas autenticadas).
 
 A rota `/` mantém o cadastro de usuário e empresa; `/login` abre a autenticação. As páginas internas exigem sessão, e acessos sem sessão retornam a `/login`. Após o cadastro visual da empresa, ainda é necessário entrar com uma conta existente na API.
 
