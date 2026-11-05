@@ -1,7 +1,7 @@
 import Plotly from "plotly.js-dist-min";
 import createPlotlyComponent from "react-plotly.js/factory";
 
-import { useTheme } from "../../contexts/ThemeContext";
+import { useTheme } from "../../contexts/ThemeContext/useTheme";
 import type { ChatPlotlyProps } from "../../types/ai";
 
 const Plot = createPlotlyComponent(Plotly);
