@@ -37,6 +37,8 @@ async function detailHarness(overrides = {}, associations = [{ userId: 7, proper
     "/delta/analytics/property-monthly": [],
     "/delta/analytics/monitoring-hourly": [],
     "/delta/analytics/alerts": [],
+    "/delta/analytics/leaks": [],
+    "/delta/analytics/monthly-variation/15": [{ propertyId: 15, referenceMonth: currentReferenceMonth(), totalLiters: 1500 }],
     ...overrides,
   };
   const app = await harness(async url => {
@@ -117,7 +119,7 @@ test("detalhe autoriza a instalação antes de consultar o endereço e as leitur
   assert.equal(data.daily[0].costValue, null);
   assert.equal(data.warnings.length, 0);
   assert.deepEqual(paths.slice(0, 3), ["/delta/auth/me", "/delta/user-properties/7", "/delta/property/15"]);
-  assert.equal(paths.length, 9);
+  assert.equal(paths.length, 10);
   assert.deepEqual([data.indicators.length, data.hourly.length, data.alerts.length], [0, 0, 0]);
 });
 

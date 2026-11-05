@@ -5,7 +5,7 @@ import { harness } from "./helpers/service-harness.mjs";
 const signal = () => new AbortController().signal;
 const response = (data, status = 200) => new Response(JSON.stringify(data), { status });
 const session = () => ({ accessToken: "access", refreshToken: "refresh", expiresAt: Date.now() + 60000, refreshExpiresAt: Date.now() + 600000 });
-const form = { name: "Unidade", type: "PRÉDIO", cep: "02940-013", city: "São Paulo", state: "SP", regionId: "1", classification: "COMERCIAL_NORMAL_INDUSTRIAL", deviceId: "Delta-001", monthlyConsumption: "", monthlyGoal: "" };
+const form = { name: "Unidade", type: "PRÉDIO", cep: "02940-013", city: "São Paulo", state: "SP", regionId: "1", classification: "COMERCIAL_NORMAL_INDUSTRIAL", deviceId: "Delta-001", monthlyConsumption: "", monthlyGoal: "8" };
 
 async function backend(options = {}) {
   const calls = [];
