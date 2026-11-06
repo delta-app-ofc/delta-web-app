@@ -18,6 +18,21 @@ docker compose -p delta-web-app-test -f docker-compose.test.yml down
 
 ## Conferir o resultado e encerrar
 
+### Publicação no Render
+
+O `Dockerfile` de produção declara as configurações públicas `VITE_*` como
+argumentos no estágio de build. O Render passa as variáveis configuradas no
+serviço como build args; o Vite incorpora esses valores ao JavaScript gerado.
+
+Configure `VITE_POSTGRES_API_URL` com a origem da API, sem `/delta` no final,
+para habilitar o login. As demais integrações usam `VITE_MONGO_API_URL`,
+`VITE_RANKING_API_URL`, `VITE_AI_API_URL` e `VITE_WEATHER_API_URL`.
+`VITE_TARIFF_REGIONS` permite substituir as regiões tarifárias e é opcional.
+Essas variáveis são públicas e não devem conter senhas, tokens ou chaves privadas.
+
+Após alterar os valores, gere um novo build e deploy. Reiniciar o container
+ou reutilizar uma imagem já compilada não altera a configuração do frontend.
+
 ### Verificações do frontend
 
 Confira a saída do ESLint, TypeScript e Vite e o código de saída do serviço `checks`. Uma falha no lint interrompe a sequência. Este fluxo não abre o aplicativo no navegador e não executa testes funcionais. Não precisa de API, banco, `.env` ou porta publicada.

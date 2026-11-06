@@ -7,8 +7,15 @@ RUN npm ci
 
 COPY . ./
 
-# Vite compila as variáveis VITE_* neste estágio. No Render, configure-as
-# como Environment Variables antes do deploy.
+# O Render fornece as variáveis do serviço como build args. Declare as
+# configurações públicas neste estágio para o Vite incorporá-las ao bundle.
+ARG VITE_POSTGRES_API_URL
+ARG VITE_MONGO_API_URL
+ARG VITE_RANKING_API_URL
+ARG VITE_AI_API_URL
+ARG VITE_WEATHER_API_URL
+ARG VITE_TARIFF_REGIONS
+
 RUN npm run lint && npm run build
 
 FROM nginx:1.27-alpine AS runtime
