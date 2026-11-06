@@ -1,0 +1,31 @@
+name: Continuous Delivery
+
+on:
+  push:
+    branches:
+      - main
+
+permissions: {}
+
+concurrency:
+  group: cd-render-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Render Deploy
+        shell: bash
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::error::Configure o secret RENDER_DEPLOY_HOOK com o deploy hook do delta-web-app."
+            exit 1
+          fi
+
+          curl --fail --silent --show-error --max-time 60 \
+            --request POST --output /dev/null "$RENDER_DEPLOY_HOOK"
